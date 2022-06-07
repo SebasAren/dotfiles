@@ -99,8 +99,7 @@ source $ZSH/oh-my-zsh.sh
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PATH/.local/share/pnpm:$PYENV_ROOT/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
+export PATH="$HOME/.local/share/pnpm:$HOME/.pyenv/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
 if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
