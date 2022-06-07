@@ -100,8 +100,7 @@ source $ZSH/oh-my-zsh.sh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 export PYENV_ROOT="$HOME/.pyenv"
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PYENV_ROOT/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
+export PATH="$PATH/.local/share/pnpm:$PYENV_ROOT/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
 if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
@@ -119,7 +118,6 @@ fpath+=~/.zfunc
 alias yayo="yay"
 . "$HOME/.local/share/lscolors.sh"
 
-export PATH="$PNPM_HOME:$PATH"
 
 # tabtab source for packages
 # uninstall by removing these lines
