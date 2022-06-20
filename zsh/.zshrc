@@ -116,7 +116,10 @@ autoload -Uz compinit
 zstyle ":completion:*" menu select
 fpath+=~/.zfunc
 alias yayo="yay"
-. "$HOME/.local/share/lscolors.sh"
+LS_COLORS="$HOME/.local/share/lscolors.sh"
+if [[ -f "$LS_COLORS" ]]; then
+  . "$LS_COLORS"
+fi
 
 
 # tabtab source for packages
