@@ -10,6 +10,7 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.history = 1000
 vim.o.dictionary = '/usr/share/dict/words'
 vim.o.startofline = true
+vim.o.cmdheight = 0
 
 -- Mapping waiting time
 vim.o.timeout = false
@@ -41,7 +42,6 @@ vim.o.showcmd = true -- display command in bottom bar
 vim.o.incsearch = true -- starts searching as soon as typing, without enter needed
 vim.o.ignorecase = true -- ignore letter case when searching
 vim.o.smartcase = true -- case insentive unless capitals used in search
-
 vim.o.matchtime = 2 -- delay before showing matching paren
 vim.o.mps = vim.o.mps .. ",<:>"
 
