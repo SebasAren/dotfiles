@@ -54,6 +54,7 @@ return require('packer').startup { function(use)
         lspconfig.pyright.setup{}
         lspconfig.eslint.setup{}
         lspconfig.svelte.setup{}
+        lspconfig.graphql.setup{}
       end
     }
   }

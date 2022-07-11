@@ -116,12 +116,14 @@ autoload -Uz compinit
 zstyle ":completion:*" menu select
 fpath+=~/.zfunc
 alias yayo="yay"
-LS_COLORS="$HOME/.local/share/lscolors.sh"
-if [[ -f "$LS_COLORS" ]]; then
-  . "$LS_COLORS"
+COLOR_FILE="$HOME/.local/share/lscolors.sh"
+if [[ -f "$COLOR_FILE" ]]; then
+  . "$COLOR_FILE"
 fi
 
 
 # tabtab source for packages
 # uninstall by removing these lines
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
+
+export PATH="$HOME/.poetry/bin:$PATH"
