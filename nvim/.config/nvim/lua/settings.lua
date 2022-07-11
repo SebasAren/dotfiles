@@ -10,7 +10,6 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.history = 1000
 vim.o.dictionary = '/usr/share/dict/words'
 vim.o.startofline = true
-vim.o.cmdheight = 0
 
 -- Mapping waiting time
 vim.o.timeout = false
