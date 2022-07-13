@@ -23,12 +23,13 @@ require('formatter').setup({
     javascript = prettierSetup,
     typescript = prettierSetup,
     vue = prettierSetup,
-    python = blackSetup
+    python = blackSetup,
+    graphql = prettierSetup
   },
 })
 vim.api.nvim_exec([[
 augroup FormatAutogroup
   autocmd!
-  autocmd BufWritePost *.js,*.vue,*.ts,*.py FormatWrite
+  autocmd BufWritePost *.js,*.vue,*.ts,*.py,*.graphql FormatWrite
 augroup END
 ]], true) -- auto format on save
