@@ -15,7 +15,10 @@ return require('packer').startup { function(use)
     branch = 'chad',
     run = 'python3 -m chadtree deps',
   } -- file browser
-  use 'marko-cerovac/material.nvim' -- material colourscheme
+  use {
+    'catppuccin/nvim',
+    as = "catppuccin"
+  } -- material colourscheme
   use 'ryanoasis/vim-devicons' -- icons for plugins
   use 'adelarsq/vim-devicons-emoji' -- more icons for plugins
   use 'lukas-reineke/indent-blankline.nvim' -- indent lines

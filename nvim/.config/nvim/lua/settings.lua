@@ -83,9 +83,9 @@ vim.cmd([[
   augroup END
 ]])
 
-vim.o.background = 'dark'
-vim.g.material_style = 'darker'
-vim.cmd 'colorscheme material'
+require('catppuccin').setup()
+vim.g.catppuccin_flavour = 'mocha'
+vim.cmd[[colorscheme catppuccin]]
 
 -- Plugins
 require('indent_blankline').setup()
