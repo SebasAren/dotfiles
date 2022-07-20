@@ -83,7 +83,11 @@ vim.cmd([[
   augroup END
 ]])
 
-require('catppuccin').setup()
+require('catppuccin').setup({
+  integrations = {
+    barbar = true
+  }
+})
 vim.g.catppuccin_flavour = 'mocha'
 vim.cmd[[colorscheme catppuccin]]
 
