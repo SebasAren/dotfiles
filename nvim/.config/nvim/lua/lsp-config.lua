@@ -1,3 +1,18 @@
+local mason = require("mason")
+local mason_lsp = require("mason-lspconfig")
+local lspconfig = require('lspconfig')
+
+mason.setup()
+mason_lsp.setup({
+  automatic_installation = true
+})
+lspconfig.volar.setup{ }
+lspconfig.eslint.setup{ }
+lspconfig.tsserver.setup{ }
+lspconfig.pyright.setup{ }
+lspconfig.sumneko_lua.setup{ }
+lspconfig.graphql.setup{ }
+
 vim.cmd [[autocmd! ColorScheme * highlight NormalFloat guibg=#1f2335]]
 vim.cmd [[autocmd! ColorScheme * highlight FloatBorder guifg=white guibg=#1f2335]]
 

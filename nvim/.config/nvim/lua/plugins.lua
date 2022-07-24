@@ -43,24 +43,11 @@ return require('packer').startup { function(use)
 
   -- general dev
   use {
-    "williamboman/nvim-lsp-installer",
-    {
-      "neovim/nvim-lspconfig",
-      config = function()
-        require("nvim-lsp-installer").setup{
-          automatic_installation = true
-        }
-        local lspconfig = require("lspconfig")
-        lspconfig.sumneko_lua.setup{}
-        lspconfig.volar.setup{}
-        lspconfig.tsserver.setup{}
-        lspconfig.pyright.setup{}
-        lspconfig.eslint.setup{}
-        lspconfig.svelte.setup{}
-        lspconfig.graphql.setup{}
-      end
-    }
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+    "neovim/nvim-lspconfig",
   }
+  use "mfussenegger/nvim-dap"
   use {
     "RishabhRD/popfix",
     {
