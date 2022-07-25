@@ -7,3 +7,4 @@ require('lsp-config')
 require('formatting')
 require('worktree')
 require('dap-settings')
+require('lsp-saga');

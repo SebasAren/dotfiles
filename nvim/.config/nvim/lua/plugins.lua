@@ -35,7 +35,6 @@ return require('packer').startup { function(use)
       'nvim-lua/plenary.nvim'
     }
   }
-  use { 'kdheepak/lazygit.nvim', branch = 'main' } -- layzygit integration
   use {'ThePrimeagen/git-worktree.nvim', config = function()
     require('git-worktree').setup{}
   end
@@ -47,42 +46,30 @@ return require('packer').startup { function(use)
     "williamboman/mason-lspconfig.nvim",
     "neovim/nvim-lspconfig",
   }
+  -- autocompletion
+  use {
+    'hrsh7th/cmp-nvim-lsp',
+    'hrsh7th/cmp-buffer',
+    'hrsh7th/cmp-path',
+    'hrsh7th/cmp-cmdline',
+    'hrsh7th/nvim-cmp',
+    'hrsh7th/cmp-vsnip',
+    'hrsh7th/vim-vsnip',
+    'hrsh7th/vim-vsnip-integ',
+    'rafamadriz/friendly-snippets',
+    'hrsh7th/cmp-nvim-lsp-signature-help',
+    'hrsh7th/cmp-nvim-lsp-document-symbol',
+    'hrsh7th/cmp-nvim-lua',
+  }
   use "mfussenegger/nvim-dap"
-  use {
-    "RishabhRD/popfix",
-    {
-      "RishabhRD/nvim-lsputils",
-      config = function()
-        vim.lsp.handlers['textDocument/codeAction'] = require'lsputil.codeAction'.code_action_handler
-        vim.lsp.handlers['textDocument/references'] = require'lsputil.locations'.references_handler
-        vim.lsp.handlers['textDocument/definition'] = require'lsputil.locations'.definition_handler
-        vim.lsp.handlers['textDocument/declaration'] = require'lsputil.locations'.declaration_handler
-        vim.lsp.handlers['textDocument/typeDefinition'] = require'lsputil.locations'.typeDefinition_handler
-        vim.lsp.handlers['textDocument/implementation'] = require'lsputil.locations'.implementation_handler
-        vim.lsp.handlers['textDocument/documentSymbol'] = require'lsputil.symbols'.document_handler
-        vim.lsp.handlers['workspace/symbol'] = require'lsputil.symbols'.workspace_handler
-      end
-    }
-  }
-  use {
-    "ray-x/lsp_signature.nvim",
+  use({
+    "glepnir/lspsaga.nvim",
+    branch = "main",
     config = function()
-      local cfg = {
-        bind = true,
-        floating_window_above_cur_line = false,
-        zindex = 50,
-        handler_opts = {
-          border = "rounded"
-        }
-      }
-      require "lsp_signature".setup(cfg)
-    end
-  }
+      require("lspsaga").init_lsp_saga()
+    end,
+  })
   use 'gfanto/fzf-lsp.nvim'
-  use {
-    'weilbith/nvim-code-action-menu',
-    cmd = 'CodeActionMenu'
-  } -- code action menu
   use 'windwp/nvim-autopairs' -- automatically insert pairs
   use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' } -- syntax highlighting
   use {
@@ -90,11 +77,6 @@ return require('packer').startup { function(use)
     config = function()
       require('nvim-ts-autotag').setup()
     end
-  }
-  use {
-    'hrsh7th/vim-vsnip',
-    'hrsh7th/vim-vsnip-integ',
-    'rafamadriz/friendly-snippets'
   }
 
   -- search
