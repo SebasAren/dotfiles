@@ -91,6 +91,11 @@ return require('packer').startup { function(use)
       require('nvim-ts-autotag').setup()
     end
   }
+  use {
+    'hrsh7th/vim-vsnip',
+    'hrsh7th/vim-vsnip-integ',
+    'rafamadriz/friendly-snippets'
+  }
 
   -- search
   use { 'nvim-telescope/telescope.nvim', requires = { { 'nvim-lua/popup.nvim' }, { 'nvim-lua/plenary.nvim' } } } -- file finder

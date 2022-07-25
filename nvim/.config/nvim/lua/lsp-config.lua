@@ -12,6 +12,16 @@ lspconfig.tsserver.setup{ }
 lspconfig.pyright.setup{ }
 lspconfig.sumneko_lua.setup{ }
 lspconfig.graphql.setup{ }
+--Enable (broadcasting) snippet capability for completion
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+lspconfig.html.setup{
+  capabilities = capabilities,
+  filetypes = {"html", "vue"}
+}
+
+require'lspconfig'.html.setup {
+}
 
 vim.cmd [[autocmd! ColorScheme * highlight NormalFloat guibg=#1f2335]]
 vim.cmd [[autocmd! ColorScheme * highlight FloatBorder guifg=white guibg=#1f2335]]
