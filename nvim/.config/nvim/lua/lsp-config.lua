@@ -55,3 +55,6 @@ lspconfig.html.setup{
   capabilities = capabilities,
   filetypes = {"html", "vue"}
 }
+lspconfig.tailwindcss.setup{
+  capabilities = capabilities
+}
