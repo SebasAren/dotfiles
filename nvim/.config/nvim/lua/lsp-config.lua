@@ -58,3 +58,12 @@ lspconfig.html.setup{
 lspconfig.tailwindcss.setup{
   capabilities = capabilities
 }
+lspconfig.jsonls.setup{
+  capabilities = capabilities,
+  settings = {
+    json = {
+      schemas = require('schemastore').json.schemas(),
+      validate = { enable = true },
+    },
+  },
+}
