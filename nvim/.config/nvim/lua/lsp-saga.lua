@@ -40,13 +40,3 @@ end, { silent = true, noremap = true })
 vim.keymap.set("n", "]E", function()
   require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
 end, { silent = true, noremap = true })
-
-
--- float terminal also you can pass the cli command in open_float_terminal function
-vim.keymap.set("n", "<leader>gg", function()
-    term.open_float_terminal("lazygit")
-end, { silent = true,noremap = true })
-vim.keymap.set("t", "<leader>gg", function()
-    vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true))
-    term.close_float_terminal()
-end, { silent = true })

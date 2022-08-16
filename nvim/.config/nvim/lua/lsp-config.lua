@@ -3,6 +3,12 @@ local mason_lsp = require("mason-lspconfig")
 local lspconfig = require('lspconfig')
 
 local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+local on_attach = function(client)
+  if client.server_capabilities.colorProvider then
+    -- Attach document colour support
+    require("document-color").buf_attach(bufnr)
+  end
+end
 mason.setup({
   capabilities = capabilities
 })
@@ -56,7 +62,8 @@ lspconfig.html.setup{
   filetypes = {"html", "vue"}
 }
 lspconfig.tailwindcss.setup{
-  capabilities = capabilities
+  capabilities = capabilities,
+  on_attach = on_attach,
 }
 lspconfig.jsonls.setup{
   capabilities = capabilities,
