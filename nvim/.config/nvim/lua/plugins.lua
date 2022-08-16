@@ -47,6 +47,12 @@ return require('packer').startup { function(use)
     "neovim/nvim-lspconfig",
   }
   use { 'b0o/schemastore.nvim' }
+  use { 'mrshmllow/document-color.nvim', config = function()
+    require('document-color').setup{
+      mode = 'background'
+    }
+  end
+  }
   -- autocompletion
   use {
     'hrsh7th/cmp-nvim-lsp',
@@ -70,6 +76,7 @@ return require('packer').startup { function(use)
       require("lspsaga").init_lsp_saga()
     end,
   })
+  use 'glepnir/coman.nvim'
   use 'gfanto/fzf-lsp.nvim'
   use 'windwp/nvim-autopairs' -- automatically insert pairs
   use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' } -- syntax highlighting

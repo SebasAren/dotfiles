@@ -108,9 +108,6 @@ require('nvim-treesitter.configs').setup({
   }
 })
 
--- enable commenter
-require('mini.comment').setup{}
-
 -- highlighting of word under cursor
 require('mini.cursorword').setup{}
 
