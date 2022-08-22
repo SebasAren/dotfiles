@@ -132,7 +132,11 @@ require('workspaces').setup({
     open = { "Telescope find_files" }
   }
 })
-require('nvim-tree').setup{}
+require('nvim-tree').setup{
+  diagnostics = {
+    enable = true,
+  }
+}
 
 -- vim-test
 vim.g['test#strategy'] = 'neovim'
