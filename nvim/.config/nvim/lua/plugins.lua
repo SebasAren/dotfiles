@@ -11,11 +11,6 @@ return require('packer').startup { function(use)
   use 'mhartington/formatter.nvim' -- formatting
   use 'tpope/vim-surround'
   use {
-    'ms-jpq/chadtree',
-    branch = 'chad',
-    run = 'python3 -m chadtree deps',
-  } -- file browser
-  use {
     'catppuccin/nvim',
     as = "catppuccin"
   } -- material colourscheme
@@ -23,6 +18,13 @@ return require('packer').startup { function(use)
   use 'adelarsq/vim-devicons-emoji' -- more icons for plugins
   use 'lukas-reineke/indent-blankline.nvim' -- indent lines
   use { 'romgrk/barbar.nvim', requires = { 'kyazdani42/nvim-web-devicons' } } -- tab bar on top of screen and easy mappings
+  use {
+    'kyazdani42/nvim-tree.lua',
+    requires = {
+      'kyazdani42/nvim-web-devicons', -- optional, for file icons
+    },
+    tag = 'nightly' -- optional, updated every week. (see issue #1193)
+  }
   use 'chentoast/marks.nvim' -- simpler mark navigation
   use 'FooSoft/vim-argwrap' -- argument wrapper
   use 'natecraddock/workspaces.nvim' -- workspace support

@@ -83,7 +83,7 @@ nmap('<leader>a', '<cmd>ArgWrap<cr>')
 nmap('<C-g>', '<cmd>GitMessenger<cr>')
 
 -- CHADtree
-nmap('<leader>n', '<cmd>CHADopen<CR>')
+nmap('<leader>n', '<cmd>NvimTreeToggle<CR>')
 
 -- buffers
 nmap('<A-,>', '<cmd>BufferPrevious<CR>')
