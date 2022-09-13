@@ -168,8 +168,22 @@ awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
     local l = awful.layout.suit;
-    local names = { "work", "fun", "chat", "4", "5"}
-    local layouts = {l.tile, l.floating, l.max, l.tile, l.tile}
+    local names = {
+      "work",
+      "work2",
+      "fun",
+      "chat",
+      "video",
+      "5"
+    }
+    local layouts = {
+      l.tile,
+      l.tile,
+      l.floating,
+      l.tile,
+      l.max,
+      l.tile
+    }
     awful.tag(names, s, layouts)
 
     -- Create a promptbox for each screen
@@ -327,7 +341,22 @@ globalkeys = gears.table.join(
               {description = "lua execute prompt", group = "awesome"}),
     -- Menubar
     awful.key({ modkey }, "p", function() menubar.show() end,
-              {description = "show the menubar", group = "launcher"})
+              {description = "show the menubar", group = "launcher"}),
+
+    -- Volume keys
+    awful.key({}, "XF86AudioLowerVolume", function ()
+     awful.util.spawn("amixer -q -D pulse sset Master 5%-", false) end),
+   awful.key({}, "XF86AudioRaiseVolume", function ()
+     awful.util.spawn("amixer -q -D pulse sset Master 5%+", false) end),
+   awful.key({}, "XF86AudioMute", function ()
+     awful.util.spawn("amixer -D pulse set Master 1+ toggle", false) end),
+   -- Media Keys
+   awful.key({}, "XF86AudioPlay", function()
+     awful.util.spawn("playerctl play-pause", false) end),
+   awful.key({}, "XF86AudioNext", function()
+     awful.util.spawn("playerctl next", false) end),
+   awful.key({}, "XF86AudioPrev", function()
+     awful.util.spawn("playerctl previous", false) end)
 )
 
 clientkeys = gears.table.join(
