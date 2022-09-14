@@ -38,6 +38,10 @@ lspconfig.sumneko_lua.setup{
       runtime = {
         -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
         version = 'LuaJIT',
+        path = {
+          '?/init.lua',
+          '?.lua'
+        }
       },
       diagnostics = {
         -- Get the language server to recognize the `vim` global
@@ -47,7 +51,9 @@ lspconfig.sumneko_lua.setup{
         -- Make the server aware of Neovim runtime files
         library = {
           vim.api.nvim_get_runtime_file("", true),
-          '/usr/share/awesome/lib'
+          '/usr/share/awesome/lib',
+          '/usr/share/lua/5.3/lain',
+          '/usr/share/lua/5.3/freedesktop',
         },
       },
       -- Do not send telemetry data containing a randomized but unique identifier
