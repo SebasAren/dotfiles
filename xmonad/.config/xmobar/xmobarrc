@@ -1,0 +1,37 @@
+Config { font = "xft:Noto Sans:pixelsize=12"
+       , additionalFonts = []
+       , borderColor = "black"
+       , border = TopB
+       , bgColor = "black"
+       , fgColor = "grey"
+       , alpha = 255
+       , position = Top
+       , textOffset = -1
+       , iconOffset = -1
+       , lowerOnStart = True
+       , pickBroadest = False
+       , persistent = False
+       , hideOnStart = False
+       , iconRoot = "."
+       , allDesktops = True
+       , overrideRedirect = True
+       , commands = [ Run Network "enp4s0" ["-L","0","-H","32",
+                                          "--normal","gray","--high","gray"] 10
+                    , Run Network "wlp3s0" ["-L","0","-H","32",
+                                          "--normal","green","--high","red"] 10
+                    , Run Cpu ["-L","3","-H","50",
+                               "--normal","gray","--high","red"] 10
+                    , Run Memory ["-t","Mem: <usedratio>%"] 10
+                    , Run Com "uname" ["-s","-r"] "" 36000
+                    , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
+                    , Run MultiCoreTemp ["-t", "Temp: <avg>°C",
+                                          "-L", "60", "-H", "80",
+                                          "-l", "green", "-n", "yellow", "-h", "red",
+                                          "--", "--mintemp", "20", "--maxtemp", "100"] 50
+                    , Run Volume "default" "Master" [] 10
+                    ]
+       , sepChar = "%"
+       , alignSep = "}{"
+       , template = "%cpu% %multicoretemp% | %memory% | %enp4s0% - %wlp3s0% }\
+                    \{ <fc=grey>%date%</fc>| %uname% %default:Master%     "
+       }
