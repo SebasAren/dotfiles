@@ -127,3 +127,5 @@ fi
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
 
 export PATH="$HOME/.poetry/bin:$PATH"
+
+[ -f "/home/sebas/.ghcup/env" ] && source "/home/sebas/.ghcup/env" # ghcup-env

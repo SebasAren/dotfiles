@@ -83,3 +83,6 @@ lspconfig.jsonls.setup{
     },
   },
 }
+lspconfig.hls.setup{
+  capabilities = capabilities
+}
