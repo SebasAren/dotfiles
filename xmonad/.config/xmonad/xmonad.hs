@@ -3,11 +3,12 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Renamed
 import XMonad.Util.EZConfig
+import XMonad.Hooks.EwmhDesktops
 import Graphics.X11.ExtraTypes.XF86
 
 
 -- launch XMonad with a status bar and overridden configuration
-main = xmonad =<< statusBar myBar myPP myToggleStrutsKey  myConfig
+main = xmonad . ewmh =<< statusBar myBar myPP myToggleStrutsKey myConfig
 
 
 -- general configuration with keyboard customisation
