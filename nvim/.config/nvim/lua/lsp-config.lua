@@ -17,6 +17,7 @@ mason_lsp.setup{
 }
 lspconfig.volar.setup{
   capabilities = capabilities,
+  filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'}
   -- init_options = {
   --   typescript = {
   --     serverPath = vim.fn.stdpath 'data' .. 'mason' .. 'typescript-language-server',
@@ -24,10 +25,8 @@ lspconfig.volar.setup{
   -- }
 }
 lspconfig.eslint.setup{
-  capabilities = capabilities
-}
-lspconfig.tsserver.setup{
-  capabilities = capabilities
+  capabilities = capabilities,
+  filetypes = { "javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact", "typescript.tsx", "svelte", "vue"}
 }
 lspconfig.pyright.setup{
   capabilities = capabilities
@@ -68,7 +67,7 @@ lspconfig.graphql.setup{
 }
 lspconfig.html.setup{
   capabilities = capabilities,
-  filetypes = {"html", "vue"}
+  filetypes = {"html"}
 }
 lspconfig.tailwindcss.setup{
   capabilities = capabilities,
