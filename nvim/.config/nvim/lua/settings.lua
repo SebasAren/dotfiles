@@ -121,6 +121,7 @@ require('mini.sessions').setup{
   directory = HOME .. '/.vim',
   file = 'Session.vim',
 }
+require('mini.map').setup{}
 -- startup screen
 require('mini.starter').setup{}
 require('mini.trailspace').setup{}
