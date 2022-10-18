@@ -1,35 +1,25 @@
-local prettierSetup = {
-  function()
-    return {
-      exe = "prettier",
-      args = {"--stdin-filepath", vim.fn.fnameescape(vim.api.nvim_buf_get_name(0))},
-      stdin = true,
-    }
-  end
-}
-
-local blackSetup = {
-  function()
-    return {
-      exe = "black",
-      args = { '-' },
-      stdin = true,
-    }
-  end
-}
 -- formatter setup
-require('formatter').setup({
-  filetype = {
-    javascript = prettierSetup,
-    typescript = prettierSetup,
-    vue = prettierSetup,
-    python = blackSetup,
-    graphql = prettierSetup
-  },
+local prettier = require("formatter.defaults.prettierd")
+
+require("formatter").setup({
+	logging = true,
+	log_level = vim.log.levels.WARN,
+	filetype = {
+		javascript = prettier,
+		typescript = require("formatter.filetypes.typescript").prettierd,
+		vue = prettier,
+		python = require("formatter.filetypes.python").black,
+		graphql = prettier,
+		prisma = prettier,
+		lua = require("formatter.filetypes.lua").stylua,
+	},
 })
-vim.api.nvim_exec([[
+vim.api.nvim_exec(
+	[[
 augroup FormatAutogroup
   autocmd!
-  autocmd BufWritePost *.js,*.vue,*.ts,*.py,*.graphql FormatWrite
+  autocmd BufWritePost * FormatWrite
 augroup END
-]], true) -- auto format on save
+]],
+	true
+) -- auto format on save
