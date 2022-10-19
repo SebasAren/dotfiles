@@ -83,13 +83,6 @@ vim.cmd([[
   augroup END
 ]])
 
-require('catppuccin').setup({
-  integrations = {
-    barbar = true
-  }
-})
-vim.g.catppuccin_flavour = 'mocha'
-vim.cmd[[colorscheme catppuccin]]
 
 -- Plugins
 require('indent_blankline').setup()
