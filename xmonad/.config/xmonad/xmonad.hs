@@ -56,8 +56,7 @@ myConfig = def
   , ((myModMask .|. shiftMask,  xK_l                    ), spawn "xautolock -locknow")
 
   -- take screenshots
-  , ((noModMask,                xK_Print                ), spawn "sleep 0.2; cd /tmp && scrot -s -e 'xdg-open $f &'")
-  , ((myModMask,                xK_Print                ), spawn "           cd /tmp && scrot    -e 'xdg-open $f &'")
+  , ((noModMask,                xK_Print                ), spawn "xfce4-screenshooter")
   ]
 
 
