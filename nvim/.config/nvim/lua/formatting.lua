@@ -18,7 +18,7 @@ vim.api.nvim_exec(
 	[[
 augroup FormatAutogroup
   autocmd!
-  autocmd BufWritePost * FormatWrite
+  autocmd BufWritePost * FormatWriteLock
 augroup END
 ]],
 	true
