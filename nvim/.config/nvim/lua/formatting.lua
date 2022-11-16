@@ -14,12 +14,8 @@ require("formatter").setup({
 		lua = require("formatter.filetypes.lua").stylua,
 	},
 })
-vim.api.nvim_exec(
-	[[
-augroup FormatAutogroup
-  autocmd!
-  autocmd BufWritePost * FormatWriteLock
-augroup END
-]],
-	true
-) -- auto format on save
+local formatGroup = vim.api.nvim_create_augroup("FormatAutogroup", { clear = true });
+vim.api.nvim_create_autocmd("BufWritePost", {
+  command = "FormatWriteLock",
+  group = formatGroup
+})
