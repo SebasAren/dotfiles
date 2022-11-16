@@ -1,4 +1,3 @@
--- formatter setup
 local prettier = require("formatter.defaults.prettierd")
 
 require("formatter").setup({
@@ -12,10 +11,11 @@ require("formatter").setup({
 		graphql = prettier,
 		prisma = prettier,
 		lua = require("formatter.filetypes.lua").stylua,
+		["*"] = require("formatter.filetypes.any").remove_trailing_whitespace,
 	},
 })
-local formatGroup = vim.api.nvim_create_augroup("FormatAutogroup", { clear = true });
+local formatGroup = vim.api.nvim_create_augroup("FormatAutogroup", { clear = true })
 vim.api.nvim_create_autocmd("BufWritePost", {
-  command = "FormatWriteLock",
-  group = formatGroup
+	command = "FormatWriteLock",
+	group = formatGroup,
 })
