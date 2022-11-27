@@ -52,6 +52,5 @@ picom -b &
 trayer --edge top --align right --SetDockType true --SetPartialStrut true \
   --expand true --width 10 --transparent true --tint 0x5f5f5f --height 20 --monitor 1 &
 xrandr --output DisplayPort-0 --off --output DisplayPort-1 --off --output DisplayPort-2 --primary --mode 2560x1440 --pos 1920x0 --rotate normal --output HDMI-A-0 --mode 1920x1080 --pos 0x180 --rotate normal &
-xscreensaver -no-splash &
 feh --bg-scale ~/.wallpapers/psy.jpg &
 exec xmonad
