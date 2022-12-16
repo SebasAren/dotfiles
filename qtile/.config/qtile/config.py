@@ -60,7 +60,7 @@ keys = [
     Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
     # Toggle between different layouts as defined below
     Key([mod], "space", lazy.next_layout(), desc="Toggle between layouts"),
-    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod, "shift"], "c", lazy.window.kill(), desc="Kill focused window"),
     Key([mod], "q", lazy.prev_screen(), desc="Previous monitor"),
     Key([mod], "e", lazy.next_screen(), desc="Next monitor"),
     Key([mod, "shift"], "r", lazy.reload_config(), desc="Reload the config"),
@@ -169,6 +169,7 @@ floating_layout = layout.Floating(
         Match(wm_class="ssh-askpass"),  # ssh-askpass
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
+        Match(wm_class="steam"),
     ]
 )
 auto_fullscreen = True
