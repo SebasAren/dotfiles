@@ -67,7 +67,7 @@ ZSH_THEME="mh"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git archlinux dotenv zsh-navigation-tools)
+plugins=(git archlinux dotenv zsh-navigation-tools fzf nvm)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -97,8 +97,6 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$HOME/.pyenv/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
 if command -v pyenv 1>/dev/null 2>&1; then
@@ -127,5 +125,6 @@ fi
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
 
 export PATH="$HOME/.poetry/bin:$PATH"
+export NVM_DIR="/usr/share/nvm"
 
 [ -f "/home/sebas/.ghcup/env" ] && source "/home/sebas/.ghcup/env" # ghcup-env
