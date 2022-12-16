@@ -60,7 +60,9 @@ keys = [
     Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
     # Toggle between different layouts as defined below
     Key([mod], "space", lazy.next_layout(), desc="Toggle between layouts"),
-    Key([mod], "q", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod], "q", lazy.prev_screen(), desc="Previous monitor"),
+    Key([mod], "e", lazy.next_screen(), desc="Next monitor"),
     Key([mod, "shift"], "r", lazy.reload_config(), desc="Reload the config"),
     Key([mod, "shift"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key(
@@ -133,8 +135,9 @@ screens = [
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
         ),
+        bottom=bar.Bar([widget.TaskList()], 24),
     ),
-    Screen(),
+    Screen(bottom=bar.Bar([widget.TaskList()], 24)),
 ]
 
 # Drag floating layouts.
