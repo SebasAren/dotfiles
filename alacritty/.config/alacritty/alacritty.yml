@@ -99,16 +99,6 @@ scrolling:
 # Font configuration (changes require restart)
 font:
   # Normal (roman) font face
-  normal:
-    family: Alacritty
-    style: Regular
-  bold:
-    family: Alacritty
-    style: Bold
-  italic:
-    family: Alacritty
-    style: Italic
-
     # The `style` can be specified to pick a specific face.
     #style: Regular
 

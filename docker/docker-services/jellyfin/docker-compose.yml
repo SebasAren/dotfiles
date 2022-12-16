@@ -1,0 +1,18 @@
+version: "2.3"
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin
+    user: 1000:1000
+    restart: unless-stopped
+    volumes:
+      - /stash2/config:/config
+      - /stash2/cache:/cache
+      - /stash2/media:/media:ro
+      - /stash/media:/media2:ro
+    ports:
+      - 8096:8096
+      - 8920:8920
+      - 1900:1900/udp
+      - 7359:7359/udp
+      - 18800:18800
