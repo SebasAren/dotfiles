@@ -61,6 +61,7 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], "space", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod, "shift"], "c", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod], "b", lazy.hide_show_bar("top")),
     Key([mod], "q", lazy.prev_screen(), desc="Previous monitor"),
     Key([mod], "e", lazy.next_screen(), desc="Next monitor"),
     Key([mod, "shift"], "r", lazy.reload_config(), desc="Reload the config"),
