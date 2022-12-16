@@ -24,19 +24,6 @@ lspconfig.volar.setup({
 	--   }
 	-- }
 })
-lspconfig.eslint.setup({
-	capabilities = capabilities,
-	filetypes = {
-		"javascript",
-		"javascriptreact",
-		"javascript.jsx",
-		"typescript",
-		"typescriptreact",
-		"typescript.tsx",
-		"svelte",
-		"vue",
-	},
-})
 lspconfig.pyright.setup({
 	capabilities = capabilities,
 })
