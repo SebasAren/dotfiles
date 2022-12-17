@@ -40,7 +40,6 @@ from libqtile.widget.quick_exit import QuickExit
 from libqtile.layout.max import Max
 from libqtile.layout.xmonad import MonadTall
 from libqtile.layout.floating import Floating
-from libqtile.backend.base import Window
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
