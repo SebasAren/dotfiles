@@ -25,13 +25,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from libqtile import bar, layout, widget
+import socket
+
+from libqtile import bar, layout, widget, hook
+from libqtile.backend.base import Window
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
+from utils.process import run_script
+
 mod = "mod4"
 terminal = guess_terminal()
+hostname = socket.gethostname()
+HOME = "henk"
+WORK = ""
+
+# autostart
+@hook.subscribe.startup_once
+def autostart_once():
+    if hostname == HOME:
+        run_script("./autostart/home.sh")
+    if hostname == WORK:
+        run_script("./autostart/work.sh")
+    run_script("./autostart/base.sh")
+
 
 keys = [
     # A list of available commands that can be bound to keys can be found
@@ -157,6 +175,15 @@ mouse = [
     Click([mod], "Button2", lazy.window.bring_to_front()),
 ]
 
+
+@hook.subscribe.client_new
+def float_steam(window: Window):
+    wm_class = window.get_wm_class()
+    w_name = window.name
+    if wm_class == ("Steam", "Steam") and (w_name != "Steam"):
+        window.floating = True
+
+
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: list
 follow_mouse_focus = True
@@ -172,7 +199,6 @@ floating_layout = layout.Floating(
         Match(wm_class="ssh-askpass"),  # ssh-askpass
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
-        Match(wm_class="steam"),
         Match(title="xfce4-screenshooter"),
     ]
 )
