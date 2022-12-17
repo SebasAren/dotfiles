@@ -72,6 +72,8 @@ keys = [
         lazy.spawn("rofi -show run"),
         desc="Spawn a rofi command runner",
     ),
+    # Generic keybinds
+    Key([], "Print", lazy.spawn("xfce4-screenshooter")),
 ]
 
 groups = [Group(i) for i in "123456789"]
@@ -171,6 +173,7 @@ floating_layout = layout.Floating(
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
         Match(wm_class="steam"),
+        Match(title="xfce4-screenshooter"),
     ]
 )
 auto_fullscreen = True
