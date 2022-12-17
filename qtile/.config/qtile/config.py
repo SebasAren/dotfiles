@@ -27,19 +27,31 @@
 
 import socket
 
-from libqtile import bar, layout, widget, hook
+from libqtile import bar, hook
+from libqtile.widget.groupbox import GroupBox
+from libqtile.widget.prompt import Prompt
+from libqtile.widget.currentlayout import CurrentLayout
+from libqtile.widget.windowname import WindowName
+from libqtile.widget.chord import Chord
+from libqtile.widget.systray import Systray
+from libqtile.widget.clock import Clock
+from libqtile.widget.quick_exit import QuickExit
+from libqtile.layout.max import Max
+from libqtile.layout.xmonad import MonadTall
+from libqtile.layout.floating import Floating
 from libqtile.backend.base import Window
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
 from utils.process import run_script
+from utils.bars import task_bar
 
+HOME = "henk"
+WORK = ""
 mod = "mod4"
 terminal = guess_terminal()
 hostname = socket.gethostname()
-HOME = "henk"
-WORK = ""
 
 # autostart
 @hook.subscribe.startup_once
@@ -121,8 +133,8 @@ for i in groups:
     )
 
 layouts = [
-    layout.MonadTall(),
-    layout.Max(),
+    MonadTall(),
+    Max(),
 ]
 
 widget_defaults = dict(
@@ -132,15 +144,16 @@ widget_defaults = dict(
 )
 extension_defaults = widget_defaults.copy()
 
+
 screens = [
     Screen(
         top=bar.Bar(
             [
-                widget.CurrentLayout(),
-                widget.GroupBox(),
-                widget.Prompt(),
-                widget.WindowName(),
-                widget.Chord(
+                CurrentLayout(),
+                GroupBox(),
+                Prompt(),
+                WindowName(),
+                Chord(
                     chords_colors={
                         "launch": ("#ff0000", "#ffffff"),
                     },
@@ -148,17 +161,17 @@ screens = [
                 ),
                 # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
                 # widget.StatusNotifier(),
-                widget.Systray(),
-                widget.Clock(format="%Y-%m-%d %a %I:%M %p"),
-                widget.QuickExit(),
+                Systray(),
+                Clock(format="%Y-%m-%d %a %I:%M %p"),
+                QuickExit(),
             ],
             24,
             # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
             # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
         ),
-        bottom=bar.Bar([widget.TaskList()], 24),
+        bottom=task_bar(),
     ),
-    Screen(bottom=bar.Bar([widget.TaskList()], 24)),
+    Screen(bottom=task_bar()),
 ]
 
 # Drag floating layouts.
@@ -189,10 +202,10 @@ dgroups_app_rules = []  # type: list
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating(
+floating_layout = Floating(
     float_rules=[
         # Run the utility of `xprop` to see the wm class and name of an X client.
-        *layout.Floating.default_float_rules,
+        *Floating.default_float_rules,
         Match(wm_class="confirmreset"),  # gitk
         Match(wm_class="makebranch"),  # gitk
         Match(wm_class="maketag"),  # gitk
