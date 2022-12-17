@@ -3,3 +3,4 @@ nvim/.config/nvim/plugin/packer_compiled.lua
 .stack-work/
 .env
 __pycache__/
+qtile/.config/qtile/wallpapers/wallpaper.jpg

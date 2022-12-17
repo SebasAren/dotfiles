@@ -28,6 +28,7 @@
 import socket
 
 from libqtile import bar, hook
+from libqtile.dgroups import simple_key_binder
 from libqtile.widget.groupbox import GroupBox
 from libqtile.widget.prompt import Prompt
 from libqtile.widget.currentlayout import CurrentLayout
@@ -104,31 +105,15 @@ keys = [
     Key([], "Print", lazy.spawn("xfce4-screenshooter")),
 ]
 
-groups = [Group(i) for i in "123456789"]
+groups = [
+    Group("a"),
+    Group("b"),
+    Group("comm"),
+    Group("float", matches=[Match(wm_class="Steam")], layout="floating"),
+]
 
-for i in groups:
-    keys.extend(
-        [
-            # mod1 + letter of group = switch to group
-            Key(
-                [mod],
-                i.name,
-                lazy.group[i.name].toscreen(),
-                desc="Switch to group {}".format(i.name),
-            ),
-            # mod1 + shift + letter of group = switch to & move focused window to group
-            Key(
-                [mod, "shift"],
-                i.name,
-                lazy.window.togroup(i.name, switch_group=True),
-                desc="Switch to & move focused window to group {}".format(i.name),
-            ),
-            # Or, use below if you prefer not to switch to that group.
-            # # mod1 + shift + letter of group = move focused window to group
-            # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
-            #     desc="move focused window to group {}".format(i.name)),
-        ]
-    )
+dgroups_key_binder = simple_key_binder(mod)
+
 
 layouts = [
     MonadTall(),
@@ -146,6 +131,7 @@ extension_defaults = widget_defaults.copy()
 
 screens = [
     Screen(
+        wallpaper="~/.config/qtile/wallpapers/wallpaper.jpg",
         top=bar.Bar(
             [
                 CurrentLayout(),
@@ -170,7 +156,11 @@ screens = [
         ),
         bottom=task_bar(),
     ),
-    Screen(bottom=task_bar()),
+    Screen(
+        wallpaper="~/.config/qtile/wallpapers/wallpaper.jpg",
+        wallpaper_mode="stretch",
+        bottom=task_bar(),
+    ),
 ]
 
 # Drag floating layouts.
@@ -188,15 +178,6 @@ mouse = [
 ]
 
 
-@hook.subscribe.client_new
-def float_steam(window: Window):
-    wm_class = window.get_wm_class()
-    w_name = window.name
-    if wm_class == ("Steam", "Steam") and (w_name != "Steam"):
-        window.floating = True
-
-
-dgroups_key_binder = None
 dgroups_app_rules = []  # type: list
 follow_mouse_focus = True
 bring_front_click = False
