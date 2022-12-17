@@ -44,20 +44,6 @@ lspconfig.volar.setup({
 		new_config.init_options.typescript.tsdk = get_typescript_server_path(new_root_dir)
 	end,
 })
-
-lspconfig.eslint.setup({
-	capabilities = capabilities,
-	filetypes = {
-		"javascript",
-		"javascriptreact",
-		"javascript.jsx",
-		"typescript",
-		"typescriptreact",
-		"typescript.tsx",
-		"svelte",
-		"vue",
-	},
-})
 lspconfig.pyright.setup({
 	capabilities = capabilities,
 })
