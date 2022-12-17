@@ -40,7 +40,7 @@ from libqtile.widget.quick_exit import QuickExit
 from libqtile.layout.max import Max
 from libqtile.layout.xmonad import MonadTall
 from libqtile.layout.floating import Floating
-from libqtile.config import Click, Drag, Group, Key, Match, Screen
+from libqtile.config import Click, Drag, Group, Key, Match, Screen, KeyChord
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
@@ -102,6 +102,15 @@ keys = [
     ),
     # Generic keybinds
     Key([], "Print", lazy.spawn("xfce4-screenshooter")),
+    # Quick launchers
+    KeyChord(
+        [mod, "shift"],
+        "p",
+        [
+            Key([], "p", lazy.spawn("qutebrowser")),
+        ],
+        name="Quick Launch",
+    ),
 ]
 
 groups = [
