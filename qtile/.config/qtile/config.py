@@ -89,7 +89,7 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], "space", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod, "shift"], "c", lazy.window.kill(), desc="Kill focused window"),
-    Key([mod], "b", lazy.hide_show_bar("top")),
+    Key([mod], "b", lazy.hide_show_bar("top"), desc="Hide top bar"),
     Key([mod], "q", lazy.prev_screen(), desc="Previous monitor"),
     Key([mod], "e", lazy.next_screen(), desc="Next monitor"),
     Key([mod, "shift"], "r", lazy.reload_config(), desc="Reload the config"),
@@ -209,9 +209,10 @@ floating_layout = Floating(
         Match(wm_class="makebranch"),  # gitk
         Match(wm_class="maketag"),  # gitk
         Match(wm_class="ssh-askpass"),  # ssh-askpass
+        Match(wm_class="pinentry-gtk-2"),
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
-        Match(title="xfce4-screenshooter"),
+        Match(title="xfce4-screenshooter"),  # screenshot application
     ]
 )
 auto_fullscreen = True
