@@ -124,9 +124,6 @@ for i = 1, 9 do
   nmap(string.format('<leader>h%d', i), string.format('<cmd>lua require("harpoon.term").gotoTerminal(%d)<cr>', i))
 end
 nmap('<leader>hl', '<cmd>lua require("harpoon.cmd-ui").toggle_quick_menu()<cr>')
-nmap('gcc', '<cmd>ComComment<cr>')
-map('x', 'gcc', ':ComComment<cr>')
-nmap('gcj', '<cmd>ComAnnotation<Cr>')
 
 nmap('<leader>mc', '<cmd>lua require("mini.map").close()<cr>')
 nmap('<leader>mf', '<cmd>lua require("mini.map").toggle_focus()<cr>')

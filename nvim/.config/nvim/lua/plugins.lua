@@ -88,7 +88,12 @@ return require("packer").startup({
 				require("lspsaga").init_lsp_saga()
 			end,
 		})
-		use("glepnir/coman.nvim")
+    use({
+      "numToStr/Comment.nvim",
+      config = function()
+        require("Comment").setup()
+      end
+    })
 		use("gfanto/fzf-lsp.nvim")
 		use("windwp/nvim-autopairs") -- automatically insert pairs
 		use({ "nvim-treesitter/nvim-treesitter", run = ":TSUpdate" }) -- syntax highlighting
