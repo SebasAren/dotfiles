@@ -33,9 +33,11 @@ from libqtile.widget.groupbox import GroupBox
 from libqtile.widget.currentlayout import CurrentLayout
 from libqtile.widget.windowname import WindowName
 from libqtile.widget.chord import Chord
-from libqtile.widget.systray import Systray
+from libqtile.widget.pomodoro import Pomodoro
+from libqtile.widget.statusnotifier import StatusNotifier
 from libqtile.widget.clock import Clock
 from libqtile.widget.quick_exit import QuickExit
+from libqtile.widget.net import Net
 from libqtile.layout.max import Max
 from libqtile.layout.xmonad import MonadTall
 from libqtile.layout.floating import Floating
@@ -45,6 +47,7 @@ from libqtile.utils import guess_terminal
 
 from utils.process import run_script
 from utils.bars import task_bar
+from widgets.wireplumber import WireplumberVolume
 
 HOME = "henk"
 WORK = ""
@@ -101,6 +104,17 @@ keys = [
     ),
     # Generic keybinds
     Key([], "Print", lazy.spawn("xfce4-screenshooter")),
+    Key(
+        [],
+        "XF86AudioRaiseVolume",
+        lazy.spawn("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"),
+    ),
+    Key(
+        [],
+        "XF86AudioLowerVolume",
+        lazy.spawn("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    ),
+    Key([], "XF86AudioMute", lazy.spawn("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")),
     # Quick launchers
     KeyChord(
         [mod, "shift"],
@@ -152,8 +166,11 @@ screens = [
                 WindowName(),
                 # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
                 # widget.StatusNotifier(),
-                Systray(),
+                Net(),
+                Pomodoro(),
+                StatusNotifier(),
                 Clock(format="%Y-%m-%d %a %I:%M %p"),
+                WireplumberVolume(),
                 QuickExit(),
             ],
             24,
