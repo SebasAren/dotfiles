@@ -107,13 +107,6 @@ require('mini.cursorword').setup{}
 -- autopairing
 require('mini.pairs').setup{}
 
--- session manager and startup screen
-require('mini.sessions').setup{
-  autoread = false,
-  autowrite = true,
-  directory = HOME .. '/.vim',
-  file = 'Session.vim',
-}
 require('mini.map').setup{}
 -- startup screen
 require('mini.starter').setup{}
