@@ -129,6 +129,7 @@ keys = [
 groups = [
     Group("a"),
     Group("b"),
+    Group("c"),
     Group("comm"),
     Group("float", matches=[Match(wm_class="Steam")], layout="floating"),
 ]
