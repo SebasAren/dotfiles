@@ -30,7 +30,6 @@ import socket
 from libqtile import bar, hook
 from libqtile.dgroups import simple_key_binder
 from libqtile.widget.groupbox import GroupBox
-from libqtile.widget.prompt import Prompt
 from libqtile.widget.currentlayout import CurrentLayout
 from libqtile.widget.windowname import WindowName
 from libqtile.widget.chord import Chord
@@ -144,14 +143,13 @@ screens = [
             [
                 CurrentLayout(),
                 GroupBox(),
-                Prompt(),
-                WindowName(),
                 Chord(
                     chords_colors={
                         "launch": ("#ff0000", "#ffffff"),
                     },
                     name_transform=lambda name: name.upper(),
                 ),
+                WindowName(),
                 # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
                 # widget.StatusNotifier(),
                 Systray(),
