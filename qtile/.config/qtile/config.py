@@ -214,6 +214,7 @@ floating_layout = Floating(
         Match(wm_class="maketag"),  # gitk
         Match(wm_class="ssh-askpass"),  # ssh-askpass
         Match(wm_class="pinentry-gtk-2"),
+        Match(wm_class="mullvad vpn"),
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
         Match(title="xfce4-screenshooter"),  # screenshot application
