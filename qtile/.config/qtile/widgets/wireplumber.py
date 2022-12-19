@@ -2,6 +2,7 @@ import subprocess
 import shlex
 from libqtile.widget.volume import Volume
 from libqtile.widget import base
+from libqtile.log_utils import logger
 
 
 class WireplumberVolume(Volume):
@@ -23,7 +24,9 @@ class WireplumberVolume(Volume):
                 return float(a[8:]) * 100
             else:
                 return -1
-        except (subprocess.CalledProcessError, ValueError):
+        except (subprocess.CalledProcessError, ValueError) as e:
+            if isinstance(e, subprocess.CalledProcessError):
+                logger.error(e)
             return -1
 
     def open_qpwgraph(self):

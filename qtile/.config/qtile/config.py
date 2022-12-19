@@ -165,8 +165,6 @@ screens = [
                     name_transform=lambda name: name.upper(),
                 ),
                 WindowName(),
-                # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
-                # widget.StatusNotifier(),
                 Net(),
                 Pomodoro(),
                 StatusNotifier(),
@@ -175,8 +173,6 @@ screens = [
                 QuickExit(),
             ],
             24,
-            # border_width=[2, 0, 2, 0],  # Draw top and bottom borders
-            # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
         ),
         bottom=task_bar(),
     ),
