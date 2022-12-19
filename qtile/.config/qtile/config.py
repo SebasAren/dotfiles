@@ -25,19 +25,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
+
+sys.path.append(".")
 import socket
 
-from libqtile import bar, hook
+from libqtile import hook
 from libqtile.dgroups import simple_key_binder
-from libqtile.widget.groupbox import GroupBox
-from libqtile.widget.currentlayout import CurrentLayout
-from libqtile.widget.windowname import WindowName
-from libqtile.widget.chord import Chord
-from libqtile.widget.pomodoro import Pomodoro
-from libqtile.widget.statusnotifier import StatusNotifier
-from libqtile.widget.clock import Clock
-from libqtile.widget.quick_exit import QuickExit
-from libqtile.widget.net import Net
 from libqtile.layout.max import Max
 from libqtile.layout.xmonad import MonadTall
 from libqtile.layout.floating import Floating
@@ -46,8 +40,7 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
 from utils.process import run_script
-from utils.bars import task_bar
-from widgets.wireplumber import WireplumberVolume
+from utils.bars import task_bar, top_bar
 
 HOME = "henk"
 WORK = ""
@@ -154,26 +147,7 @@ extension_defaults = widget_defaults.copy()
 screens = [
     Screen(
         wallpaper="~/.config/qtile/wallpapers/wallpaper.jpg",
-        top=bar.Bar(
-            [
-                CurrentLayout(),
-                GroupBox(),
-                Chord(
-                    chords_colors={
-                        "launch": ("#ff0000", "#ffffff"),
-                    },
-                    name_transform=lambda name: name.upper(),
-                ),
-                WindowName(),
-                Net(),
-                Pomodoro(),
-                StatusNotifier(),
-                Clock(format="%Y-%m-%d %a %I:%M %p"),
-                WireplumberVolume(),
-                QuickExit(),
-            ],
-            24,
-        ),
+        top=top_bar(),
         bottom=task_bar(),
     ),
     Screen(
