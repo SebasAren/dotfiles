@@ -34,6 +34,13 @@ return require("packer").startup({
 		use("chentoast/marks.nvim") -- simpler mark navigation
 		use("FooSoft/vim-argwrap") -- argument wrapper
 		use("natecraddock/workspaces.nvim") -- workspace support
+		use({
+			"folke/trouble.nvim",
+			requires = "kyazdani42/nvim-web-devicons",
+			config = function()
+				require("trouble").setup({})
+			end,
+		}) -- quickfix replacement
 
 		-- git
 		use("rhysd/git-messenger.vim") -- see latest commit of line
@@ -88,12 +95,12 @@ return require("packer").startup({
 				require("lspsaga").init_lsp_saga()
 			end,
 		})
-    use({
-      "numToStr/Comment.nvim",
-      config = function()
-        require("Comment").setup()
-      end
-    })
+		use({
+			"numToStr/Comment.nvim",
+			config = function()
+				require("Comment").setup()
+			end,
+		})
 		use("gfanto/fzf-lsp.nvim")
 		use("windwp/nvim-autopairs") -- automatically insert pairs
 		use({ "nvim-treesitter/nvim-treesitter", run = ":TSUpdate" }) -- syntax highlighting
