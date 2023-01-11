@@ -23,7 +23,10 @@ return require("packer").startup({
 		use("ryanoasis/vim-devicons") -- icons for plugins
 		use("adelarsq/vim-devicons-emoji") -- more icons for plugins
 		use("lukas-reineke/indent-blankline.nvim") -- indent lines
-		use({ "romgrk/barbar.nvim", requires = { "kyazdani42/nvim-web-devicons" } }) -- tab bar on top of screen and easy mappings
+		use({
+			"romgrk/barbar.nvim",
+			requires = { "kyazdani42/nvim-web-devicons" },
+		}) -- tab bar on top of screen and easy mappings
 		use({
 			"kyazdani42/nvim-tree.lua",
 			requires = {
@@ -135,5 +138,22 @@ return require("packer").startup({
 
 		-- python
 		use({ "Vimjas/vim-python-pep8-indent", ft = "python" }) -- python indenting
+
+		-- neorg
+		use({
+			"nvim-neorg/neorg",
+			config = function()
+				require("neorg").setup({
+					load = {
+						["core.defaults"] = {},
+						["core.norg.dirman"] = {
+							config = { workspaces = { work = "~/notes/work", home = "~/notes/home" } },
+						},
+						["core.norg.completion"] = { config = { engine = "nvim-cmp" } },
+					},
+				})
+			end,
+			requires = "nvim-lua/plenary.nvim",
+		})
 	end,
 })

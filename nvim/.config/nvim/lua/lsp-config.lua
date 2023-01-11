@@ -88,6 +88,19 @@ lspconfig.html.setup({
 lspconfig.tailwindcss.setup({
 	capabilities = capabilities,
 	on_attach = on_attach,
+	settings = {
+		tailwindCSS = {
+			files = {
+				exclude = {
+					"**/node_modules/**",
+					"**/.hg/**",
+					"**/.git/**",
+					"**/.svn/**",
+					"**/.nuxt/**",
+				},
+			},
+		},
+	},
 })
 lspconfig.jsonls.setup({
 	capabilities = capabilities,
