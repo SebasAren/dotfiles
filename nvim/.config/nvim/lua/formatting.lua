@@ -11,6 +11,7 @@ require("formatter").setup({
 		graphql = prettier,
 		prisma = prettier,
 		lua = require("formatter.filetypes.lua").stylua,
+		nix = require("formatter.filetypes.nix").nixfmt,
 		["*"] = require("formatter.filetypes.any").remove_trailing_whitespace,
 	},
 })
