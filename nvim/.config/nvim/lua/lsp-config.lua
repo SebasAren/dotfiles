@@ -120,3 +120,6 @@ lspconfig.prismals.setup({
 lspconfig.jsonnet_ls.setup({
 	capabilities = capabilities,
 })
+lspconfig.nil_ls.setup({
+	capabilities = capabilities,
+})
