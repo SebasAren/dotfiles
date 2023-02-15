@@ -155,5 +155,10 @@ return require("packer").startup({
 			end,
 			requires = "nvim-lua/plenary.nvim",
 		})
+
+		-- kitty
+		use({
+			"fladson/vim-kitty",
+		})
 	end,
 })

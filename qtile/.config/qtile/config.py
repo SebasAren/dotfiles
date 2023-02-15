@@ -47,7 +47,7 @@ from utils.bars import task_bar, top_bar
 HOME = "henk"
 WORK = ""
 mod = "mod4"
-terminal = guess_terminal()
+terminal = guess_terminal("kitty")
 hostname = socket.gethostname()
 
 # autostart
