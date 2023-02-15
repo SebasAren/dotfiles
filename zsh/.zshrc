@@ -67,7 +67,7 @@ ZSH_THEME="mh"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git archlinux dotenv fzf nvm z)
+plugins=(git archlinux dotenv fzf z)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -96,9 +96,8 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-
+#
 export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$HOME/.pyenv/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
 if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
@@ -114,23 +113,7 @@ autoload -Uz compinit
 zstyle ":completion:*" menu select
 fpath+=~/.zfunc
 alias yayo="yay"
-COLOR_FILE="$HOME/.local/share/lscolors.sh"
-if [[ -f "$COLOR_FILE" ]]; then
-  . "$COLOR_FILE"
-fi
 
-
-# tabtab source for packages
-# uninstall by removing these lines
-[[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
-
-export PATH="$HOME/.poetry/bin:$PATH"
-
-[ -f "/home/sebas/.ghcup/env" ] && source "/home/sebas/.ghcup/env" # ghcup-env
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /usr/bin/tk tk
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$HOME/.poetry/bin:$PNPM_HOME:$HOME/.pyenv/bin:$HOME/.local/bin:$HOME/.dotnet:$HOME/.yarn/bin:$PATH"
