@@ -44,7 +44,7 @@ def top_bar():
             Net(),
             Pomodoro(),
             Systray(),
-            Clock(format="%Y-%m-%d %a %I:%M %p"),
+            Clock(format="%Y-%m-%d %a %H:%M %p"),
             WireplumberVolume(),
             QuickExit(),
         ],
