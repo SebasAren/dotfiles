@@ -13,14 +13,16 @@ local Worktree = require("git-worktree")
 --          path = path where worktree deleted
 
 Worktree.on_tree_change(function(op, metadata)
-  if op == Worktree.Operations.Switch then
-    local infile = io.open(metadata.prev_path .. "/../.env", "r")
-    local instr = infile:read("*a")
-    infile:close()
+	if op == Worktree.Operations.Switch then
+		local infile = io.open(metadata.prev_path .. "/../.env", "r")
 
-    local outfile = io.open(metadata.path .. "/.env", "w")
-    outfile:write(instr)
-    outfile:close()
-    print("Switched from " .. metadata.prev_path .. " to " .. metadata.path)
-  end
+		local outfile = io.open(metadata.path .. "/.env", "w")
+		if outfile and infile then
+			local instr = infile:read("*a")
+			infile:close()
+			outfile:write(instr)
+			outfile:close()
+		end
+		print("Switched from " .. metadata.prev_path .. " to " .. metadata.path)
+	end
 end)
