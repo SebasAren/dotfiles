@@ -5,8 +5,13 @@ return require("packer").startup({
 		-- common
 		use("chrisbra/Colorizer") -- adds color highlighting to certain filetypes
 		use("ggandor/lightspeed.nvim") -- s navigation
-		use("nvim-lualine/lualine.nvim") -- statusline
 		use({ "echasnovski/mini.nvim", branch = "main" }) -- utility functions
+		use({
+			"rebelot/heirline.nvim",
+			config = function()
+				require("heirline").setup(require("statusline.main"))
+			end,
+		})
 		use("rhysd/vim-grammarous") -- grammar check
 		use("andymass/vim-matchup") -- matching parens and more
 		use("mhartington/formatter.nvim") -- formatting
@@ -23,10 +28,6 @@ return require("packer").startup({
 		use("ryanoasis/vim-devicons") -- icons for plugins
 		use("adelarsq/vim-devicons-emoji") -- more icons for plugins
 		use("lukas-reineke/indent-blankline.nvim") -- indent lines
-		use({
-			"romgrk/barbar.nvim",
-			requires = { "kyazdani42/nvim-web-devicons" },
-		}) -- tab bar on top of screen and easy mappings
 		use({
 			"kyazdani42/nvim-tree.lua",
 			requires = {

@@ -89,11 +89,6 @@ require("indent_blankline").setup()
 require("toggleterm").setup({
 	open_mapping = [[<c-\>]],
 })
-require("lualine").setup({
-	options = {
-		theme = "catppuccin",
-	},
-})
 
 require("nvim-treesitter.configs").setup({
 	highlight = {
