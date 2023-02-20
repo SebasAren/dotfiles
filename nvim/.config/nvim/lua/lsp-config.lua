@@ -117,9 +117,6 @@ lspconfig.hls.setup({
 lspconfig.prismals.setup({
 	capabilities = capabilities,
 })
-lspconfig.jsonnet_ls.setup({
-	capabilities = capabilities,
-})
 lspconfig.svelte.setup({
 	capabilities = capabilities,
 })
