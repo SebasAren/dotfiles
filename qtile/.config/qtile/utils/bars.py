@@ -9,8 +9,6 @@ from libqtile.widget.groupbox import GroupBox
 from libqtile.widget.currentlayout import CurrentLayout
 from libqtile.widget.windowname import WindowName
 from libqtile.widget.chord import Chord
-from libqtile.widget.pomodoro import Pomodoro
-from libqtile.widget.statusnotifier import StatusNotifier
 from libqtile.widget.systray import Systray
 from libqtile.widget.clock import Clock
 from libqtile.widget.quick_exit import QuickExit
@@ -42,7 +40,6 @@ def top_bar():
             ),
             WindowName(),
             Net(),
-            Pomodoro(),
             Systray(),
             Clock(format="%Y-%m-%d %a %H:%M %p"),
             WireplumberVolume(),

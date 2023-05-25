@@ -39,7 +39,7 @@ from libqtile.layout.floating import Floating
 from libqtile.config import Click, Drag, Group, Key, Match, Screen, KeyChord
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
-from qtile_extras.resources import wallpapers
+# from qtile_extras.resources import wallpapers
 
 from utils.process import run_script
 from utils.bars import task_bar, top_bar
@@ -148,13 +148,11 @@ extension_defaults = widget_defaults.copy()
 
 screens = [
     Screen(
-        wallpaper=str(wallpapers.WALLPAPER_TRIANGLES_ROUNDED),
         wallpaper_mode="stretch",
         top=top_bar(),
         bottom=task_bar(),
     ),
     Screen(
-        wallpaper=str(wallpapers.WALLPAPER_TRIANGLES_ROUNDED),
         wallpaper_mode="stretch",
         bottom=task_bar(),
     ),
