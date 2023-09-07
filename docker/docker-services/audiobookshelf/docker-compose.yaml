@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  audiobookshelf:
+    restart: unless-stopped
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    ports:
+      - 13378:80
+    volumes:
+      - /stash2/media/Audiobooks:/audiobooks
+      - /stash2/audiobookshelf:/config
+      - /stash2/audiobookmeta:/metadata

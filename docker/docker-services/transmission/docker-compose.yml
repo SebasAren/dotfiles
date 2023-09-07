@@ -10,17 +10,19 @@ services:
       - /stash/media/:/data2
     restart: unless-stopped
     environment:
-      - TZ=Europe/Amsterdam
-      - OPENVPN_PROVIDER=MULLVAD
+      - TZ
+      - OPENVPN_PROVIDER
       - OPENVPN_USERNAME
-      - OPENVPN_PASSWORD=m
-      - OPENVPN_CONFIG=nl_all
-      - LOCAL_NETWORK=192.168.2.0/24
+      - OPENVPN_PASSWORD
+      - OPENVPN_CONFIG
+      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - VPN_LOG_LEVEL=11
+      - LOCAL_NETWORK
       - WEBPROXY_ENABLED=true
       - WEBPROXY_PORT=8118
       - PUID=1000
       - PGID=1000
-      - TRANSMISSION_PEER_PORT=55749
+      - TRANSMISSION_PEER_PORT
     logging:
       driver: json-file
       options:
@@ -29,4 +31,4 @@ services:
       - '9091:9091'
       - '8118:8118'
     sysctls:
-      - "net.ipv6.conf.all.disable_ipv6=0"
+      - "net.ipv6.conf.all.disable_ipv6=1"
