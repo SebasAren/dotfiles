@@ -4,7 +4,7 @@ return require("packer").startup({
 
 		-- common
 		use("chrisbra/Colorizer") -- adds color highlighting to certain filetypes
-		use("ggandor/lightspeed.nvim") -- s navigation
+		use("ggandor/lightspeed.nvim" ) -- s navigation
 		use({ "echasnovski/mini.nvim", branch = "main" }) -- utility functions
 		use({
 			"rebelot/heirline.nvim",
@@ -124,6 +124,12 @@ return require("packer").startup({
 				require("nvim-ts-autotag").setup()
 			end,
 		})
+		use({
+			"ray-x/lsp_signature.nvim",
+			config = function()
+				require("lsp_signature").setup()
+			end,
+		})
 
 		-- search
 		use({ "nvim-telescope/telescope.nvim", requires = { { "nvim-lua/popup.nvim" }, { "nvim-lua/plenary.nvim" } } }) -- file finder
@@ -139,23 +145,6 @@ return require("packer").startup({
 
 		-- python
 		use({ "Vimjas/vim-python-pep8-indent", ft = "python" }) -- python indenting
-
-		-- neorg
-		use({
-			"nvim-neorg/neorg",
-			config = function()
-				require("neorg").setup({
-					load = {
-						["core.defaults"] = {},
-						["core.norg.dirman"] = {
-							config = { workspaces = { work = "~/notes/work", home = "~/notes/home" } },
-						},
-						["core.norg.completion"] = { config = { engine = "nvim-cmp" } },
-					},
-				})
-			end,
-			requires = "nvim-lua/plenary.nvim",
-		})
 
 		-- kitty
 		use({

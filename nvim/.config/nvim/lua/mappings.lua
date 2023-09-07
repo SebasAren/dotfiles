@@ -180,3 +180,5 @@ map("n", "<Space>bn", "<Cmd>BufferOrderByBufferNumber<CR>")
 map("n", "<Space>bd", "<Cmd>BufferOrderByDirectory<CR>")
 map("n", "<Space>bl", "<Cmd>BufferOrderByLanguage<CR>")
 map("n", "<Space>bw", "<Cmd>BufferOrderByWindowNumber<CR>")
+
+nmap("<C-p>", "<cmd>lua require('lsp_signature').toggle_float_win()<CR>")
