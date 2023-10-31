@@ -85,7 +85,6 @@ vim.cmd([[
 ]])
 
 -- Plugins
-require("indent_blankline").setup()
 require("toggleterm").setup({
 	open_mapping = [[<c-\>]],
 })

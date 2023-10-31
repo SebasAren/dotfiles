@@ -4,7 +4,7 @@ return require("packer").startup({
 
 		-- common
 		use("chrisbra/Colorizer") -- adds color highlighting to certain filetypes
-		use("ggandor/lightspeed.nvim" ) -- s navigation
+		use("ggandor/lightspeed.nvim") -- s navigation
 		use({ "echasnovski/mini.nvim", branch = "main" }) -- utility functions
 		use({
 			"rebelot/heirline.nvim",
@@ -14,7 +14,28 @@ return require("packer").startup({
 		})
 		use("rhysd/vim-grammarous") -- grammar check
 		use("andymass/vim-matchup") -- matching parens and more
-		use("mhartington/formatter.nvim") -- formatting
+		use({
+			"mhartington/formatter.nvim",
+			config = function()
+				local prettier = require("formatter.defaults.prettierd")
+
+				require("formatter").setup({
+					logging = true,
+					log_level = vim.log.levels.WARN,
+					filetype = {
+						javascript = prettier,
+						typescript = require("formatter.filetypes.typescript").prettierd,
+						vue = prettier,
+						python = require("formatter.filetypes.python").black,
+						graphql = prettier,
+						prisma = prettier,
+						lua = require("formatter.filetypes.lua").stylua,
+						nix = require("formatter.filetypes.nix").nixfmt,
+						["*"] = require("formatter.filetypes.any").remove_trailing_whitespace,
+					},
+				})
+			end,
+		}) -- formatting
 		use("tpope/vim-surround")
 		use({
 			"catppuccin/nvim",
@@ -27,7 +48,12 @@ return require("packer").startup({
 		}) -- material colourscheme
 		use("ryanoasis/vim-devicons") -- icons for plugins
 		use("adelarsq/vim-devicons-emoji") -- more icons for plugins
-		use("lukas-reineke/indent-blankline.nvim") -- indent lines
+		use({
+			"lukas-reineke/indent-blankline.nvim",
+			config = function()
+				require("ibl").setup()
+			end,
+		}) -- indent lines
 		use({
 			"kyazdani42/nvim-tree.lua",
 			requires = {
