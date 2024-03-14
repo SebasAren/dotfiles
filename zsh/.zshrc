@@ -104,7 +104,7 @@ if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv virtualenv-init -)"
 fi
 alias vi="nvim"
-alias ssh="TERM=xterm-256color ssh"
+alias ssh="TERM=xterm-256color kitty +kitten ssh"
 export EDITOR="nvim"
 export ZSH_DOTENV_PROMPT=false
 export MAKEFLAGS="-j12"
