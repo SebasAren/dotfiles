@@ -67,7 +67,10 @@ ZSH_THEME="mh"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git archlinux dotenv fzf z)
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+plugins=(git archlinux dotenv fzf z pyenv)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -98,11 +101,6 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 #
 export PNPM_HOME="$HOME/.local/share/pnpm"
-if command -v pyenv 1>/dev/null 2>&1; then
-  eval "$(pyenv init --path)"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
-fi
 alias vi="nvim"
 alias ssh="TERM=xterm-256color ssh"
 export EDITOR="nvim"
@@ -117,3 +115,8 @@ alias yayo="yay"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$HOME/.local/bin:$PATH"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
