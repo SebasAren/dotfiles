@@ -102,7 +102,7 @@ source $ZSH/oh-my-zsh.sh
 #
 export PNPM_HOME="$HOME/.local/share/pnpm"
 alias vi="nvim"
-alias ssh="TERM=xterm-256color ssh"
+alias ssh="TERM=xterm-256color kitty +kitten ssh"
 export EDITOR="nvim"
 export ZSH_DOTENV_PROMPT=false
 export MAKEFLAGS="-j12"

@@ -14,8 +14,7 @@ services:
       - OPENVPN_PROVIDER
       - OPENVPN_USERNAME
       - OPENVPN_PASSWORD
-      - OPENVPN_CONFIG
-      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - OPENVPN_CONFIG=default
       - VPN_LOG_LEVEL=11
       - LOCAL_NETWORK
       - WEBPROXY_ENABLED=true
@@ -31,4 +30,4 @@ services:
       - '9091:9091'
       - '8118:8118'
     sysctls:
-      - "net.ipv6.conf.all.disable_ipv6=1"
+      - "net.ipv6.conf.all.disable_ipv6=0"

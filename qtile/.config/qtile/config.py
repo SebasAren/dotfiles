@@ -39,6 +39,7 @@ from libqtile.layout.floating import Floating
 from libqtile.config import Click, Drag, Group, Key, Match, Screen, KeyChord
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+
 # from qtile_extras.resources import wallpapers
 
 from utils.process import run_script
@@ -49,6 +50,7 @@ WORK = ""
 mod = "mod4"
 terminal = guess_terminal("kitty")
 hostname = socket.gethostname()
+
 
 # autostart
 @hook.subscribe.startup_once
@@ -97,6 +99,11 @@ keys = [
         lazy.spawn("rofi -show run"),
         desc="Spawn a rofi command runner",
     ),
+    Key(
+        [mod, "shift"],
+        "p",
+        lazy.spawn("rofi -show drun"),
+    ),
     # Generic keybinds
     Key([], "Print", lazy.spawn("xfce4-screenshooter")),
     Key(
@@ -110,15 +117,6 @@ keys = [
         lazy.spawn("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
     ),
     Key([], "XF86AudioMute", lazy.spawn("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")),
-    # Quick launchers
-    KeyChord(
-        [mod, "shift"],
-        "p",
-        [
-            Key([], "p", lazy.spawn("qutebrowser")),
-        ],
-        name="Quick Launch",
-    ),
 ]
 
 groups = [
