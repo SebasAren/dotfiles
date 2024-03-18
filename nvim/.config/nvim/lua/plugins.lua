@@ -21,7 +21,7 @@ return require("packer").startup({
 
 				require("formatter").setup({
 					logging = true,
-					log_level = vim.log.levels.WARN,
+					log_level = vim.log.levels.DEBUG,
 					filetype = {
 						javascript = prettier,
 						typescript = require("formatter.filetypes.typescript").prettierd,
@@ -29,6 +29,7 @@ return require("packer").startup({
 						python = require("formatter.filetypes.python").black,
 						graphql = prettier,
 						prisma = prettier,
+						html = prettier,
 						lua = require("formatter.filetypes.lua").stylua,
 						nix = require("formatter.filetypes.nix").nixfmt,
 						["*"] = require("formatter.filetypes.any").remove_trailing_whitespace,
@@ -59,7 +60,6 @@ return require("packer").startup({
 			requires = {
 				"kyazdani42/nvim-web-devicons", -- optional, for file icons
 			},
-			tag = "nightly", -- optional, updated every week. (see issue #1193)
 		})
 		use("chentoast/marks.nvim") -- simpler mark navigation
 		use("FooSoft/vim-argwrap") -- argument wrapper
