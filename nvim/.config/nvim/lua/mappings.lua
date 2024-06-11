@@ -28,9 +28,6 @@ end
 nmap("/", "/\\v")
 vmap("/", "/\\v")
 
--- don't jump when using *
-nmap("*", "*<c-o>")
-
 -- keep search matches in the middle of the window
 nmap("n", "nzzzv")
 nmap("N", "Nzzzv")
