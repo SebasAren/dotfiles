@@ -195,5 +195,16 @@ return require("packer").startup({
 		use({
 			"fladson/vim-kitty",
 		})
+		use({
+			"iamcco/markdown-preview.nvim",
+			run = "cd app && npm install",
+			config = function()
+				vim.g.mkdp_filetypes = { "markdown", "mkd" }
+				vim.g.mkdp_command_for_global = 1
+				vim.g.mkdp_echo_preview_url = 1
+				vim.g.mkdp_auto_start = 0
+				vim.g.mkdp_open_to_the_world = 1
+			end,
+		})
 	end,
 })

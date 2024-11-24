@@ -35,7 +35,7 @@ mason.setup({
 mason_lsp.setup({
 	automatic_installation = true,
 })
-lspconfig.tsserver.setup({
+lspconfig.ts_ls.setup({
 	capabilities = capabilities,
 })
 lspconfig.volar.setup({
