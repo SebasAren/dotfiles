@@ -25,6 +25,8 @@ return require("packer").startup({
 					filetype = {
 						javascript = prettier,
 						typescript = require("formatter.filetypes.typescript").prettierd,
+						typescriptreact = prettier,
+						javascriptreact = prettier,
 						vue = prettier,
 						python = require("formatter.filetypes.python").black,
 						graphql = prettier,
@@ -197,7 +199,9 @@ return require("packer").startup({
 		})
 		use({
 			"iamcco/markdown-preview.nvim",
-			run = "cd app && npm install",
+			run = function()
+				vim.fn["mkdp#util#install"]()
+			end,
 			config = function()
 				vim.g.mkdp_filetypes = { "markdown", "mkd" }
 				vim.g.mkdp_command_for_global = 1
