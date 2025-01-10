@@ -9,6 +9,8 @@ services:
       - /stash2/media/:/data
       - /stash/media/:/data2
     restart: unless-stopped
+    devices:
+      - /dev/net/tun:/dev/net/tun
     environment:
       - TZ
       - OPENVPN_PROVIDER
@@ -22,6 +24,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TRANSMISSION_PEER_PORT
+      - CREATE_TUN_DEVICE=false
+      - TRANSMISSION_WEB_UI=combustion
     logging:
       driver: json-file
       options:
