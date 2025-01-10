@@ -171,6 +171,13 @@ return require("packer").startup({
 
 		-- python
 		use({ "Vimjas/vim-python-pep8-indent", ft = "python" }) -- python indenting
+		use({
+			"linux-cultist/venv-selector.nvim",
+			branch = "regexp",
+			config = function()
+				require("venv-selector").setup()
+			end,
+		})
 
 		-- kitty
 		use({
