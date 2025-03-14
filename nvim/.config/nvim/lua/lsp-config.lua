@@ -165,3 +165,6 @@ lspconfig.emmet_language_server.setup({
 		variables = {},
 	},
 })
+lspconfig.cobol_ls.setup({
+	capabilities = capabilities,
+})
