@@ -82,40 +82,6 @@ return require("packer").startup({
 			end,
 		})
 
-		-- git
-		use("rhysd/git-messenger.vim") -- see latest commit of line
-		use({
-			"tanvirtin/vgit.nvim", -- easy staging from within buffer
-			requires = {
-				"nvim-lua/plenary.nvim",
-			},
-			config = function()
-				require("vgit").setup({
-					keymaps = {
-						["n <C-k>"] = "hunk_up",
-						["n <C-j>"] = "hunk_down",
-						["n <leader>gs"] = "buffer_hunk_stage",
-						["n <leader>gr"] = "buffer_hunk_reset",
-						["n <leader>gp"] = "buffer_hunk_preview",
-						["n <leader>gb"] = "buffer_blame_preview",
-						["n <leader>gf"] = "buffer_diff_preview",
-						["n <leader>gh"] = "buffer_history_preview",
-						["n <leader>gu"] = "buffer_reset",
-						["n <leader>gl"] = "project_hunks_preview",
-						["n <leader>gd"] = "project_diff_preview",
-						["n <leader>gq"] = "project_hunks_qf",
-						["n <leader>gx"] = "toggle_diff_preference",
-					},
-				})
-			end,
-		})
-		use({
-			"ThePrimeagen/git-worktree.nvim",
-			config = function()
-				require("git-worktree").setup({})
-			end,
-		})
-
 		-- general dev
 		use({
 			"williamboman/mason.nvim",
@@ -198,10 +164,6 @@ return require("packer").startup({
 			end,
 		})
 
-		-- kitty
-		use({
-			"fladson/vim-kitty",
-		})
 		use({
 			"iamcco/markdown-preview.nvim",
 			run = "cd app && npm install",
@@ -211,6 +173,49 @@ return require("packer").startup({
 				vim.g.mkdp_echo_preview_url = 1
 				vim.g.mkdp_auto_start = 0
 				vim.g.mkdp_open_to_the_world = 1
+			end,
+		})
+		-- ai
+		use({
+			"yetone/avante.nvim",
+			branch = "main",
+			requires = {
+				"nvim-treesitter/nvim-treesitter",
+				"stevearc/dressing.nvim",
+				"nvim-lua/plenary.nvim",
+				"MunifTanjim/nui.nvim",
+				"MeanderingProgrammer/render-markdown.nvim",
+			},
+			run = "make",
+			config = function()
+				require("avante").setup({
+					provider = "openrouter_deepseek",
+					cursor_applying_provider = "groq",
+					behaviour = {
+						enable_cursor_planning_mode = true,
+					},
+					vendors = {
+						openrouter_claude = {
+							__inherited_from = "openai",
+							endpoint = "https://openrouter.ai/api/v1",
+							api_key_name = "OPENROUTER_API_KEY",
+							model = "anthropic/claude-3.5-sonnet",
+						},
+						groq = {
+							__inherited_from = "openai",
+							api_key_name = "GROQ_API_KEY",
+							endpoint = "https://api.groq.com/openai/v1/",
+							model = "llama-3.3-70b-versatile",
+							max_tokens = 32768,
+						},
+						openrouter_deepseek = {
+							__inherited_from = "openai",
+							endpoint = "https://openrouter.ai/api/v1",
+							api_key_name = "OPENROUTER_API_KEY",
+							model = "deepseek/deepseek-chat-v3-0324",
+						},
+					},
+				})
 			end,
 		})
 	end,
