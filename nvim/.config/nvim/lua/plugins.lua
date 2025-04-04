@@ -199,7 +199,13 @@ return require("packer").startup({
 							__inherited_from = "openai",
 							endpoint = "https://openrouter.ai/api/v1",
 							api_key_name = "OPENROUTER_API_KEY",
-							model = "anthropic/claude-3.5-sonnet",
+							model = "anthropic/claude-3.7-sonnet",
+						},
+						openrouter_chatgpt = {
+							__inherited_from = "openai",
+							endpoint = "https://openrouter.ai/api/v1",
+							api_key_name = "OPENROUTER_API_KEY",
+							model = "openai/gpt-4o-mini",
 						},
 						groq = {
 							__inherited_from = "openai",
