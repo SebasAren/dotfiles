@@ -70,7 +70,7 @@ ZSH_THEME="mh"
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init --path)"
-plugins=(git archlinux dotenv fzf z pyenv)
+plugins=(git archlinux dotenv fzf z asdf pyenv uv)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -100,7 +100,6 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 #
-export PNPM_HOME="$HOME/.local/share/pnpm"
 alias vi="nvim"
 alias ssh="TERM=xterm-256color kitty +kitten ssh"
 export EDITOR="nvim"
@@ -110,13 +109,5 @@ export MAKEFLAGS="-j12"
 autoload -Uz compinit
 zstyle ":completion:*" menu select
 fpath+=~/.zfunc
-alias yayo="yay"
-
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$HOME/.local/bin:$PATH"
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
