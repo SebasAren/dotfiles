@@ -47,12 +47,6 @@ nmap("L", "g_")
 vmap("H", "^")
 vmap("L", "g_")
 
--- more natural movement with wrap on
-nmap("j", "gj")
-nmap("k", "gk")
-vmap("j", "gj")
-vmap("k", "gk")
-
 -- Reselect visual block after indent/outdent
 vmap("<", "<gv")
 vmap(">", ">gv")
@@ -66,15 +60,3 @@ nmap("<leader>v", "<C-w>v")
 nmap("<leader>s", "<C-w>s")
 vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pane
 vim.o.splitright = true -- when splitting vertically, mnove coursor to right pane
-
--- PLUGINS
--- toggleterm
-function _G.set_terminal_keymaps()
-	tmap("<esc>", [[ <C-\><C-n> ]])
-	tmap("<C-h>", [[<C-\><C-n><C-W>h]])
-	tmap("<C-j>", [[<C-\><C-n><C-W>j]])
-	tmap("<C-k>", [[<C-\><C-n><C-W>k]])
-	tmap("<C-l>", [[<C-\><C-n><C-W>l]])
-end
-
-vim.cmd("autocmd! TermOpen term://*toggleterm#* lua set_terminal_keymaps()")

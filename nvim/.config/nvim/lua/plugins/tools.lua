@@ -6,14 +6,6 @@ return {
 		end,
 	}, -- indent lines
 	{
-		"mrshmllow/document-color.nvim",
-		config = function()
-			require("document-color").setup({
-				mode = "background",
-			})
-		end,
-	},
-	{
 		"nvim-treesitter/nvim-treesitter",
 		config = function()
 			local configs = require("nvim-treesitter.configs")

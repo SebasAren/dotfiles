@@ -1,6 +1,5 @@
 require("config.lazy")
 require("config.filetypes")
-require("config.terminals")
 require("config.settings")
 require("config.mappings")
 pcall(function()
