@@ -7,6 +7,7 @@ return {
 			"antoinemadec/FixCursorHold.nvim",
 			"nvim-treesitter/nvim-treesitter",
 			"nvim-neotest/neotest-python",
+			"marilari88/neotest-vitest",
 		},
 		config = function()
 			require("neotest").setup({
@@ -14,6 +15,7 @@ return {
 					require("neotest-python")({
 						-- Optional: Add any neotest-python specific config here
 					}),
+					require("neotest-vitest")({}),
 				},
 			})
 		end,
