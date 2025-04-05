@@ -9,28 +9,28 @@ return {
 				function()
 					require("fzf-lua").files()
 				end,
-				desc = "Open FZF-Lua files picker",
+				desc = "Fuzzy find files",
 			},
 			{
 				"<leader>rg",
 				function()
 					require("fzf-lua").grep()
 				end,
-				desc = "Search with FZF-Lua grep",
+				desc = "Live grep in files",
 			},
 			{
 				"<leader>rG",
 				function()
 					require("fzf-lua").grep_last()
 				end,
-				desc = "Search with FZF-Lua grep (repeat)",
+				desc = "Repeat last grep search",
 			},
 			{
 				"<leader>rb",
 				function()
 					require("fzf-lua").buffers()
 				end,
-				desc = "Search with FZF-Lua buffers",
+				desc = "Search open buffers",
 			},
 		},
 	},

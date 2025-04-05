@@ -50,7 +50,6 @@ return {
 			require("venv-selector").setup()
 		end,
 	},
-	{ "Vimjas/vim-python-pep8-indent", ft = "python" }, -- python indenting
 	{
 		"iamcco/markdown-preview.nvim",
 		build = function()
@@ -65,11 +64,6 @@ return {
 		end,
 	},
 	{ "nvim-tree/nvim-web-devicons", lazy = true },
-	{
-		"MeanderingProgrammer/render-markdown.nvim",
-		dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" },
-		opts = {},
-	},
 	{
 		"folke/which-key.nvim",
 		event = "VeryLazy",
