@@ -57,46 +57,4 @@ return {
 			custom_tools = require("utils.llmtools"),
 		},
 	},
-	{
-		"olimorris/codecompanion.nvim",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-treesitter/nvim-treesitter",
-		},
-		opts = {
-			adapters = {
-				openrouter_deepseek = function()
-					return require("codecompanion.adapters").extend("openai_compatible", {
-						env = {
-							url = "https://openrouter.ai/api",
-							api_key = "OPENROUTER_API_KEY",
-							chat_url = "/v1/chat/completions",
-						},
-						schema = {
-							model = {
-								default = "deepseek/deepseek-chat-v3-0324",
-							},
-						},
-					})
-				end,
-			},
-			strategies = {
-				chat = {
-					adapter = "openrouter_deepseek",
-				},
-				inline = {
-					adapter = "openrouter_deepseek",
-				},
-			},
-			display = {
-				diff = {
-					enabled = true,
-					close_chat_at = 240,
-					layout = "vertical",
-					opts = { "internal", "filler", "closeoff", "algorithm:patience", "followwrap", "linematch:120" },
-					provider = "mini_diff", -- default|mini_diff
-				},
-			},
-		},
-	},
 }
