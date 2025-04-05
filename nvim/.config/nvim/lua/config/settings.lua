@@ -1,4 +1,3 @@
-HOME = os.getenv("HOME")
 vim.opt.termguicolors = true
 
 -- Display
@@ -45,12 +44,16 @@ vim.o.wildignore =
 	"deps,.svn,CVS,.git,.hg,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif,.DS_Store,*.aux,*.out,*.toc"
 
 -- Only show cursorline in the current window and in normal mode.
-vim.cmd([[
-  augroup cline
-      au!
-      au WinLeave * set nocursorline
-      au WinEnter * set cursorline
-      au InsertEnter * set nocursorline
-      au InsertLeave * set cursorline
-  augroup END
-]])
+vim.api.nvim_create_augroup("cline", { clear = true })
+vim.api.nvim_create_autocmd({ "WinLeave", "InsertEnter" }, {
+	group = "cline",
+	callback = function()
+		vim.opt.cursorline = false
+	end,
+})
+vim.api.nvim_create_autocmd({ "WinEnter", "InsertLeave" }, {
+	group = "cline",
+	callback = function()
+		vim.opt.cursorline = true
+	end,
+})

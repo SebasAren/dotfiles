@@ -1,15 +1,11 @@
 vim.cmd("noremap <C-b> :noh<cr>:call clearmatches()<cr>") -- clear matches Ctrl+b
 
 local function map(mode, shortcut, command)
-	vim.api.nvim_set_keymap(mode, shortcut, command, { noremap = true, silent = true })
+	vim.keymap.set(mode, shortcut, command)
 end
 
 local function nmap(shortcut, command)
 	map("n", shortcut, command)
-end
-
-local function imap(shortcut, command)
-	map("i", shortcut, command)
 end
 
 local function vmap(shortcut, command)
@@ -20,33 +16,17 @@ local function cmap(shortcut, command)
 	map("c", shortcut, command)
 end
 
-local function tmap(shortcut, command)
-	map("t", shortcut, command)
-end
-
--- sane regexes
-nmap("/", "/\\v")
-vmap("/", "/\\v")
-
 -- keep search matches in the middle of the window
 nmap("n", "nzzzv")
 nmap("N", "Nzzzv")
 
 -- Same when jumping around
 nmap("g;", "g;zz")
---nmap('g', 'g,zz') -- for some reason doesn't work well
 
--- Open a Quickfix window for the last search.
-nmap("<leader>?", ":execute 'vimgrep /'.@/.'/g %'<CR>:copen<CR>")
-
--- Begining & End of line in Normal mode
-nmap("H", "^")
-nmap("L", "g_")
+-- Begining & End of line in Normal and visual mode
+vim.keymap.set({ "v", "n" }, "H", "^")
+vim.keymap.set({ "v", "n" }, "L", "g_")
 --
--- Begining & End of line in visual mode
-vmap("H", "^")
-vmap("L", "g_")
-
 -- Reselect visual block after indent/outdent
 vmap("<", "<gv")
 vmap(">", ">gv")
