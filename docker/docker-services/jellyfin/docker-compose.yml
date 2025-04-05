@@ -16,3 +16,9 @@ services:
       - 1900:1900/udp
       - 7359:7359/udp
       - 18800:18800
+
+  jellyfin-vue:
+    image: ghcr.io/jellyfin/jellyfin-vue:unstable
+    restart: unless-stopped
+    ports:
+      - 7070:80
