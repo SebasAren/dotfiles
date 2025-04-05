@@ -1,6 +1,4 @@
 HOME = os.getenv("HOME")
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
 vim.opt.termguicolors = true
 
 -- basic settings
@@ -20,7 +18,7 @@ vim.o.ttimeoutlen = 100
 vim.o.showmatch = true -- show matching brackets
 vim.o.scrolloff = 3 -- always show 3 rows from edge of the screen
 vim.o.synmaxcol = 300 -- stop syntax highlight after x lines for performance
-vim.o.laststatus = 2 -- always show status line
+vim.o.laststatus = 3
 
 vim.o.list = false -- do not display white characters
 vim.o.foldenable = false
@@ -52,22 +50,6 @@ vim.o.shiftwidth = 2 -- indentation rule
 vim.o.formatoptions = "qnj1" -- q  - comment formatting; n - numbered lists; j - remove comment when joining lines; 1 - don't break after one-letter word
 vim.o.expandtab = true -- expand tab to spaces
 
--- Backup files
-vim.o.backup = true -- use backup files
-vim.o.writebackup = false
-vim.o.swapfile = false -- do not use swap file
-vim.o.undodir = HOME .. "/.vim/tmp/undo//" -- undo files
-vim.o.backupdir = HOME .. "/.vim/tmp/backup//" -- backups
-vim.o.directory = "/.vim/tmp/swap//" -- swap files
-
-vim.cmd([[
-  au FileType python                  set ts=4 sw=4
-  au BufRead,BufNewFile *.md          set ft=mkd tw=80 syntax=markdown
-  au BufRead,BufNewFile *.ppmd        set ft=mkd tw=80 syntax=markdown
-  au BufRead,BufNewFile *.markdown    set ft=mkd tw=80 syntax=markdown
-  au BufRead,BufNewFile *.slimbars    set syntax=slim
-]])
-
 -- Commands mode
 vim.o.wildmenu = true -- on TAB, complete options for system command
 vim.o.wildignore =
@@ -84,43 +66,4 @@ vim.cmd([[
   augroup END
 ]])
 
--- Plugins
-require("toggleterm").setup({
-	open_mapping = [[<c-\>]],
-})
-
-require("nvim-treesitter.configs").setup({
-	highlight = {
-		enable = true,
-	},
-})
-
--- highlighting of word under cursor
-require("mini.cursorword").setup({})
-
--- autopairing
-require("mini.pairs").setup({})
-
-require("mini.map").setup({})
--- startup screen
-require("mini.trailspace").setup({})
-
-require("marks").setup({ default_mappings = true })
-
-require("workspaces").setup({
-	hooks = {
-		open = { "Telescope find_files" },
-	},
-})
-require("nvim-tree").setup({
-	diagnostics = {
-		enable = true,
-	},
-})
-
--- vim-test
-vim.g["test#strategy"] = "neovim"
-vim.g["test#harpoon_term"] = 2
-
-vim.g.python3_host_prog = HOME .. "/.pyenv/versions/nvim/bin/python"
 vim.g.colorizer_auto_filetype = "css,html,scss"

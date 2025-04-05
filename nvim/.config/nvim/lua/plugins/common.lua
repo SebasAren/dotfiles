@@ -2,7 +2,6 @@ return {
 	-- Common plugins
 	{ "chrisbra/Colorizer" }, -- adds color highlighting to certain filetypes
 	{ "ggandor/lightspeed.nvim" }, -- s navigation
-	{ "echasnovski/mini.nvim", branch = "main" }, -- utility functions
 	{
 		"rebelot/heirline.nvim",
 		config = function()

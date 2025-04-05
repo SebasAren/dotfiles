@@ -74,9 +74,6 @@ nmap("<leader>rt", "<cmd>lua require'telescope.builtin'.treesitter{}<cr>")
 nmap("<leader>gw", "<cmd>lua require('telescope').extensions.git_worktree.git_worktrees()<cr>")
 nmap("<leader>ga", "<cmd>lua require('telescope').extensions.git_worktree.create_git_worktree()<cr>")
 
--- argwrap
-nmap("<leader>a", "<cmd>ArgWrap<cr>")
-
 -- git
 nmap("<C-g>", "<cmd>GitMessenger<cr>")
 
@@ -125,24 +122,6 @@ for i = 1, 9 do
 	nmap(string.format("<leader>h%d", i), string.format('<cmd>lua require("harpoon.term").gotoTerminal(%d)<cr>', i))
 end
 nmap("<leader>hl", '<cmd>lua require("harpoon.cmd-ui").toggle_quick_menu()<cr>')
-
-nmap("<leader>mc", '<cmd>lua require("mini.map").close()<cr>')
-nmap("<leader>mf", '<cmd>lua require("mini.map").toggle_focus()<cr>')
-nmap("<leader>mo", '<cmd>lua require("mini.map").open()<cr>')
-nmap("<leader>mr", '<cmd>lua require("mini.map").refresh()<cr>')
-nmap("<leader>ms", '<cmd>lua require("mini.map").toggle_side()<cr>')
-nmap("<leader>mt", '<cmd>lua require("mini.map").toggle()<cr>')
-
--- trouble
-nmap("<leader>xx", "<cmd>TroubleToggle<cr>")
-nmap("<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>")
-nmap("<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>")
-nmap("<leader>xl", "<cmd>TroubleToggle loclist<cr>")
-nmap("<leader>xq", "<cmd>TroubleToggle quickfix<cr>")
-nmap("gH", "<cmd>TroubleToggle lsp_references<cr>")
-
--- barbar
-local opts = { noremap = true, silent = true }
 
 -- Move to previous/next
 nmap("<A-,>", "<Cmd>BufferPrevious<CR>")

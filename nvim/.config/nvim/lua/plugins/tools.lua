@@ -4,16 +4,12 @@ return {
 		dependencies = {
 			"kyazdani42/nvim-web-devicons", -- optional, for file icons
 		},
+		opts = {
+			diagnostics = {
+				enable = false,
+			},
+		},
 	},
-	{ "chentoast/marks.nvim" }, -- simpler mark navigation
-	{ "natecraddock/workspaces.nvim" }, -- workspace support
-	{
-		"folke/trouble.nvim",
-		dependencies = "kyazdani42/nvim-web-devicons",
-		config = function()
-			require("trouble").setup({})
-		end,
-	}, -- quickfix replacement
 	{
 		"AckslD/nvim-neoclip.lua",
 		dependencies = {
@@ -30,7 +26,6 @@ return {
 			require("ibl").setup()
 		end,
 	}, -- indent lines
-	{ "FooSoft/vim-argwrap" }, -- argument wrapper
 	{
 		"mrshmllow/document-color.nvim",
 		config = function()
@@ -39,15 +34,15 @@ return {
 			})
 		end,
 	},
-	{ "mfussenegger/nvim-dap" },
 	{
-		"numToStr/Comment.nvim",
-		config = function()
-			require("Comment").setup()
-		end,
-	},
-	{ "windwp/nvim-autopairs" }, -- automatically insert pairs
-	{ "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" }, -- syntax highlighting
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+		opts = {
+			highlight = {
+				enable = true,
+			},
+		},
+	}, -- syntax highlighting
 	{
 		"windwp/nvim-ts-autotag",
 		config = function()
@@ -56,8 +51,20 @@ return {
 	},
 	{ "ThePrimeagen/harpoon" },
 	-- Testing
-	{ "janko-m/vim-test" }, -- testing commands
-	{ "akinsho/toggleterm.nvim", branch = "main" }, -- terminal wrapper
+	{
+		"janko-m/vim-test",
+		config = function()
+			vim.g["test#strategy"] = "neovim"
+			vim.g["test#harpoon_term"] = 2
+		end,
+	}, -- testing commands
+	{
+		"akinsho/toggleterm.nvim",
+		branch = "main",
+		opts = {
+			open_mapping = [[<c-\>]],
+		},
+	}, -- terminal wrapper
 	-- Python
 	{
 		"linux-cultist/venv-selector.nvim",
@@ -80,5 +87,4 @@ return {
 			vim.g.mkdp_open_to_the_world = 1
 		end,
 	},
-	{ "tpope/vim-surround" },
 }
