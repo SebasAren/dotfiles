@@ -42,13 +42,6 @@ return {
 			})
 		end,
 	},
-	{
-		"akinsho/toggleterm.nvim",
-		branch = "main",
-		opts = {
-			open_mapping = [[<c-\>]],
-		},
-	}, -- terminal wrapper
 	-- Python
 	{
 		"linux-cultist/venv-selector.nvim",

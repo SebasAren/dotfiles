@@ -2,10 +2,10 @@ return {
 	{
 		"akinsho/toggleterm.nvim",
 		branch = "main",
-		opts = {
-			open_mapping = [[<c-\>]],
-		},
 		config = function()
+			require("toggleterm").setup({
+				open_mapping = [[<c-\>]],
+			})
 			local function map(mode, shortcut, command)
 				vim.api.nvim_set_keymap(mode, shortcut, command, { noremap = true, silent = true })
 			end
@@ -25,11 +25,11 @@ return {
 				direction = "float",
 			})
 
-			local function lazygit_toggle()
+			function _lazygit_toggle()
 				lazygit:toggle()
 			end
 
-			map("n", "<leader>gg", "<cmd>lua lazygit_toggle()<CR>")
+			map("n", "<leader>gg", "<cmd>lua _lazygit_toggle()<CR>")
 		end,
 	},
 }
