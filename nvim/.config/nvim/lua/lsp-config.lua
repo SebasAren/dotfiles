@@ -45,8 +45,17 @@ lspconfig.volar.setup({
 	-- 	new_config.init_options.typescript.tsdk = get_typescript_server_path(new_root_dir)
 	-- end,
 })
-lspconfig.pyright.setup({
+lspconfig.basedpyright.setup({
 	capabilities = capabilities,
+	settings = {
+		basedpyright = {
+			analysis = {
+				diagnosticSeverityOverrides = {
+					reportUnusedCallResult = "none",
+				},
+			},
+		},
+	},
 })
 lspconfig.lua_ls.setup({
 	settings = {
@@ -156,4 +165,7 @@ lspconfig.emmet_language_server.setup({
 		--- @type table<string, string> [Emmet Docs](https://docs.emmet.io/customization/snippets/#variables)
 		variables = {},
 	},
+})
+lspconfig.cobol_ls.setup({
+	capabilities = capabilities,
 })
