@@ -16,7 +16,7 @@ services:
       - OPENVPN_PROVIDER
       - OPENVPN_USERNAME
       - OPENVPN_PASSWORD
-      - OPENVPN_CONFIG=default
+      - OPENVPN_CONFIG
       - VPN_LOG_LEVEL=11
       - LOCAL_NETWORK
       - WEBPROXY_ENABLED=true
