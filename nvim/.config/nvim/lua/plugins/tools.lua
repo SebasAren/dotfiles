@@ -54,13 +54,6 @@ return {
 			require("nvim-ts-autotag").setup()
 		end,
 	},
-	{
-		"nvim-telescope/telescope.nvim",
-		dependencies = {
-			{ "nvim-lua/popup.nvim" },
-			{ "nvim-lua/plenary.nvim" },
-		},
-	}, -- file finder
 	{ "ThePrimeagen/harpoon" },
 	-- Testing
 	{ "janko-m/vim-test" }, -- testing commands
@@ -87,4 +80,5 @@ return {
 			vim.g.mkdp_open_to_the_world = 1
 		end,
 	},
+	{ "tpope/vim-surround" },
 }

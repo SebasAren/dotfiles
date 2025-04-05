@@ -2,12 +2,11 @@ return {
 	{
 		"catppuccin/nvim",
 		name = "catppuccin",
+		priority = 1000,
 		config = function()
-			vim.g.catppuccin_flavour = "mocha"
-			require("catppuccin").setup()
-			vim.cmd([[colorscheme catppuccin]])
+			vim.cmd.colorscheme("catppuccin-mocha")
 		end,
-	}, -- material colourscheme
+	},
 	{ "ryanoasis/vim-devicons" }, -- icons for plugins
 	{ "adelarsq/vim-devicons-emoji" }, -- more icons for plugins
 }
