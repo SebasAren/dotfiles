@@ -95,4 +95,5 @@ return {
 		dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" },
 		opts = {},
 	},
+	{ "ggandor/lightspeed.nvim" }, -- s navigation
 }
