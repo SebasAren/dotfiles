@@ -17,11 +17,11 @@ local ScrollBar = {
 }
 
 local StatusLine = {
-	require("statusline.vimode"),
+	require("config.statusline.vimode"),
 	Space,
-	require("statusline.filename"),
+	require("config.statusline.filename"),
 	Space,
-	require("statusline.git"),
+	require("config.statusline.git"),
 	Align,
 	Ruler,
 	Space,

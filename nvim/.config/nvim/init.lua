@@ -1,4 +1,4 @@
-require("plugins")
+require("config.lazy")
 require("settings")
 require("mappings")
 require("autocompletion")
