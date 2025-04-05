@@ -1,16 +1,5 @@
 return {
 	{
-		"kyazdani42/nvim-tree.lua",
-		dependencies = {
-			"kyazdani42/nvim-web-devicons", -- optional, for file icons
-		},
-		opts = {
-			diagnostics = {
-				enable = false,
-			},
-		},
-	},
-	{
 		"AckslD/nvim-neoclip.lua",
 		dependencies = {
 			{ "kkharji/sqlite.lua", module = "sqlite" },
@@ -36,28 +25,41 @@ return {
 	},
 	{
 		"nvim-treesitter/nvim-treesitter",
-		build = ":TSUpdate",
-		opts = {
-			highlight = {
-				enable = true,
-			},
-		},
-	}, -- syntax highlighting
-	{
-		"windwp/nvim-ts-autotag",
 		config = function()
-			require("nvim-ts-autotag").setup()
+			local configs = require("nvim-treesitter.configs")
+			configs.setup({
+				highlight = { enable = true },
+				indent = { enable = true },
+				sync_install = false,
+				ensure_installed = {
+					"bash",
+					"c",
+					"diff",
+					"html",
+					"javascript",
+					"jsdoc",
+					"json",
+					"jsonc",
+					"lua",
+					"luadoc",
+					"luap",
+					"markdown",
+					"markdown_inline",
+					"printf",
+					"python",
+					"query",
+					"regex",
+					"toml",
+					"tsx",
+					"typescript",
+					"vim",
+					"vimdoc",
+					"xml",
+					"yaml",
+				},
+			})
 		end,
 	},
-	{ "ThePrimeagen/harpoon" },
-	-- Testing
-	{
-		"janko-m/vim-test",
-		config = function()
-			vim.g["test#strategy"] = "neovim"
-			vim.g["test#harpoon_term"] = 2
-		end,
-	}, -- testing commands
 	{
 		"akinsho/toggleterm.nvim",
 		branch = "main",
@@ -86,5 +88,11 @@ return {
 			vim.g.mkdp_auto_start = 0
 			vim.g.mkdp_open_to_the_world = 1
 		end,
+	},
+	{ "nvim-tree/nvim-web-devicons", lazy = true },
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" },
+		opts = {},
 	},
 }

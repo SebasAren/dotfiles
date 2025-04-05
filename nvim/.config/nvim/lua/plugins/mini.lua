@@ -34,5 +34,6 @@ return {
 				toggle = "<leader>a",
 			},
 		}),
+		require("mini.icons").setup({}),
 	},
 }

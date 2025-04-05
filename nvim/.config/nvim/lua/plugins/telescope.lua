@@ -6,6 +6,18 @@ return {
 			{ "nvim-lua/popup.nvim" },
 			{ "nvim-lua/plenary.nvim" },
 		},
+		keys = {
+			{
+				"<leader>p",
+				"<cmd>Telescope find_files<cr>",
+				desc = "Open file finder",
+			},
+			{
+				"<leader>rg",
+				"<cmd>Telescope live_grep<cr>",
+				desc = "Open grep finder",
+			},
+		},
 		opts = {
 			extensions = {
 				fzf = {

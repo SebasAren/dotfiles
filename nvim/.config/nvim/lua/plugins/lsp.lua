@@ -14,7 +14,10 @@ return {
 			local lspconfig = require("lspconfig")
 
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
-			local on_attach = function(client)
+			require("document-color").setup({
+				mode = "background",
+			})
+			local on_attach = function(client, bufnr)
 				if client.server_capabilities.colorProvider then
 					-- Attach document colour support
 					require("document-color").buf_attach(bufnr)
@@ -185,7 +188,7 @@ return {
 	{ "b0o/schemastore.nvim" },
 	{
 		"glepnir/lspsaga.nvim",
-		branch = "main",
+		event = "LspAttach",
 		config = function()
 			require("lspsaga").setup({})
 			local keymap = vim.keymap.set

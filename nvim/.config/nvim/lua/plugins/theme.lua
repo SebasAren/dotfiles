@@ -1,12 +1,11 @@
 return {
 	{
-		"catppuccin/nvim",
-		name = "catppuccin",
-		priority = 1000,
+		"folke/tokyonight.nvim",
+		lazy = false, -- make sure we load this during startup if it is your main colorscheme
+		priority = 1000, -- make sure to load this before all the other start plugins
 		config = function()
-			vim.cmd.colorscheme("catppuccin-mocha")
+			-- load the colorscheme here
+			vim.cmd([[colorscheme tokyonight]])
 		end,
 	},
-	{ "ryanoasis/vim-devicons" }, -- icons for plugins
-	{ "adelarsq/vim-devicons-emoji" }, -- more icons for plugins
 }
