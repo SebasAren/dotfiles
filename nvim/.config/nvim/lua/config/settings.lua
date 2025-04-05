@@ -19,7 +19,7 @@ vim.o.number = true -- line number on the left
 vim.o.numberwidth = 4 -- always reserve 3 spaces for line number
 vim.o.modelines = 0
 vim.o.showcmd = true -- display command in bottom bar
-vim.o.signcolumn = "yes"
+vim.o.signcolumn = "yes:2"
 
 -- Search
 vim.o.incsearch = true -- starts searching as soon as typing, without enter needed
