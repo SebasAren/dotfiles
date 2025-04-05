@@ -1,9 +1,8 @@
 return {
 	{
-		"janko-m/vim-test",
+		"vim-test/vim-test",
 		config = function()
-			vim.g["test#strategy"] = "neovim"
-			vim.g["test#harpoon_term"] = 2
+			vim.g["test#strategy"] = "toggleterm"
 		end,
 		keys = {
 			{
