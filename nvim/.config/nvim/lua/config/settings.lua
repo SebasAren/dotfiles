@@ -6,10 +6,13 @@ vim.o.showmatch = true -- show matching brackets
 vim.o.scrolloff = 3 -- always show 3 rows from edge of the screen
 vim.o.laststatus = 3
 
+-- Folds
+vim.o.foldenable = true
+vim.o.foldlevel = 99 -- limit folding to 4 levels
+vim.o.foldlevelstart = 99
+vim.o.foldcolumn = "1"
+
 vim.o.list = false -- do not display white characters
-vim.o.foldenable = false
-vim.o.foldlevel = 4 -- limit folding to 4 levels
-vim.o.foldmethod = "syntax" -- use language syntax to generate folds
 vim.o.wrap = false --do not wrap lines even if very long
 vim.o.eol = false -- show if there's no eol char
 vim.o.showbreak = "↪" -- character to show when line is broken

@@ -208,8 +208,6 @@ return {
 				mode = "n",
 				silent = true,
 			},
-			-- Outline
-			{ "<leader>o", "<cmd>LSoutlineToggle<CR>", desc = "Toggle Outline", mode = "n", silent = true },
 			-- Hover Doc
 			{ "K", "<cmd>Lspsaga hover_doc<CR>", desc = "Hover Documentation", mode = "n", silent = true },
 		},
