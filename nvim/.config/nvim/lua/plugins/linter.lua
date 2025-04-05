@@ -15,6 +15,9 @@ return {
 			typescriptreact = {
 				"eslint_d",
 			},
+			vue = {
+				"eslint_d",
+			},
 			python = {
 				"ruff",
 			},
