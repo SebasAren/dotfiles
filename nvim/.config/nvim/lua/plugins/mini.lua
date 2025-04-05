@@ -27,13 +27,19 @@ return {
 					line_up = "<C-M-k>",
 				},
 			})
+			require("mini.splitjoin").setup({
+				mappings = {
+					toggle = "<leader>a",
+				},
+			})
+			require("mini.icons").setup({})
+			require("mini.diff").setup({
+				mappings = {
+					apply = "ct",
+					reset = "cT",
+					textobject = "ct",
+				},
+			})
 		end,
-		require("mini.surround").setup({}),
-		require("mini.splitjoin").setup({
-			mappings = {
-				toggle = "<leader>a",
-			},
-		}),
-		require("mini.icons").setup({}),
 	},
 }

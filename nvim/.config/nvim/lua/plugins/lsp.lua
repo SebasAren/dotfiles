@@ -1,11 +1,10 @@
 return {
-	-- Lsp
 	{
 		"neovim/nvim-lspconfig",
 		dependencies = {
-			{ "williamboman/mason.nvim" },
-			{ "williamboman/mason-lspconfig.nvim" },
-			{ "hrsh7th/cmp-nvim-lsp" },
+			"williamboman/mason.nvim",
+			"williamboman/mason-lspconfig.nvim",
+			"hrsh7th/cmp-nvim-lsp",
 			"mrshmllow/document-color.nvim",
 		},
 		config = function()
@@ -24,8 +23,6 @@ return {
 				end
 			end
 			local mason_registry = require("mason-registry")
-
-			local util = require("lspconfig.util")
 
 			mason.setup({
 				capabilities = capabilities,
@@ -236,7 +233,6 @@ return {
 			keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { silent = true })
 		end,
 	},
-	{ "gfanto/fzf-lsp.nvim" },
 	{
 		"ray-x/lsp_signature.nvim",
 		config = function()

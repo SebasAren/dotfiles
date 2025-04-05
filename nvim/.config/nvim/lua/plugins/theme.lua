@@ -8,4 +8,10 @@ return {
 			vim.cmd([[colorscheme tokyonight]])
 		end,
 	},
+	{
+		"akinsho/bufferline.nvim",
+		version = "*",
+		dependencies = "nvim-tree/nvim-web-devicons",
+		opts = {},
+	},
 }

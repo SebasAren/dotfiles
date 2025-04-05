@@ -1,22 +1,9 @@
 HOME = os.getenv("HOME")
 vim.opt.termguicolors = true
 
--- basic settings
-vim.o.encoding = "utf-8"
-vim.o.backspace = "indent,eol,start" -- backspace works on every char in insert mode
-vim.o.completeopt = "menuone,noselect"
-vim.o.history = 1000
-vim.o.startofline = true
-
--- Mapping waiting time
-vim.o.timeout = false
-vim.o.ttimeout = true
-vim.o.ttimeoutlen = 100
-
 -- Display
 vim.o.showmatch = true -- show matching brackets
 vim.o.scrolloff = 3 -- always show 3 rows from edge of the screen
-vim.o.synmaxcol = 300 -- stop syntax highlight after x lines for performance
 vim.o.laststatus = 3
 
 vim.o.list = false -- do not display white characters
@@ -32,6 +19,7 @@ vim.o.number = true -- line number on the left
 vim.o.numberwidth = 4 -- always reserve 3 spaces for line number
 vim.o.modelines = 0
 vim.o.showcmd = true -- display command in bottom bar
+vim.o.signcolumn = "yes"
 
 -- Search
 vim.o.incsearch = true -- starts searching as soon as typing, without enter needed
@@ -63,5 +51,3 @@ vim.cmd([[
       au InsertLeave * set cursorline
   augroup END
 ]])
-
-vim.g.colorizer_auto_filetype = "css,html,scss"
