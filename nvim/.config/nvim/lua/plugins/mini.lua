@@ -40,6 +40,13 @@ return {
 					textobject = "ct",
 				},
 			})
+			require("mini.completion").setup({
+				lsp_completion = {
+					process_items = function(items, base)
+						return MiniCompletion.default_process_items(items, base, { filtersort = "fuzzy" })
+					end,
+				},
+			})
 		end,
 	},
 }

@@ -5,7 +5,6 @@ return {
 			"williamboman/mason.nvim",
 			"williamboman/mason-lspconfig.nvim",
 			"mrshmllow/document-color.nvim",
-			"saghen/blink.cmp",
 			"b0o/schemastore.nvim",
 		},
 		config = function()
@@ -152,7 +151,7 @@ return {
 
 			-- Setup each LSP server from the servers table
 			for server, config in pairs(servers) do
-				config.capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
+				-- config.capabilities = require("blink.cmp").get_lsp_capabilities(config.capabilities)
 				config.on_attach = on_attach
 				lspconfig[server].setup(config)
 			end
