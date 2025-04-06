@@ -3,15 +3,15 @@ return {
 		"echasnovski/mini.nvim",
 		version = false,
 		config = function()
-			-- highlighting of word under cursor
+			-- Highlight the word under the cursor
 			require("mini.cursorword").setup({})
-			-- autopairing
+			-- Automatically insert or delete pairs (e.g., brackets, quotes)
 			require("mini.pairs").setup({})
-			-- trailing space highlight
+			-- Highlight trailing whitespace
 			require("mini.trailspace").setup({})
-			-- commenter
+			-- Comment/uncomment lines with ease
 			require("mini.comment").setup({})
-			-- move objects
+			-- Move lines or visual selections with custom keybindings
 			require("mini.move").setup({
 				mappings = {
 					-- Move visual selection in Visual mode
@@ -27,12 +27,15 @@ return {
 					line_up = "<C-M-k>",
 				},
 			})
+			-- Toggle between single-line and multi-line code blocks
 			require("mini.splitjoin").setup({
 				mappings = {
 					toggle = "<leader>a",
 				},
 			})
+			-- Display icons for file types and other UI elements
 			require("mini.icons").setup({})
+			-- Visualize and manipulate Git diffs
 			require("mini.diff").setup({
 				mappings = {
 					apply = "ct",
@@ -40,6 +43,9 @@ return {
 					textobject = "ct",
 				},
 			})
+			-- Snippet engine for code snippets
+			require("mini.snippets").setup()
+			-- Enhanced completion with fuzzy filtering
 			require("mini.completion").setup({
 				lsp_completion = {
 					process_items = function(items, base)
