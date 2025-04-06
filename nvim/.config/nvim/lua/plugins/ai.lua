@@ -8,6 +8,7 @@ return {
 			"stevearc/dressing.nvim",
 			"nvim-lua/plenary.nvim",
 			"MunifTanjim/nui.nvim",
+			"ravitemer/mcphub.nvim",
 			{
 				"MeanderingProgrammer/render-markdown.nvim",
 				opts = { file_types = { "markdown", "Avante" } },
@@ -54,7 +55,45 @@ return {
 					model = "google/gemini-2.5-pro-preview-03-25",
 				},
 			},
-			custom_tools = require("utils.llmtools"),
+			system_prompt = function()
+				local hub = require("mcphub").get_hub_instance()
+				return hub:get_active_servers_prompt()
+			end,
+			disabled_tools = {
+				"list_files",
+				"search_files",
+				"read_file",
+				"create_file",
+				"rename_file",
+				"delete_file",
+				"create_dir",
+				"rename_dir",
+				"delete_dir",
+				"bash",
+			},
+			custom_tools = function()
+				return { require("mcphub.extensions.avante").mcp_tool() }
+			end,
 		},
+	},
+	{
+		"ravitemer/mcphub.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim", -- Required for Job and HTTP requests
+		},
+		-- comment the following line to ensure hub will be ready at the earliest
+		cmd = "MCPHub", -- lazy load by default
+		-- build = "npm install -g mcp-hub@latest", -- Installs required mcp-hub npm module
+		-- uncomment this if you don't want mcp-hub to be available globally or can't use -g
+		build = "bundled_build.lua", -- Use this and set use_bundled_binary = true in opts  (see Advanced configuration)
+		config = function()
+			require("mcphub").setup({
+				auto_approve = true,
+				extensions = {
+					avante = {},
+				},
+				use_bundled_binary = true,
+			})
+		end,
 	},
 }
