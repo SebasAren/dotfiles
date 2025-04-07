@@ -11,126 +11,126 @@ return {
 				function()
 					require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
 				end,
-				desc = "Breakpoint Condition",
+				desc = "Set conditional breakpoint",
 			},
 			{
 				"<leader>db",
 				function()
 					require("dap").toggle_breakpoint()
 				end,
-				desc = "Toggle Breakpoint",
+				desc = "Toggle breakpoint at current line",
 			},
 			{
 				"<leader>dc",
 				function()
 					require("dap").continue()
 				end,
-				desc = "Run/Continue",
+				desc = "Start/continue debugging session",
 			},
 			{
 				"<leader>da",
 				function()
 					require("dap").continue({ before = get_args })
 				end,
-				desc = "Run with Args",
+				desc = "Continue with custom arguments",
 			},
 			{
 				"<leader>dC",
 				function()
 					require("dap").run_to_cursor()
 				end,
-				desc = "Run to Cursor",
+				desc = "Run to cursor position",
 			},
 			{
 				"<leader>dg",
 				function()
 					require("dap").goto_()
 				end,
-				desc = "Go to Line (No Execute)",
+				desc = "Go to line without executing",
 			},
 			{
 				"<leader>di",
 				function()
 					require("dap").step_into()
 				end,
-				desc = "Step Into",
+				desc = "Step into function",
 			},
 			{
 				"<leader>dj",
 				function()
 					require("dap").down()
 				end,
-				desc = "Down",
+				desc = "Move down in stack trace",
 			},
 			{
 				"<leader>dk",
 				function()
 					require("dap").up()
 				end,
-				desc = "Up",
+				desc = "Move up in stack trace",
 			},
 			{
 				"<leader>dl",
 				function()
 					require("dap").run_last()
 				end,
-				desc = "Run Last",
+				desc = "Re-run last debug session",
 			},
 			{
 				"<leader>do",
 				function()
 					require("dap").step_out()
 				end,
-				desc = "Step Out",
+				desc = "Step out of current function",
 			},
 			{
 				"<leader>dO",
 				function()
 					require("dap").step_over()
 				end,
-				desc = "Step Over",
+				desc = "Step over current line",
 			},
 			{
 				"<leader>dP",
 				function()
 					require("dap").pause()
 				end,
-				desc = "Pause",
+				desc = "Pause debug session",
 			},
 			{
 				"<leader>dr",
 				function()
 					require("dap").repl.toggle()
 				end,
-				desc = "Toggle REPL",
+				desc = "Toggle debug REPL",
 			},
 			{
 				"<leader>ds",
 				function()
 					require("dap").session()
 				end,
-				desc = "Session",
+				desc = "Show current debug session",
 			},
 			{
 				"<leader>dt",
 				function()
 					require("dap").terminate()
 				end,
-				desc = "Terminate",
+				desc = "Terminate debug session",
 			},
 			{
 				"<leader>dw",
 				function()
 					require("dap.ui.widgets").hover()
 				end,
-				desc = "Hover variable",
+				desc = "Hover variable under cursor",
 			},
 			{
 				"<leader>dS",
 				function()
 					require("dap.ui.widgets").sidebar(require("dap.ui.widgets").scopes, {}, "vsplit").toggle()
 				end,
-				desc = "Set scopes as right pane",
+				desc = "Toggle scopes sidebar",
 			},
 			{
 				"<leader>du",
@@ -139,26 +139,28 @@ return {
 						.sidebar(require("dap.ui.widgets").frames, { height = 10 }, "belowright split")
 						.toggle()
 				end,
-				desc = "Set frames as bottom pane",
+				desc = "Toggle frames sidebar",
 			},
 			{
 				"<leader>dh",
 				function()
 					require("dap.repl").toggle({}, "belowright split")
 				end,
-				desc = "Repl split",
+				desc = "Toggle REPL in split",
 			},
 			{
 				"<leader>dv",
 				function()
 					require("fzf-lua").dap_variables()
 				end,
+				desc = "Search debug variables with fzf",
 			},
 			{
 				"<leader>df",
 				function()
 					require("fzf-lua").dap_frames()
 				end,
+				desc = "Search debug frames with fzf",
 			},
 		},
 		config = function()
