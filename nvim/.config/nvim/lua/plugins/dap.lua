@@ -126,27 +126,6 @@ return {
 				desc = "Hover variable under cursor",
 			},
 			{
-				"<leader>dW",
-				function()
-					require("dap").set_variable(vim.fn.expand("<cword>"))
-				end,
-				desc = "Add variable under cursor to watch list",
-			},
-			{
-				"<leader>dE",
-				function()
-					require("dap").set_expression(vim.fn.input("Expression to watch: "))
-				end,
-				desc = "Add custom expression to watch list",
-			},
-			{
-				"<leader>dR",
-				function()
-					require("dap").clear_watches()
-				end,
-				desc = "Clear all watches",
-			},
-			{
 				"<leader>dS",
 				function()
 					require("dap.ui.widgets").sidebar(require("dap.ui.widgets").scopes, {}, "vsplit").toggle()
@@ -274,32 +253,23 @@ return {
 				end,
 				desc = "Toggle DAP UI",
 			},
+			{
+				"<leader>dW",
+				function()
+					require("dapui").elements.watches.add(vim.fn.expand("<cword>"))
+				end,
+				desc = "Add variable under cursor to watch list",
+			},
+			{
+				"<leader>dE",
+				function()
+					require("dapui").elements.watches.add(vim.fn.input("Watch expression: "))
+				end,
+				desc = "Add custom expression to watch list",
+			},
 		},
 		config = function()
-			local dapui = require("dapui")
-			dapui.setup({
-				layouts = {
-					{
-						elements = {
-							-- Elements can be strings or table with id and size keys.
-							{ id = "scopes", size = 0.25 },
-							"breakpoints",
-							"stacks",
-							"watches",
-						},
-						size = 40,
-						position = "left",
-					},
-					{
-						elements = {
-							"repl",
-							"console",
-						},
-						size = 10,
-						position = "bottom",
-					},
-				},
-			})
+			require("dapui").setup()
 		end,
 	},
 }
