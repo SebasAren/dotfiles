@@ -3,6 +3,7 @@ return {
 	dependencies = {
 		{ "kevinhwang91/promise-async" },
 	},
+	lazy = false,
 	keys = {
 		{
 			"zR",
