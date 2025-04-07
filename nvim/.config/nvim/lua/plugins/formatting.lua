@@ -5,20 +5,31 @@ return {
 			local prettier = require("formatter.defaults.prettierd")
 
 			require("formatter").setup({
+				-- Enable logging for debugging purposes
 				logging = true,
+				-- Set log level to DEBUG for detailed output
 				log_level = vim.log.levels.DEBUG,
+				-- Configure formatters per filetype
 				filetype = {
+					-- JavaScript/TypeScript family
 					javascript = prettier,
 					typescript = require("formatter.filetypes.typescript").prettierd,
 					typescriptreact = prettier,
 					javascriptreact = prettier,
+					-- Vue files
 					vue = prettier,
+					-- Python formatter
 					python = require("formatter.filetypes.python").black,
+					-- GraphQL and Prisma
 					graphql = prettier,
 					prisma = prettier,
+					-- HTML formatting
 					html = prettier,
+					-- Lua formatter
 					lua = require("formatter.filetypes.lua").stylua,
+					-- Nix formatter
 					nix = require("formatter.filetypes.nix").nixfmt,
+					-- Default formatter for all other filetypes
 					["*"] = require("formatter.filetypes.any").remove_trailing_whitespace,
 				},
 			})
