@@ -126,6 +126,27 @@ return {
 				desc = "Hover variable under cursor",
 			},
 			{
+				"<leader>dW",
+				function()
+					require("dap").set_variable(vim.fn.expand("<cword>"))
+				end,
+				desc = "Add variable under cursor to watch list",
+			},
+			{
+				"<leader>dE",
+				function()
+					require("dap").set_expression(vim.fn.input("Expression to watch: "))
+				end,
+				desc = "Add custom expression to watch list",
+			},
+			{
+				"<leader>dR",
+				function()
+					require("dap").clear_watches()
+				end,
+				desc = "Clear all watches",
+			},
+			{
 				"<leader>dS",
 				function()
 					require("dap.ui.widgets").sidebar(require("dap.ui.widgets").scopes, {}, "vsplit").toggle()
@@ -133,7 +154,7 @@ return {
 				desc = "Toggle scopes sidebar",
 			},
 			{
-				"<leader>du",
+				"<leader>dU",
 				function()
 					require("dap.ui.widgets")
 						.sidebar(require("dap.ui.widgets").frames, { height = 10 }, "belowright split")
@@ -239,6 +260,45 @@ return {
 				text = "->",
 				texthl = "DiagnosticHint",
 				numhl = "",
+			})
+		end,
+	},
+	{
+		"rcarriga/nvim-dap-ui",
+		dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+		keys = {
+			{
+				"<leader>du",
+				function()
+					require("dapui").toggle()
+				end,
+				desc = "Toggle DAP UI",
+			},
+		},
+		config = function()
+			local dapui = require("dapui")
+			dapui.setup({
+				layouts = {
+					{
+						elements = {
+							-- Elements can be strings or table with id and size keys.
+							{ id = "scopes", size = 0.25 },
+							"breakpoints",
+							"stacks",
+							"watches",
+						},
+						size = 40,
+						position = "left",
+					},
+					{
+						elements = {
+							"repl",
+							"console",
+						},
+						size = 10,
+						position = "bottom",
+					},
+				},
 			})
 		end,
 	},
