@@ -30,7 +30,7 @@ return {
 			-- Toggle between single-line and multi-line code blocks
 			require("mini.splitjoin").setup({
 				mappings = {
-					toggle = "<leader>a",
+					toggle = "<leader>J",
 				},
 			})
 			-- Display icons for file types and other UI elements
