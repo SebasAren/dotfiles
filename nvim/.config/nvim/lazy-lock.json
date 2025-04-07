@@ -1,6 +1,6 @@
 {
   "FixCursorHold.nvim": { "branch": "master", "commit": "1900f89dc17c603eec29960f57c00bd9ae696495" },
-  "avante.nvim": { "branch": "main", "commit": "1c36cfc8120681ffe3261cba83f00338630da606" },
+  "avante.nvim": { "branch": "main", "commit": "d76a158b61fc818a5af7b440b6b397f595021686" },
   "bufferline.nvim": { "branch": "main", "commit": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3" },
   "document-color.nvim": { "branch": "main", "commit": "74c487f0e5accfaae033755451b9e367220693fd" },
   "dressing.nvim": { "branch": "master", "commit": "2d7c2db2507fa3c4956142ee607431ddb2828639" },
@@ -20,7 +20,7 @@
   "mason.nvim": { "branch": "main", "commit": "fc98833b6da5de5a9c5b1446ac541577059555be" },
   "mcphub.nvim": { "branch": "main", "commit": "4fed675f17baa79074c4f0ecdf5b18875f08a179" },
   "mini.icons": { "branch": "main", "commit": "397ed3807e96b59709ef3292f0a3e253d5c1dc0a" },
-  "mini.nvim": { "branch": "main", "commit": "e744b5dbb3158242af77124bd6763a8647ea82ed" },
+  "mini.nvim": { "branch": "main", "commit": "fe8a669078a5066220262f173bf901f322e39c05" },
   "neotest": { "branch": "master", "commit": "dddbe8fe358b05b2b7e54fe4faab50563171a76d" },
   "neotest-python": { "branch": "master", "commit": "a2861ab3c9a0bf75a56b11835c2bfc8270f5be7e" },
   "neotest-vitest": { "branch": "main", "commit": "9f8f05bee6e5b980a4d1e84adab119a8f9756a77" },

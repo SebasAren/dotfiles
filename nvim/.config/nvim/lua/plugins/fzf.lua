@@ -5,32 +5,38 @@ return {
 		opts = {},
 		keys = {
 			{
-				"<leader>p",
+				"<leader>pp",
 				function()
 					require("fzf-lua").files()
 				end,
 				desc = "Fuzzy find files",
 			},
 			{
-				"<leader>rg",
+				"<leader>pg",
 				function()
 					require("fzf-lua").grep()
 				end,
 				desc = "Live grep in files",
 			},
 			{
-				"<leader>rG",
+				"<leader>pG",
 				function()
 					require("fzf-lua").grep_last()
 				end,
 				desc = "Repeat last grep search",
 			},
 			{
-				"<leader>rb",
+				"<leader>pb",
 				function()
 					require("fzf-lua").buffers()
 				end,
 				desc = "Search open buffers",
+			},
+			{
+				"<leader>pd",
+				function()
+					require("fzf-lua").dap_commands()
+				end,
 			},
 		},
 	},

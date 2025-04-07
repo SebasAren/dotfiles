@@ -123,7 +123,7 @@ return {
 				function()
 					require("dap.ui.widgets").hover()
 				end,
-				desc = "Widgets",
+				desc = "Hover variable",
 			},
 			{
 				"<leader>dS",
@@ -147,6 +147,18 @@ return {
 					require("dap.repl").toggle({}, "belowright split")
 				end,
 				desc = "Repl split",
+			},
+			{
+				"<leader>dv",
+				function()
+					require("fzf-lua").dap_variables()
+				end,
+			},
+			{
+				"<leader>df",
+				function()
+					require("fzf-lua").dap_frames()
+				end,
 			},
 		},
 		config = function()
