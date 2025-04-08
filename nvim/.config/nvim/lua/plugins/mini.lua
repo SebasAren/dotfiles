@@ -2,6 +2,9 @@ return {
 	{
 		"echasnovski/mini.nvim",
 		version = false,
+		dependencies = {
+			"rafamadriz/friendly-snippets",
+		},
 		config = function()
 			-- Highlight the word under the cursor
 			require("mini.cursorword").setup({})
@@ -35,16 +38,13 @@ return {
 			})
 			-- Display icons for file types and other UI elements
 			require("mini.icons").setup({})
-			-- Visualize and manipulate Git diffs
-			require("mini.diff").setup({
-				mappings = {
-					apply = "ct",
-					reset = "cT",
-					textobject = "ct",
+			-- Snippet engine for code snippets
+			local gen_loader = require("mini.snippets").gen_loader
+			require("mini.snippets").setup({
+				snippets = {
+					gen_loader.from_lang(),
 				},
 			})
-			-- Snippet engine for code snippets
-			require("mini.snippets").setup()
 			-- Enhanced completion with fuzzy filtering
 			require("mini.completion").setup({
 				lsp_completion = {
