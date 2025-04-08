@@ -44,6 +44,11 @@ return {
 			})
 		end,
 	},
+	{
+		"windwp/nvim-ts-autotag",
+		opts = {},
+		lazy = false,
+	},
 	-- Python
 	{
 		"linux-cultist/venv-selector.nvim",
