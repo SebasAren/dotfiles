@@ -45,14 +45,6 @@ return {
 					gen_loader.from_lang(),
 				},
 			})
-			-- Enhanced completion with fuzzy filtering
-			require("mini.completion").setup({
-				lsp_completion = {
-					process_items = function(items, base)
-						return MiniCompletion.default_process_items(items, base, { filtersort = "fuzzy" })
-					end,
-				},
-			})
 		end,
 	},
 }
