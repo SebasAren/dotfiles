@@ -4,6 +4,7 @@ vim.opt.termguicolors = true
 vim.o.showmatch = true -- show matching brackets
 vim.o.scrolloff = 3 -- always show 3 rows from edge of the screen
 vim.o.laststatus = 3
+vim.o.conceallevel = 2
 
 -- Folds
 vim.o.foldenable = true
