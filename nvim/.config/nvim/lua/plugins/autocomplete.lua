@@ -21,6 +21,7 @@ return {
 				["<C-f>"] = { "scroll_documentation_down" },
 				["<C-b>"] = { "scroll_documentation_up" },
 			},
+			signature = { enabled = true },
 			appearance = {
 				nerd_font_variant = "mono",
 			},
