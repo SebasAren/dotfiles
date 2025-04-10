@@ -17,7 +17,7 @@ return {
 		},
 		build = "make",
 		opts = {
-			provider = "openrouter_deepseek",
+			provider = "openrouter_deepseek_v3",
 			cursor_applying_provider = "groq",
 			behaviour = {
 				enable_cursor_planning_mode = true,
@@ -42,7 +42,13 @@ return {
 					model = "llama-3.3-70b-versatile",
 					max_tokens = 32768,
 				},
-				openrouter_deepseek = {
+				openrouter_deepseek_v3 = {
+					__inherited_from = "openai",
+					endpoint = "https://openrouter.ai/api/v1",
+					api_key_name = "OPENROUTER_API_KEY",
+					model = "deepseek/deepseek-chat-v3-0324",
+				},
+				openrouter_deepseek_r1 = {
 					__inherited_from = "openai",
 					endpoint = "https://openrouter.ai/api/v1",
 					api_key_name = "OPENROUTER_API_KEY",
