@@ -44,6 +44,10 @@ vim.o.wildmenu = true -- on TAB, complete options for system command
 vim.o.wildignore =
 	"deps,.svn,CVS,.git,.hg,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif,.DS_Store,*.aux,*.out,*.toc"
 
+-- Split changes
+vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pane
+vim.o.splitright = true -- when splitting vertically, mnove coursor to right pane
+
 -- Only show cursorline in the current window and in normal mode.
 vim.api.nvim_create_augroup("cline", { clear = true })
 vim.api.nvim_create_autocmd({ "WinLeave", "InsertEnter" }, {

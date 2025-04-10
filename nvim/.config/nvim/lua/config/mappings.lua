@@ -34,9 +34,3 @@ vmap(">", ">gv")
 -- home and end line in command mode
 cmap("<C-a>", "<Home>")
 cmap("<C-e>", "<End>")
-
--- Easy window split; C-w v -> vv, C-w - s -> ss
-nmap("<leader>v", "<C-w>v")
-nmap("<leader>s", "<C-w>s")
-vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pane
-vim.o.splitright = true -- when splitting vertically, mnove coursor to right pane
