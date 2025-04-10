@@ -45,4 +45,15 @@ return {
 			"rcarriga/nvim-notify",
 		},
 	},
+	{
+		"rcarriga/nvim-notify",
+		event = "VeryLazy",
+		config = function()
+			require("notify").setup({
+				merge_duplicates = true,
+				level = 3,
+				render = "compact",
+			})
+		end,
+	},
 }
