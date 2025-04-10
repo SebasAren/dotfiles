@@ -95,7 +95,7 @@ return {
 		opts = {},
 		keys = {
 			{
-				"s",
+				"<leader>s",
 				mode = { "n", "x", "o" },
 				function()
 					require("flash").jump()
@@ -103,7 +103,7 @@ return {
 				desc = "Flash",
 			},
 			{
-				"S",
+				"<leader>S",
 				mode = { "n", "x", "o" },
 				function()
 					require("flash").treesitter()
@@ -136,6 +136,4 @@ return {
 			},
 		},
 	},
-	{ "tpope/vim-surround" },
-	{ "tpope/vim-repeat" },
 }

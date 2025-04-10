@@ -45,6 +45,7 @@ return {
 					gen_loader.from_lang(),
 				},
 			})
+			require("mini.surround").setup()
 		end,
 	},
 }
