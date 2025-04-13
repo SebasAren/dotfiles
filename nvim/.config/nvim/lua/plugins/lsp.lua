@@ -19,6 +19,7 @@ return {
 			mason.setup()
 			mason_lsp.setup({
 				automatic_installation = true,
+				ensure_installed = { "prettierd", "stylua", "black", "isort" },
 			})
 
 			-- Set up document-color on attach hook
@@ -156,63 +157,6 @@ return {
 				config.on_attach = on_attach
 				lspconfig[server].setup(config)
 			end
-		end,
-	},
-	{
-		"glepnir/lspsaga.nvim",
-		event = "LspAttach",
-		keys = {
-			-- Lsp finder find the symbol definition implement reference
-			{ "gh", "<cmd>Lspsaga finder<CR>", desc = "LSP Finder", mode = "n", silent = true },
-			-- Code action
-			{ "<leader>ca", "<cmd>Lspsaga code_action<CR>", desc = "Code Action", mode = { "n", "v" }, silent = true },
-			-- Rename
-			{ "gr", "<cmd>Lspsaga rename<CR>", desc = "Rename", mode = "n", silent = true },
-			-- Peek Definition
-			{ "gd", "<cmd>Lspsaga peek_definition<CR>", desc = "Peek Definition", mode = "n", silent = true },
-			-- Show line diagnostics
-			{
-				"<leader>cd",
-				"<cmd>Lspsaga show_line_diagnostics<CR>",
-				desc = "Line Diagnostics",
-				mode = "n",
-				silent = true,
-			},
-			-- Show cursor diagnostic
-			{
-				"<leader>cd",
-				"<cmd>Lspsaga show_cursor_diagnostics<CR>",
-				desc = "Cursor Diagnostics",
-				mode = "n",
-				silent = true,
-			},
-			-- Diagnostic jump
-			{ "[e", "<cmd>Lspsaga diagnostic_jump_prev<CR>", desc = "Previous Diagnostic", mode = "n", silent = true },
-			{ "]e", "<cmd>Lspsaga diagnostic_jump_next<CR>", desc = "Next Diagnostic", mode = "n", silent = true },
-			-- Only jump to error
-			{
-				"[E",
-				function()
-					require("lspsaga.diagnostic").goto_prev({ severity = vim.diagnostic.severity.ERROR })
-				end,
-				desc = "Previous Error",
-				mode = "n",
-				silent = true,
-			},
-			{
-				"]E",
-				function()
-					require("lspsaga.diagnostic").goto_next({ severity = vim.diagnostic.severity.ERROR })
-				end,
-				desc = "Next Error",
-				mode = "n",
-				silent = true,
-			},
-			-- Hover Doc
-			{ "K", "<cmd>Lspsaga hover_doc<CR>", desc = "Hover Documentation", mode = "n", silent = true },
-		},
-		config = function()
-			require("lspsaga").setup({})
 		end,
 	},
 }
