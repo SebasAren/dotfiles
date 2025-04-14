@@ -1,7 +1,7 @@
 return {
 	{
 		"ibhagwan/fzf-lua",
-		dependencies = { "echasnovski/mini.icons" },
+		dependencies = { "echasnovski/mini.nvim" },
 		opts = {},
 		keys = {
 			{
@@ -115,6 +115,27 @@ return {
 					require("fzf-lua").dap_commands()
 				end,
 				desc = "Search DAP commands with fzf",
+			},
+			{
+				"<leader>gh",
+				function()
+					require("fzf-lua").lsp_definitions()
+				end,
+				desc = "Search LSP Definitions",
+			},
+			{
+				"<leader>ga",
+				function()
+					require("fzf-lua").lsp_code_actions()
+				end,
+				desc = "Search LSP Code Actions",
+			},
+			{
+				"<leader>gr",
+				function()
+					require("fzf-lua").lsp_references()
+				end,
+				desc = "Search LSP references",
 			},
 		},
 	},

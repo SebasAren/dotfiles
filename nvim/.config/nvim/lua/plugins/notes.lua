@@ -60,13 +60,6 @@ return {
 			{
 				"<leader>zt",
 				function()
-					require("zk.commands").get("ZkNewFromTemplate")({ dir = "notes", template = "meeting" })
-				end,
-				desc = "New meeting note",
-			},
-			{
-				"<leader>zt",
-				function()
 					require("zk.commands").get("ZkTags")()
 				end,
 				desc = "Search notes by tags",

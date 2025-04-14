@@ -44,6 +44,13 @@ vim.o.wildmenu = true -- on TAB, complete options for system command
 vim.o.wildignore =
 	"deps,.svn,CVS,.git,.hg,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif,.DS_Store,*.aux,*.out,*.toc"
 
+vim.diagnostic.config({
+	virtual_lines = {
+		current_line = true,
+	},
+	virtual_text = {},
+})
+
 -- Split changes
 vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pane
 vim.o.splitright = true -- when splitting vertically, mnove coursor to right pane
