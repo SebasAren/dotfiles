@@ -60,6 +60,12 @@ return {
 					api_key_name = "OPENROUTER_API_KEY",
 					model = "google/gemini-2.5-pro-preview-03-25",
 				},
+				perplexity = {
+					__inherited_from = "openai",
+					endpoint = "https://api.perplexity.ai",
+					model = "sonar",
+					api_key_name = "PERPLEXITY_API_KEY",
+				},
 			},
 			system_prompt = function()
 				local hub = require("mcphub").get_hub_instance()
