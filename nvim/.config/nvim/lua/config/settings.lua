@@ -1,6 +1,5 @@
-vim.opt.termguicolors = true
-
 -- Display
+vim.o.termguicolors = true
 vim.o.showmatch = true -- show matching brackets
 vim.o.scrolloff = 3 -- always show 3 rows from edge of the screen
 vim.o.laststatus = 3
@@ -56,16 +55,16 @@ vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pa
 vim.o.splitright = true -- when splitting vertically, mnove coursor to right pane
 
 -- Only show cursorline in the current window and in normal mode.
-vim.api.nvim_create_augroup("cline", { clear = true })
+local cline = vim.api.nvim_create_augroup("cline", { clear = true })
 vim.api.nvim_create_autocmd({ "WinLeave", "InsertEnter" }, {
-	group = "cline",
+	group = cline,
 	callback = function()
-		vim.opt.cursorline = false
+		vim.o.cursorline = false
 	end,
 })
 vim.api.nvim_create_autocmd({ "WinEnter", "InsertLeave" }, {
-	group = "cline",
+	group = cline,
 	callback = function()
-		vim.opt.cursorline = true
+		vim.o.cursorline = true
 	end,
 })

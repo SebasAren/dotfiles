@@ -1,4 +1,4 @@
-vim.cmd("noremap <C-b> :noh<cr>:call clearmatches()<cr>") -- clear matches Ctrl+b
+vim.keymap.set({ "v", "n" }, "<C-b>", ":noh<cr>:call clearmatches()<cr>")
 
 local function map(mode, shortcut, command)
 	vim.keymap.set(mode, shortcut, command)
@@ -26,7 +26,7 @@ nmap("g;", "g;zz")
 -- Begining & End of line in Normal and visual mode
 vim.keymap.set({ "v", "n" }, "H", "^")
 vim.keymap.set({ "v", "n" }, "L", "g_")
---
+
 -- Reselect visual block after indent/outdent
 vmap("<", "<gv")
 vmap(">", ">gv")
