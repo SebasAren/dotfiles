@@ -1,0 +1,14 @@
+vim.lsp.enable({
+	"ts_ls",
+	"volar",
+	"basedpyright",
+	"lua_ls",
+	"graphql",
+	"html",
+	"tailwindcss",
+	"jsonls",
+	"prismals",
+	"svelte",
+	"emmet_language_server",
+	"cobol_ls",
+})
