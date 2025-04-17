@@ -45,7 +45,7 @@ return {
 		config = function()
 			require("notify").setup({
 				merge_duplicates = true,
-				level = 3,
+				-- level = 3,
 				render = "compact",
 			})
 		end,
