@@ -1,13 +1,14 @@
 local lsp_servers = {}
 
-vim.lsp.config("ts_ls", {
-	filetypes = { "vue", "javascript", "typescript", "javascriptreact", "typescriptreact" },
-})
 vim.lsp.config("volar", {
+	filetypes = { "typescript", "javascript", "javascriptreact", "typescriptreact", "vue" },
 	init_options = {
 		typescript = {
 			tsdk = require("mason-registry").get_package("vue-language-server"):get_install_path()
 				.. "/node_modules/typescript/lib",
+		},
+		vue = {
+			hybridMode = false,
 		},
 	},
 })
