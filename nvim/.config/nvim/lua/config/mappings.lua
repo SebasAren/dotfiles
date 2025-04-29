@@ -34,3 +34,16 @@ vmap(">", ">gv")
 -- home and end line in command mode
 cmap("<C-a>", "<Home>")
 cmap("<C-e>", "<End>")
+
+-- Toggle diagnostics
+vim.g["diagnostics_active"] = true
+local toggle_diagnostics = function()
+	if vim.g.diagnostics_active then
+		vim.g.diagnostics_active = false
+		vim.diagnostic.enable(false)
+	else
+		vim.g.diagnostics_active = true
+		vim.diagnostic.enable(true)
+	end
+end
+vim.keymap.set("n", "<leader>xd", toggle_diagnostics, { desc = "Toggle diagnostics" })

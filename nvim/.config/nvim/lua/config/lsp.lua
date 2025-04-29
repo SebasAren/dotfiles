@@ -1,4 +1,4 @@
-local lsp_servers = {}
+local lsp_servers = { "volar", "vtsls" }
 
 vim.lsp.config("vtsls", {
 	filetypes = { "javascript", "typescript", "vue" },
