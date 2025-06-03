@@ -18,8 +18,3 @@ vim.keymap.set("v", ">", ">gv")
 -- home and end line in command mode
 vim.keymap.set("c", "<C-a>", "<Home>")
 vim.keymap.set("c", "<C-d>", "<End>")
-
--- toggle diagnostics
-vim.keymap.set("n", "<leader>xd", function()
-	vim.diagnostic.enable(not vim.diagnostic.is_enabled())
-end, { desc = "Toggle diagnostics" })
