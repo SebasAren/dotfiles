@@ -1,4 +1,4 @@
-local lsp_servers = { "volar", "vtsls" }
+local lsp_servers = { "vue_ls", "vtsls" }
 
 local get_vue_lsp_location = function()
 	return vim.fn.expand("$MASON/packages/vue-language-server")
@@ -23,7 +23,7 @@ vim.lsp.config("vtsls", {
 	},
 })
 
-vim.lsp.config("volar", {
+vim.lsp.config("vue_ls", {
 	init_options = {
 		typescript = {
 			tsdk = get_vue_lsp_location() .. "/node_modules/typescript/lib",

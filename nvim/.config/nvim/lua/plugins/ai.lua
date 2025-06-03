@@ -22,7 +22,7 @@ return {
 			behaviour = {
 				enable_cursor_planning_mode = true,
 			},
-			vendors = {
+			providers = {
 				openrouter_claude = {
 					__inherited_from = "openai",
 					endpoint = "https://openrouter.ai/api/v1",
