@@ -67,10 +67,7 @@ ZSH_THEME="mh"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-plugins=(git archlinux dotenv fzf z asdf pyenv uv)
+plugins=(git archlinux dotenv fzf z asdf uv)
 
 source $ZSH/oh-my-zsh.sh
 
