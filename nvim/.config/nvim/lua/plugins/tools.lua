@@ -40,6 +40,8 @@ return {
 					"vue",
 					"xml",
 					"yaml",
+					"prisma",
+					"graphql",
 				},
 			})
 		end,

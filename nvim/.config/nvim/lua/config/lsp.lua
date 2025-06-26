@@ -1,4 +1,8 @@
-local lsp_servers = { "volar", "vtsls" }
+local lsp_servers = { "vue_ls", "vtsls" }
+
+local get_vue_lsp_location = function()
+	return vim.fn.expand("$MASON/packages/vue-language-server")
+end
 
 vim.lsp.config("vtsls", {
 	filetypes = { "javascript", "typescript", "vue" },
@@ -8,8 +12,7 @@ vim.lsp.config("vtsls", {
 				globalPlugins = {
 					{
 						name = "@vue/typescript-plugin",
-						location = require("mason-registry").get_package("vue-language-server"):get_install_path()
-							.. "/node_modules/@vue/language-server",
+						location = get_vue_lsp_location() .. "/node_modules/@vue/language-server",
 						languages = { "vue" },
 						configNamespace = "typescript",
 						enableForWorkspaceTypeScriptVersions = true,
@@ -20,11 +23,10 @@ vim.lsp.config("vtsls", {
 	},
 })
 
-vim.lsp.config("volar", {
+vim.lsp.config("vue_ls", {
 	init_options = {
 		typescript = {
-			tsdk = require("mason-registry").get_package("vue-language-server"):get_install_path()
-				.. "/node_modules/typescript/lib",
+			tsdk = get_vue_lsp_location() .. "/node_modules/typescript/lib",
 		},
 	},
 })
