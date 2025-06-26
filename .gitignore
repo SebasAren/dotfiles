@@ -7,3 +7,4 @@ __pycache__/
 qtile/.config/qtile/wallpapers/wallpaper.jpg
 mysql_data/
 history.txt
+.aider*
