@@ -1,0 +1,5 @@
+model: openrouter/baidu/ernie-4.5-300b-a47b
+alias:
+  - "mini:openrouter/openai/o4-mini"
+  - "ernie:openrouter/baidu/ernie-4.5-300b-a47b"
+read: [CONVENTIONS.md]
