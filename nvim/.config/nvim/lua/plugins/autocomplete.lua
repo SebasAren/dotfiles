@@ -42,7 +42,10 @@ return {
 				implementation = "prefer_rust_with_warning",
 			},
 			snippets = { preset = "mini_snippets" },
-			sources = { default = { "lsp", "path", "snippets", "buffer" } },
+			sources = {
+				default = { "lsp", "path", "snippets", "buffer" },
+				per_filetype = { codecompanion = { "codecompanion" } },
+			},
 		},
 		opts_extend = { "sources.default" },
 	},
