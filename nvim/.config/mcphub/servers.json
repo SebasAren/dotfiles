@@ -1,13 +1,50 @@
 {
   "mcpServers": {
+    "fetch": {
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "command": "uvx"
+    },
+    "filesystem": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${cmd: git rev-parse --show-toplevel}"
+      ],
+      "command": "npx"
+    },
     "git": {
       "args": [
         "mcp-server-git",
         "--repository",
-        "${REPOSITORY_PATH}"
+        "${cmd: git rev-parse --show-toplevel}"
       ],
       "command": "uvx",
       "disabled": false
+    },
+    "playwright": {
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "--pull=always",
+        "mcr.microsoft.com/playwright/mcp"
+      ],
+      "command": "docker"
+    },
+    "puppeteer": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "command": "npx"
+    }
+  },
+  "nativeMCPServers": {
+    "neovim": {
+      "autoApprove": []
     }
   }
 }
