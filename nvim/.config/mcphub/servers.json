@@ -23,6 +23,16 @@
       "command": "uvx",
       "disabled": false
     },
+    "gitlab": {
+      "args": [
+        "mcp-server-gitlab"
+      ],
+      "command": "uvx",
+      "env": {
+        "GITLAB_API_URL": "${GITLAB_API_URL}",
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
     "playwright": {
       "args": [
         "run",
