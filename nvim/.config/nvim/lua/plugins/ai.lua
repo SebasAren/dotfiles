@@ -25,7 +25,22 @@ return {
 					api_key_name = "OPENROUTER_API_KEY",
 					model = "morph/morph-v3-large",
 				},
+				deepseek = {
+					__inherited_from = "openai",
+					endpoint = "https://openrouter.ai/api/v1",
+					api_key_name = "OPENROUTER_API_KEY",
+					model = "deepseek/deepseek-chat-v3-0324",
+				},
 			},
+			system_prompt = function()
+				local hub = require("mcphub").get_hub_instance()
+				return hub and hub:get_active_servers_prompt() or ""
+			end,
+			custom_tools = function()
+				return {
+					require("mcphub.extensions.avante").mcp_tool(),
+				}
+			end,
 			behaviour = {
 				enable_fastapply = true,
 			},
@@ -64,5 +79,21 @@ return {
 				ft = { "markdown", "Avante" },
 			},
 		},
+	},
+	{
+		"ravitemer/mcphub.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+		},
+		build = "npm install -g mcp-hub@latest", -- Installs `mcp-hub` node binary globally
+		config = function()
+			require("mcphub").setup({
+				extensions = {
+					avante = {
+						make_slash_commands = true,
+					},
+				},
+			})
+		end,
 	},
 }
