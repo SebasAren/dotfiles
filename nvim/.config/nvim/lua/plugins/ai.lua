@@ -11,7 +11,7 @@ return {
 		opts = {
 			-- add any opts here
 			-- for example
-			provider = "kimi",
+			provider = "groq-kimi",
 			providers = {
 				kimi = {
 					__inherited_from = "openai",
