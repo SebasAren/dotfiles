@@ -4,7 +4,8 @@
       "args": [
         "mcp-server-fetch"
       ],
-      "command": "uvx"
+      "command": "uvx",
+      "disabled": true
     },
     "filesystem": {
       "args": [
@@ -12,7 +13,8 @@
         "@modelcontextprotocol/server-filesystem",
         "${cmd: git rev-parse --show-toplevel}"
       ],
-      "command": "npx"
+      "command": "npx",
+      "disabled": true
     },
     "git": {
       "args": [
@@ -21,13 +23,14 @@
         "${cmd: git rev-parse --show-toplevel}"
       ],
       "command": "uvx",
-      "disabled": false
+      "disabled": true
     },
     "gitlab": {
       "args": [
         "mcp-server-gitlab"
       ],
       "command": "uvx",
+      "disabled": true,
       "env": {
         "GITLAB_API_URL": "${GITLAB_API_URL}",
         "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_PERSONAL_ACCESS_TOKEN}"
@@ -42,19 +45,38 @@
         "--pull=always",
         "mcr.microsoft.com/playwright/mcp"
       ],
-      "command": "docker"
+      "command": "docker",
+      "disabled": true
     },
     "puppeteer": {
       "args": [
         "-y",
         "@modelcontextprotocol/server-puppeteer"
       ],
-      "command": "npx"
+      "command": "npx",
+      "disabled": true
     }
   },
   "nativeMCPServers": {
+    "mcphub": {
+      "custom_instructions": {
+        "disabled": false
+      },
+      "disabled": false,
+      "disabled_prompts": [
+        "create_native_server"
+      ],
+      "disabled_resources": [],
+      "disabled_tools": []
+    },
     "neovim": {
-      "autoApprove": []
+      "autoApprove": [],
+      "disabled": true,
+      "disabled_prompts": [
+        "parrot"
+      ],
+      "disabled_resources": [],
+      "disabled_tools": []
     }
   }
 }

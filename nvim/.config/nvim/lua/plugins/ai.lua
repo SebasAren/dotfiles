@@ -66,6 +66,11 @@ return {
 				provider = "dressing",
 				provider_opts = {},
 			},
+			windows = {
+				input = {
+					height = 16,
+				},
+			},
 		},
 		dependencies = {
 			"nvim-lua/plenary.nvim",
