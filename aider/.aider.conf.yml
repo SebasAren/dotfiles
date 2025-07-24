@@ -1,8 +1,13 @@
 model: qwen
+weak-model: ernie
+
 alias:
   - "mini:openrouter/openai/o4-mini"
   - "ernie:openrouter/baidu/ernie-4.5-300b-a47b"
   - "r1:openrouter/deepseek/deepseek-r1-0528"
   - "v3:openrouter/deepseek/deepseek-chat-v3-0324"
   - "qwen:openrouter/qwen/qwen3-coder"
+  - "switchpoint:openrouter/switchpoint/router"
+  - "kimi:openrouter/moonshotai/kimi-k2"
+
 read: [CONVENTIONS.md]

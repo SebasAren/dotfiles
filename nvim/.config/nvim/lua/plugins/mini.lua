@@ -46,6 +46,7 @@ return {
 				},
 			})
 			require("mini.surround").setup()
+			require("mini.pick").setup()
 		end,
 	},
 }
