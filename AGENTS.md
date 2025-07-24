@@ -167,7 +167,7 @@ Key exclusions include:
    ```bash
    # Install specific configs
    stow zsh nvim kitty
-   
+
    # Or install everything
    stow */
    ```
@@ -176,7 +176,7 @@ Key exclusions include:
    ```bash
    cd docker/docker-services/jellyfin
    docker-compose up -d
-   
+
    cd ../openwebui
    docker-compose up -d
    ```

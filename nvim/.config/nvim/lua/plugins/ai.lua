@@ -11,8 +11,14 @@ return {
 		opts = {
 			-- add any opts here
 			-- for example
-			provider = "groq-kimi",
+			provider = "moonshot-kimi",
 			providers = {
+				["moonshot-kimi"] = {
+					__inherited_from = "openai",
+					endpoint = "https://api.moonshot.ai/v1",
+					api_key_name = "MOONSHOT_API_KEY",
+					model = "kimi-k2-0711-preview",
+				},
 				kimi = {
 					__inherited_from = "openai",
 					endpoint = "https://openrouter.ai/api/v1",
@@ -23,6 +29,12 @@ return {
 					__inherited_from = "openai",
 					api_key_name = "GROQ_API_KEY",
 					endpoint = "https://api.groq.com/openai/v1/",
+					model = "moonshotai/kimi-k2-instruct",
+				},
+				["aihubmix-kimi"] = {
+					__inherited_from = "openai",
+					endpoint = "https://aihubmix.com",
+					api_key_name = "AIHUBMIX_API_KEY",
 					model = "moonshotai/kimi-k2-instruct",
 				},
 				morph = {
