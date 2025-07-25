@@ -66,6 +66,9 @@
     }
   },
   "nativeMCPServers": {
+    "conventional_commits": {
+      "disabled": false
+    },
     "mcphub": {
       "custom_instructions": {
         "disabled": false

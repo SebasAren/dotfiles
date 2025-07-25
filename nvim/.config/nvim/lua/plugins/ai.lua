@@ -149,6 +149,7 @@ return {
 				},
 				native_servers = {
 					vitest = require("mcphub-native.servers.vitest"),
+					conventional_commits = require("mcphub-native.servers.conventional-commits"),
 				},
 			})
 		end,
