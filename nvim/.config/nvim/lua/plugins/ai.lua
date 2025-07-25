@@ -1,8 +1,6 @@
 return {
 	{
-		"yetone/avante.nvim",
-		-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
-		-- ⚠️ must add this setting! ! !
+		"yetone/avante.nvim", -- if you want to build from source then do `make BUILD_FROM_SOURCE=true` ⚠️ must add this setting! ! !
 		build = "make",
 		event = "VeryLazy",
 		version = false, -- Never set this value to "*"! Never!
@@ -50,6 +48,9 @@ return {
 					model = "deepseek/deepseek-chat-v3-0324",
 				},
 			},
+			behaviour = {
+				enable_fastapply = true,
+			},
 			system_prompt = function()
 				local hub = require("mcphub").get_hub_instance()
 				return hub and hub:get_active_servers_prompt() or ""
@@ -59,17 +60,38 @@ return {
 					require("mcphub.extensions.avante").mcp_tool(),
 				}
 			end,
+			-- disable all native avante tools to use only MCP tools
 			disabled_tools = {
-				"list_files", -- Built-in file operations
-				"search_files",
+				"rag_search",
+				"python",
+				"git_diff",
+				"git_commit",
+				"glob",
+				"search_keyword",
+				"read_file_toplevel_symbols",
 				"read_file",
 				"create_file",
-				"rename_file",
-				"delete_file",
+				"move_path",
+				"copy_path",
+				"delete_path",
 				"create_dir",
-				"rename_dir",
-				"delete_dir",
-				"bash", -- Built-in terminal access
+				"bash",
+				"web_search",
+				"fetch",
+				"run_python",
+				"run_bash",
+				"str_replace_editor",
+				"grep",
+				"search",
+				"find_file",
+				"create",
+				"delete",
+				"move",
+				"rename",
+				"insert",
+				"replace",
+				"copy",
+				"write",
 			},
 			input = {
 				provider = "dressing",
