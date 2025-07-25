@@ -71,9 +71,6 @@ return {
 				"delete_dir",
 				"bash", -- Built-in terminal access
 			},
-			behaviour = {
-				enable_fastapply = true,
-			},
 			input = {
 				provider = "dressing",
 				provider_opts = {},

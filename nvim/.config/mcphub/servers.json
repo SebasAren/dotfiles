@@ -63,15 +63,13 @@
         "disabled": false
       },
       "disabled": false,
-      "disabled_prompts": [
-        "create_native_server"
-      ],
+      "disabled_prompts": [],
       "disabled_resources": [],
       "disabled_tools": []
     },
     "neovim": {
       "autoApprove": [],
-      "disabled": true,
+      "disabled": false,
       "disabled_prompts": [
         "parrot"
       ],
