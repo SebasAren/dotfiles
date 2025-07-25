@@ -1,8 +1,0 @@
-version: "2.3"
-
-services:
-  fishnet:
-    image: niklasf/fishnet:2
-    restart: unless-stopped
-    environment:
-      - KEY=abcdef
