@@ -125,6 +125,9 @@ return {
 						make_slash_commands = true,
 					},
 				},
+				native_servers = {
+					vitest = require("mcphub-native.servers.vitest"),
+				},
 			})
 		end,
 	},
