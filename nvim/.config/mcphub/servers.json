@@ -24,14 +24,20 @@
       ],
       "autoApprove": [
         "git_status",
-        "git_show",
-        "git_log",
-        "git_diff",
+        "git_diff_unstaged",
         "git_diff_staged",
-        "git_diff_unstaged"
+        "git_diff",
+        "git_commit",
+        "git_add",
+        "git_log",
+        "git_show"
       ],
       "command": "uvx",
-      "disabled": false
+      "disabled": false,
+      "disabled_tools": [
+        "git_commit",
+        "git_add"
+      ]
     },
     "gitlab": {
       "args": [
@@ -67,7 +73,10 @@
   },
   "nativeMCPServers": {
     "conventional_commits": {
-      "disabled": false
+      "disabled": false,
+      "disabled_tools": [
+        "get_status"
+      ]
     },
     "mcphub": {
       "custom_instructions": {
@@ -85,7 +94,6 @@
         "read_file",
         "move_item",
         "read_multiple_files",
-        "delete_items",
         "find_files",
         "list_directory",
         "write_file",
