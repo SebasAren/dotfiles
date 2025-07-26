@@ -44,6 +44,9 @@ return {
 			},
 			snippets = { preset = "mini_snippets" },
 			sources = {
+				per_filetype = {
+					codecompanion = { "codecompanion" },
+				},
 				default = { "avante", "lsp", "path", "snippets", "buffer" },
 				providers = {
 					avante = {
