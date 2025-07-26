@@ -1,189 +1,58 @@
-# Comprehensive Project Handover Document
+# CLAUDE.md
 
-## Project Overview
-This is a comprehensive dotfiles repository for personal configuration management across multiple development environments and tools. The repository uses GNU stow for symbolic linking and maintains configurations for development tools, window managers, shells, and docker services.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Structure
+## Repository Overview
 
-### Core Configuration Directories
-The repository follows the standard dotfiles structure with each directory containing configuration files for specific tools:
+Personal dotfiles repository using GNU Stow for configuration management. Contains configurations for development tools, media services, and system utilities.
 
-- **`aider/`** - AI assistant configuration
-- **`asdf/`** - Version manager configuration
-- **`awesome/`** - Awesome window manager configuration (submodules removed)
-- **`docker/`** - Docker services and configurations
-- **`kitty/`** - Kitty terminal emulator configuration
-- **`nix/`** - Nix package manager configuration
-- **`nushell/`** - Nushell configuration
-- **`nvim/`** - Neovim configuration with LSP support
-- **`picom/`** - Picom compositor configuration
-- **`qtile/`** - Qtile window manager configuration with dunst
-- **`qutebrowser/`** - Qutebrowser configuration
-- **`wezterm/`** - Wezterm terminal emulator configuration (empty directory)
-- **`zsh/`** - Zsh shell configuration
+## Key Architecture
 
-### Docker Services
-Located in `docker/docker-services/`, these services are configured with individual docker-compose files:
+### Dotfile Management
+- **Tool**: GNU Stow creates symbolic links from tool directories to home directory
+- **Structure**: Each tool has its own directory with standard XDG config paths
+- **Install**: `stow [tool-name]` to activate configurations
 
-- **audiobookshelf** - Audio book and podcast management
-- **jellyfin** - Media server with jellyfin-vue frontend
-- **mysql** - Database service with persistent storage
-- **openwebui** - Open WebUI for local LLM interaction
-- **transmission** - Torrent client with VPN integration
+### Core Tools Configured
+- **Neovim**: Lazy.nvim-based configuration with AI integration (CodeCompanion + MCP Hub)
+- **Zsh**: Oh My Zsh with custom theme and extensive aliases
+- **Docker Services**: Individual compose files for media/AI services
+- **Qtile**: Window manager configuration
+- **Qutebrowser**: Browser configuration
 
-### Key Configuration Files
+## Essential Commands
 
-#### AI Development Tools
-- **`aider/.aider.conf.yml`** - Aider AI assistant configuration
-  - **Primary model**: qwen (qwen3-coder)
-  - **Weak model**: ernie (baidu/ernie-4.5-300b-a47b)
-  - **Model aliases**: Support for multiple AI providers (OpenAI, DeepSeek, Moonshot, etc.)
-  - **Issue**: Missing `CONVENTIONS.md` file referenced in configuration
-
-#### Git Configuration
-- **`.gitignore`** - Excludes build artifacts, data directories, and sensitive files
-- **No git submodules** - All submodules have been removed from the repository
-
-## Setup Instructions
-
-### Prerequisites
-1. **GNU Stow** - Required for dotfile installation
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install stow
-   # Arch Linux
-   sudo pacman -S stow
-   # macOS
-   brew install stow
-   ```
-
-### Installation Process
-1. Clone the repository
-2. Use stow to create symbolic links:
-   ```bash
-   cd dotfiles
-   stow zsh
-   stow nvim
-   stow awesome
-   # etc.
-   ```
-
-### Docker Services Setup
-Each service has its own docker-compose.yml file. Use these commands:
-
+### Setup & Installation
 ```bash
-# Navigate to service directory
-cd docker/docker-services/[service-name]
+# Install dotfiles for specific tools
+stow nvim zsh docker qtile qutebrowser
 
-# Start service
-docker-compose up -d
+# Install Neovim plugins
+nvim --headless "+Lazy! sync" +qa
 
-# View logs
-docker-compose logs -f
+# Start Docker services
+cd docker/docker-services/[service] && docker-compose up -d
 ```
 
-## Environment Variables
-Several docker services require environment variables:
+### Neovim Operations
+- **File search**: `<leader>pp` (fzf-lua)
+- **Live grep**: `<leader>pg`
+- **LSP actions**: `<leader>gh/ga/gr` for hover/definition/references
+- **AI assistance**: CodeCompanion with Claude integration via MCP Hub
 
-- **Transmission**: `TZ`, `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD`, `OPENVPN_CONFIG`, `LOCAL_NETWORK`, `TRANSMISSION_PEER_PORT`
-- **OpenWebUI**: `OLLAMA_BASE_URL` (defaults to local Ollama instance)
+### Docker Services
+Located in `docker/docker-services/`:
+- **Media**: Jellyfin, Audiobookshelf
+- **AI**: OpenWebUI (local LLM interface)
+- **Network**: Transmission with VPN
+- **Database**: MariaDB
 
-## Development Environment Details
+### Media Storage
+- Standard paths: `/stash/` and `/stash2/` directories
+- User context: UID 1000:1000 for Docker services
+- Persistent volumes for data/config separation
 
-### Neovim Configuration
-- **Plugin manager**: Lazy.nvim (evidenced by lazy-lock.json)
-- **LSP servers**: Pre-configured for multiple languages
-  - jsonls (JSON)
-  - svelte (Svelte)
-  - prismals (Prisma)
-  - html (HTML)
-  - lua_ls (Lua)
-  - graphql (GraphQL)
-  - basedpyright (Python)
-  - emmet_language_server (Emmet)
-
-### Shell Configuration
-- **Primary shell**: Zsh with custom .zshrc and .zprofile
-- **Configuration location**: `zsh/.zshrc` and `zsh/.zprofile`
-
-### Window Managers
-- **Awesome WM**: Configuration in `awesome/.config/awesome/` (submodules removed)
-- **Qtile**: Python-based configuration with dunst notifications
-
-## Storage and Data Management
-
-### Docker Volumes
-- **OpenWebUI**: Uses external volume `open-webui`
-- **Jellyfin**: Mounts media directories `/stash/` and `/stash2/` for content
-- **Transmission**: Mounts media directories for downloads and VPN configuration
-- **MySQL**: Uses persistent data directory `mysql_data/` (gitignored)
-
-### Gitignore Rules
-Key exclusions include:
-- Build artifacts and cache files
-- Sensitive data directories (`mysql_data/`)
-- Personal configuration files (`custom-settings.lua`)
-- Aider chat history files
-
-## Known Issues and Considerations
-
-### Critical Issues
-1. **Empty directories**: `wezterm/` directory exists but is empty
-2. **Missing services**: Documented services "fishnet" and "python" do not exist in docker/docker-services/
-3. **Fixed**: CONVENTIONS.md file has been created
-
-### Migration Notes
-1. **Media directories**: Services expect `/stash/` and `/stash2/` directories to exist
-2. **User IDs**: Docker services use user ID 1000:1000 - adjust if your system uses different IDs
-3. **VPN configuration**: Transmission requires valid VPN credentials to function
-
-### Dependencies and Requirements
-- **GNU Stow** (required for dotfile management)
-- **Docker and Docker Compose** (for services)
-- **Git**
-- **Neovim 0.8+** (for nvim configuration)
-- **Zsh** (for shell configuration)
-
-## Quick Start for New Developers
-
-1. **Initial Setup**:
-   ```bash
-   git clone <repository-url>
-   cd dotfiles
-   ```
-
-2. **Install dotfiles**:
-   ```bash
-   # Install specific configs
-   stow zsh nvim kitty
-
-   # Or install everything
-   stow */
-   ```
-
-3. **Start essential services**:
-   ```bash
-   cd docker/docker-services/jellyfin
-   docker-compose up -d
-
-   cd ../openwebui
-   docker-compose up -d
-   ```
-
-4. **Fixes completed**: CONVENTIONS.md file has been created and is now available in the repository root.
-
-## Maintenance Notes
-
-### Regular Tasks
-- Update neovim plugins: `:Lazy update` in nvim
-- Update docker images: `docker-compose pull && docker-compose up -d`
-- Review service logs: `docker-compose logs -f [service-name]`
-
-### Backup Considerations
-- Docker volumes need separate backup strategy
-- Configuration files are version controlled
-- Media directories (`/stash/` and `/stash2/`) are external to git
-- MySQL data is stored in docker volumes and should be backed up separately
-
-This repository represents a complete development environment setup with media services, AI tools, and development configurations. New developers should focus on understanding the stow-based installation process and service dependencies before making changes.
-
+### AI Development
+- **Local LLM**: Ollama via OpenWebUI
+- **AI Assistant**: CodeCompanion.nvim with Claude
+- **MCP Tools**: Custom servers for testing and git conventions
