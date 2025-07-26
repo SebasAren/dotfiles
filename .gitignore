@@ -9,3 +9,4 @@ mysql_data/
 history.txt
 .aider*
 !aider/.aider*
+*.pyz

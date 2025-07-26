@@ -190,4 +190,3 @@ Key exclusions include:
 - MySQL data is stored in docker volumes and should be backed up separately
 
 This repository represents a complete development environment setup with media services, AI tools, and development configurations. New developers should focus on understanding the stow-based installation process and service dependencies before making changes.
-
