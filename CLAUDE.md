@@ -18,14 +18,13 @@ Personal dotfiles repository using GNU Stow for configuration management. Contai
 - **Zsh**: Oh My Zsh with custom theme and extensive aliases
 - **Docker Services**: Individual compose files for media/AI services
 - **Qtile**: Window manager configuration
-- **Qutebrowser**: Browser configuration
 
 ## Essential Commands
 
 ### Setup & Installation
 ```bash
 # Install dotfiles for specific tools
-stow nvim zsh docker qtile qutebrowser
+stow nvim zsh docker qtile
 
 # Install Neovim plugins
 nvim --headless "+Lazy! sync" +qa
