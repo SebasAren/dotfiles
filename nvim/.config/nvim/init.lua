@@ -1,7 +1,7 @@
 require("config.lazy")
 
 -- Add startup profiling
-vim.api.nvim_create_autocmd("VimEnter", {
+vim.api.nvim_create_autocmd("UIEnter", {
 	callback = function()
 		local stats = require("lazy").stats()
 		local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
@@ -11,12 +11,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			stats.count,
 			ms
 		)
-		-- Use noice for popup notification
-		if package.loaded["noice"] then
-			require("noice").notify(message, vim.log.levels.INFO, { title = "Startup Stats" })
-		else
-			print(message)
-		end
+		require("noice").notify(message, vim.log.levels.INFO, { title = "Startup Stats" })
 	end,
 })
 

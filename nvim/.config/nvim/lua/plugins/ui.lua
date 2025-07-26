@@ -10,7 +10,7 @@ return {
 	},
 	{
 		"folke/noice.nvim",
-		event = "VeryLazy",
+		lazy = false,
 		opts = {
 			-- add any options here
 			lsp = {
@@ -49,7 +49,7 @@ return {
 	},
 	{
 		"rcarriga/nvim-notify",
-		event = "VeryLazy",
+		lazy = false,
 		config = function()
 			require("notify").setup({
 				merge_duplicates = true,
