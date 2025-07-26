@@ -11,9 +11,9 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			stats.count,
 			ms
 		)
-		-- Use notify for better visibility if available
-		if vim.fn.exists(':Notify') == 2 then
-			vim.notify(message, vim.log.levels.INFO, { title = "Startup Stats" })
+		-- Use noice for popup notification
+		if package.loaded["noice"] then
+			require("noice").notify(message, vim.log.levels.INFO, { title = "Startup Stats" })
 		else
 			print(message)
 		end
