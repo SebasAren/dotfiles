@@ -10,7 +10,7 @@ The repository follows the standard dotfiles structure with each directory conta
 
 - **`aider/`** - AI assistant configuration
 - **`asdf/`** - Version manager configuration
-- **`awesome/`** - Awesome window manager configuration with git submodules
+- **`awesome/`** - Awesome window manager configuration (submodules removed)
 - **`docker/`** - Docker services and configurations
 - **`kitty/`** - Kitty terminal emulator configuration
 - **`nix/`** - Nix package manager configuration
@@ -19,17 +19,16 @@ The repository follows the standard dotfiles structure with each directory conta
 - **`picom/`** - Picom compositor configuration
 - **`qtile/`** - Qtile window manager configuration with dunst
 - **`qutebrowser/`** - Qutebrowser configuration
+- **`wezterm/`** - Wezterm terminal emulator configuration (empty directory)
 - **`zsh/`** - Zsh shell configuration
 
 ### Docker Services
 Located in `docker/docker-services/`, these services are configured with individual docker-compose files:
 
 - **audiobookshelf** - Audio book and podcast management
-- **fishnet** - Chess engine analysis service
 - **jellyfin** - Media server with jellyfin-vue frontend
 - **mysql** - Database service with persistent storage
 - **openwebui** - Open WebUI for local LLM interaction
-- **python** - Python development environment
 - **transmission** - Torrent client with VPN integration
 
 ### Key Configuration Files
@@ -43,10 +42,7 @@ Located in `docker/docker-services/`, these services are configured with individ
 
 #### Git Configuration
 - **`.gitignore`** - Excludes build artifacts, data directories, and sensitive files
-- **`.gitmodules`** - Git submodules for awesome window manager extensions:
-  - `lain.git` - Additional widgets and layouts
-  - `freedesktop.git` - Freedesktop.org standard compliance
-  - `xmonad-git` and `xmonad-contrib-git` - Xmonad window manager (referenced but directory may not exist)
+- **No git submodules** - All submodules have been removed from the repository
 
 ## Setup Instructions
 
@@ -61,15 +57,9 @@ Located in `docker/docker-services/`, these services are configured with individ
    brew install stow
    ```
 
-2. **Git submodules** - Initialize for awesome WM configuration
-   ```bash
-   git submodule update --init --recursive
-   ```
-
 ### Installation Process
 1. Clone the repository
-2. Initialize git submodules
-3. Use stow to create symbolic links:
+2. Use stow to create symbolic links:
    ```bash
    cd dotfiles
    stow zsh
@@ -117,7 +107,7 @@ Several docker services require environment variables:
 - **Configuration location**: `zsh/.zshrc` and `zsh/.zprofile`
 
 ### Window Managers
-- **Awesome WM**: Git submodule-based configuration in `awesome/.config/awesome/`
+- **Awesome WM**: Configuration in `awesome/.config/awesome/` (submodules removed)
 - **Qtile**: Python-based configuration with dunst notifications
 
 ## Storage and Data Management
@@ -139,8 +129,8 @@ Key exclusions include:
 
 ### Critical Issues
 1. **Missing CONVENTIONS.md**: The `aider/.aider.conf.yml` references `CONVENTIONS.md` which does not exist
-2. **Git submodule paths**: Some submodule paths may reference non-existent directories (xmonad)
-3. **Permission issues**: MySQL data directories have restricted access
+2. **Empty directories**: `wezterm/` directory exists but is empty
+3. **Missing services**: Documented services "fishnet" and "python" do not exist in docker/docker-services/
 
 ### Migration Notes
 1. **Media directories**: Services expect `/stash/` and `/stash2/` directories to exist
@@ -150,7 +140,7 @@ Key exclusions include:
 ### Dependencies and Requirements
 - **GNU Stow** (required for dotfile management)
 - **Docker and Docker Compose** (for services)
-- **Git with submodule support**
+- **Git**
 - **Neovim 0.8+** (for nvim configuration)
 - **Zsh** (for shell configuration)
 
@@ -160,7 +150,6 @@ Key exclusions include:
    ```bash
    git clone <repository-url>
    cd dotfiles
-   git submodule update --init --recursive
    ```
 
 2. **Install dotfiles**:
@@ -190,7 +179,6 @@ Key exclusions include:
 ## Maintenance Notes
 
 ### Regular Tasks
-- Update git submodules: `git submodule update --remote`
 - Update neovim plugins: `:Lazy update` in nvim
 - Update docker images: `docker-compose pull && docker-compose up -d`
 - Review service logs: `docker-compose logs -f [service-name]`
