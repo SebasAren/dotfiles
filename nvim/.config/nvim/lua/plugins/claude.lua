@@ -1,11 +1,10 @@
+local toggle_key = "<C-,>"
 return {
 	"coder/claudecode.nvim",
 	dependencies = { "folke/snacks.nvim" },
-	config = true,
 	keys = {
 		{ "<leader>a", nil, desc = "AI/Claude Code" },
 		{ "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
-		{ "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
 		{ "<leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },
 		{ "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
 		{ "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>", desc = "Add current buffer" },
@@ -19,5 +18,24 @@ return {
 		-- Diff management
 		{ "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
 		{ "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" },
+		{ toggle_key, "<cmd>ClaudeCodeFocus<cr>", desc = "Claude Code", mode = { "n", "x" } },
+	},
+	opts = {
+		terminal = {
+			---@module "snacks"
+			---@type snacks.win.Config|{}
+			snacks_win_opts = {
+				keys = {
+					claude_hide = {
+						toggle_key,
+						function(self)
+							self:hide()
+						end,
+						mode = "t",
+						desc = "Hide",
+					},
+				},
+			},
+		},
 	},
 }
