@@ -52,13 +52,13 @@ return {
 		lazy = false,
 	},
 	-- Python
-	{
-		"linux-cultist/venv-selector.nvim",
-		branch = "regexp",
-		config = function()
-			require("venv-selector").setup()
-		end,
-	},
+	-- {
+	-- 	"linux-cultist/venv-selector.nvim",
+	-- 	branch = "regexp",
+	-- 	config = function()
+	-- 		require("venv-selector").setup()
+	-- 	end,
+	-- },
 	{
 		"iamcco/markdown-preview.nvim",
 		build = function()
