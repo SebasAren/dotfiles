@@ -5,7 +5,7 @@ local get_vue_lsp_location = function()
 end
 
 vim.lsp.config("vtsls", {
-	filetypes = { "javascript", "typescript", "vue" },
+	filetypes = { "javascript", "typescript", "vue", "typescriptreact", "javascriptreact" },
 	settings = {
 		vtsls = {
 			tsserver = {
