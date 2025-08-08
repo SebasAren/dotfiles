@@ -5,7 +5,7 @@
         "mcp-server-fetch"
       ],
       "command": "uvx",
-      "disabled": false
+      "disabled": true
     },
     "filesystem": {
       "args": [
@@ -33,7 +33,7 @@
         "git_show"
       ],
       "command": "uvx",
-      "disabled": false,
+      "disabled": true,
       "disabled_tools": [
         "git_commit",
         "git_add"
@@ -82,7 +82,7 @@
       "custom_instructions": {
         "disabled": false
       },
-      "disabled": false,
+      "disabled": true,
       "disabled_prompts": [],
       "disabled_resources": [],
       "disabled_tools": []
@@ -99,7 +99,7 @@
         "write_file",
         "edit_file"
       ],
-      "disabled": false,
+      "disabled": true,
       "disabled_prompts": [
         "parrot"
       ],
