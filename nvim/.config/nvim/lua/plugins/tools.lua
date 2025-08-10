@@ -59,19 +59,6 @@ return {
 	-- 		require("venv-selector").setup()
 	-- 	end,
 	-- },
-	{
-		"iamcco/markdown-preview.nvim",
-		build = function()
-			vim.fn["mkdp#util#install"]()
-		end,
-		config = function()
-			vim.g.mkdp_filetypes = { "markdown", "mkd" }
-			vim.g.mkdp_command_for_global = 1
-			vim.g.mkdp_echo_preview_url = 1
-			vim.g.mkdp_auto_start = 0
-			vim.g.mkdp_open_to_the_world = 1
-		end,
-	},
 	{ "nvim-tree/nvim-web-devicons", lazy = true },
 	{
 		"folke/which-key.nvim",
