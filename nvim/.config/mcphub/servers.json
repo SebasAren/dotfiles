@@ -1,19 +1,25 @@
 {
   "mcpServers": {
+    "context7": {
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "autoApprove": [
+        "resolve-library-id",
+        "get-library-docs"
+      ],
+      "command": "npx",
+      "disabled": false,
+      "env": {
+        "DEFAULT_MINIMUM_TOKENS": "1000"
+      }
+    },
     "fetch": {
       "args": [
         "mcp-server-fetch"
       ],
       "command": "uvx",
-      "disabled": true
-    },
-    "filesystem": {
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "${cmd: git rev-parse --show-toplevel}"
-      ],
-      "command": "npx",
       "disabled": true
     },
     "git": {
@@ -33,11 +39,8 @@
         "git_show"
       ],
       "command": "uvx",
-      "disabled": true,
-      "disabled_tools": [
-        "git_commit",
-        "git_add"
-      ]
+      "disabled": false,
+      "disabled_tools": []
     },
     "gitlab": {
       "args": [
@@ -69,6 +72,52 @@
       ],
       "command": "npx",
       "disabled": true
+    },
+    "sequentialthinking": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "autoApprove": [
+        "sequentialthinking"
+      ],
+      "command": "npx",
+      "disabled": false
+    },
+    "serena": {
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "${cmd: pwd}"
+      ],
+      "command": "uvx",
+      "custom_instructions": {
+        "disabled": false
+      },
+      "disabled": true
+    },
+    "tavily": {
+      "args": [
+        "-y",
+        "tavily-mcp"
+      ],
+      "autoApprove": [
+        "tavily-search"
+      ],
+      "command": "npx",
+      "disabled": false,
+      "env": {
+        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+      }
+    },
+    "vectorcode": {
+      "command": "vectorcode-mcp-server",
+      "disabled": true
     }
   },
   "nativeMCPServers": {
@@ -88,23 +137,22 @@
       "disabled_tools": []
     },
     "neovim": {
-      "autoApprove": [
-        "execute_lua",
-        "execute_command",
-        "read_file",
-        "move_item",
-        "read_multiple_files",
-        "find_files",
-        "list_directory",
-        "write_file",
-        "edit_file"
-      ],
-      "disabled": true,
+      "autoApprove": [],
+      "disabled": false,
       "disabled_prompts": [
         "parrot"
       ],
       "disabled_resources": [],
-      "disabled_tools": []
+      "disabled_tools": [
+        "delete_items",
+        "edit_file",
+        "find_files",
+        "list_directory",
+        "move_item",
+        "read_file",
+        "read_multiple_files",
+        "write_file"
+      ]
     },
     "vitest": {
       "disabled": true
