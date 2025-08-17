@@ -47,6 +47,7 @@ return {
 			})
 			require("mini.surround").setup()
 			require("mini.pick").setup()
+			require("mini.diff").setup({ source = require("mini.diff").gen_source.none() })
 		end,
 	},
 }

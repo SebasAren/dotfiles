@@ -45,6 +45,9 @@ return {
 			snippets = { preset = "mini_snippets" },
 			sources = {
 				default = { "avante", "lsp", "path", "snippets", "buffer" },
+				per_filetype = {
+					codecompanion = { "codecompanion" },
+				},
 				providers = {
 					avante = {
 						module = "blink-cmp-avante",
