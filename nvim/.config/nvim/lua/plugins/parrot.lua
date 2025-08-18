@@ -1,3 +1,7 @@
+local provider_setup, providers = pcall(function()
+	return require("plugins.llms.parrot")
+end)
+
 return {
 	{
 		"frankroeder/parrot.nvim",
@@ -6,21 +10,7 @@ return {
 		config = function()
 			require("parrot").setup({
 				-- Providers must be explicitly set up to make them available.
-				providers = {
-					zai = {
-						name = "zai",
-						api_key = os.getenv("ZAI_API_KEY"),
-						endpoint = "https://api.z.ai/api/paas/v4/chat/completions",
-						model_endpoint = "https://api.z.ai/api/paas/v4/models",
-						topic = {
-							model = "glm-4.5",
-						},
-						models = {
-							"glm-4.5",
-							"glm-4.5-air",
-						},
-					},
-				},
+				providers = provider_setup and providers or {},
 				prompts = {
 					["Debug"] = "I want you to provide the provided snippet with comprehensive debug statements.",
 				},

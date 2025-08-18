@@ -1,5 +1,7 @@
 nvim/.config/nvim/plugin/packer_compiled.lua
 nvim/.config/nvim/lua/custom-settings.lua
+nvim/.config/nvim/lua/plugins/llms
+
 .pnpm-debug.log
 .stack-work/
 .env

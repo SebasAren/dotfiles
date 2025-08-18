@@ -1,3 +1,7 @@
+local adapters_setup, adapters = pcall(function()
+	return require("plugins.llms.codecompanion")
+end)
+
 return {
 	{
 		"olimorris/codecompanion.nvim",
@@ -36,29 +40,7 @@ return {
 					},
 				},
 			},
-			adapters = {
-				zai = function()
-					return require("codecompanion.adapters").extend("openai_compatible", {
-						name = "Z-AI",
-						env = {
-							url = "https://api.z.ai/api/paas",
-							chat_url = "/v4/chat/completions",
-							models_endpoint = "/v4/models",
-							api_key = "ZAI_API_KEY",
-						},
-						schema = {
-							model = {
-								default = "glm-4.5-air",
-								choices = {
-									["glm-4.5"] = { opts = { can_reason = true } },
-									["glm-4.5-air"] = { opts = { can_reason = true } },
-									["glm-4.5-flash"] = { opts = { can_reason = true } },
-								},
-							},
-						},
-					})
-				end,
-			},
+			adapters = adapters_setup and adapters or {},
 			extensions = {
 				mcphub = {
 					callback = "mcphub.extensions.codecompanion",
