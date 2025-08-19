@@ -44,7 +44,7 @@ return {
 			},
 			snippets = { preset = "mini_snippets" },
 			sources = {
-				default = { "avante", "lsp", "path", "snippets", "buffer" },
+				default = { "avante", "lsp", "path", "snippets", "buffer", "parrot" },
 				per_filetype = {
 					codecompanion = { "codecompanion" },
 				},
@@ -53,6 +53,15 @@ return {
 						module = "blink-cmp-avante",
 						name = "Avante",
 						opts = {},
+					},
+					parrot = {
+						module = "parrot.completion.blink",
+						name = "parrot",
+						score_offset = 20,
+						opts = {
+							show_hidden_files = false,
+							max_items = 50,
+						},
 					},
 				},
 			},
