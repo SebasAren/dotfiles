@@ -110,3 +110,6 @@ fpath+=~/.zfunc
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 eval "$(uv generate-shell-completion zsh)"
+
+# opencode
+export PATH=/home/sebas/.opencode/bin:$PATH
