@@ -54,8 +54,8 @@ return {
 	-- Python
 	{
 		"linux-cultist/venv-selector.nvim",
-		branch = "regexp",
 		opts = {},
+		ft = "python",
 	},
 	{ "nvim-tree/nvim-web-devicons", lazy = true },
 	{

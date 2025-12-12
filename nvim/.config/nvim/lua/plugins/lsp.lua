@@ -30,7 +30,6 @@ return {
 			--
 			-- Setup Mason and Mason-LSPConfig
 			require("mason").setup()
-			require("lspconfig").cobol_ls.setup({})
 		end,
 	},
 }
