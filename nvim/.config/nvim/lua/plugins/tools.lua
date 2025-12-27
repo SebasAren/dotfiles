@@ -7,9 +7,10 @@ return {
 	}, -- indent lines
 	{
 		"nvim-treesitter/nvim-treesitter",
+		lazy = false,
 		config = function()
-			local configs = require("nvim-treesitter.configs")
-			configs.setup({
+			local treesitter = require("nvim-treesitter")
+			treesitter.setup({
 				highlight = { enable = true },
 				indent = { enable = true },
 				sync_install = false,
@@ -42,6 +43,7 @@ return {
 					"yaml",
 					"prisma",
 					"graphql",
+					"astro",
 				},
 			})
 		end,
