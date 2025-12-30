@@ -41,6 +41,7 @@ return {
 					"vue",
 					"xml",
 					"yaml",
+					"vim",
 					"prisma",
 					"graphql",
 					"astro",
