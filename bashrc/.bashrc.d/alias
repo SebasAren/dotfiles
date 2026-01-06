@@ -3,3 +3,4 @@ alias vi=nvim
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
+alias .....="cd ../../../.."
