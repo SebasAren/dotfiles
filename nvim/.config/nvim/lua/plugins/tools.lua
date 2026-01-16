@@ -1,3 +1,4 @@
+local filetypes = require("config.treesitter-autocmd")
 return {
 	{
 		"lukas-reineke/indent-blankline.nvim",
@@ -8,44 +9,12 @@ return {
 	{
 		"nvim-treesitter/nvim-treesitter",
 		lazy = false,
+		branch = "main",
 		config = function()
 			local treesitter = require("nvim-treesitter")
 			treesitter.setup({
-				highlight = { enable = true },
-				indent = { enable = true },
 				sync_install = false,
-				ensure_installed = {
-					"bash",
-					"c",
-					"css",
-					"diff",
-					"html",
-					"javascript",
-					"jsdoc",
-					"json",
-					"jsonc",
-					"lua",
-					"luadoc",
-					"luap",
-					"markdown",
-					"markdown_inline",
-					"printf",
-					"python",
-					"query",
-					"regex",
-					"toml",
-					"tsx",
-					"typescript",
-					"vim",
-					"vimdoc",
-					"vue",
-					"xml",
-					"yaml",
-					"vim",
-					"prisma",
-					"graphql",
-					"astro",
-				},
+				ensure_installed = filetypes,
 			})
 		end,
 	},
