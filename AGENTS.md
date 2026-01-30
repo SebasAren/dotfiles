@@ -1,192 +1,143 @@
-# Comprehensive Project Handover Document
+# AI Agent Guidelines for Dotfiles Repository
 
-## Project Overview
-This is a comprehensive dotfiles repository for personal configuration management across multiple development environments and tools. The repository uses GNU stow for symbolic linking and maintains configurations for development tools, window managers, shells, and docker services.
+## Build, Lint, and Test Commands
 
-## Repository Structure
+### Formatting Commands
+Auto-formatting runs on save via conform.nvim. Manually format with:
+- `:ConformInfo` - View formatters available
+- Toggle auto-format with `<leader>tf`
 
-### Core Configuration Directories
-The repository follows the standard dotfiles structure with each directory containing configuration files for specific tools:
+Formatters configured:
+- Lua: `stylua`
+- Python: `isort`, `black`
+- JavaScript/TypeScript/Vue/Prisma/HTML/GraphQL: `prettierd`
+- All files: `trim_whitespace`
 
-- **`aider/`** - AI assistant configuration
-- **`asdf/`** - Version manager configuration
-- **`awesome/`** - Awesome window manager configuration (submodules removed)
-- **`docker/`** - Docker services and configurations
-- **`kitty/`** - Kitty terminal emulator configuration
-- **`nix/`** - Nix package manager configuration
-- **`nushell/`** - Nushell configuration
-- **`nvim/`** - Neovim configuration with LSP support
-- **`picom/`** - Picom compositor configuration
-- **`qtile/`** - Qtile window manager configuration with dunst
-- **`qutebrowser/`** - Qutebrowser configuration
-- **`wezterm/`** - Wezterm terminal emulator configuration (empty directory)
-- **`zsh/`** - Zsh shell configuration
+### Linting Commands
+Linting runs automatically on InsertLeave and BufWritePost via nvim-lint. Tools:
+- Python: `ruff`
+- Lua: `luacheck`
+- Dockerfile: `hadolint`
+
+Manual lint: Trigger by leaving insert mode or saving
+
+### Testing Commands
+Testing via neotest with these keybindings:
+- `<leader>tt` - Run test file
+- `<leader>tT` - Run all tests in project
+- `<leader>tr` - Run nearest test
+- `<leader>tl` - Run last test
+- `<leader>ts` - Toggle test summary
+- `<leader>to` - Show test output
+- `<leader>tS` - Stop running test
+- `<leader>tw` - Toggle watch mode
+- `<leader>td` - Debug nearest test
+
+### Neovim Plugin Updates
+- `:Lazy update` - Update all plugins
+- `:Lazy sync` - Sync plugin state
 
 ### Docker Services
-Located in `docker/docker-services/`, these services are configured with individual docker-compose files:
-
-- **audiobookshelf** - Audio book and podcast management
-- **jellyfin** - Media server with jellyfin-vue frontend
-- **mysql** - Database service with persistent storage
-- **openwebui** - Open WebUI for local LLM interaction
-- **transmission** - Torrent client with VPN integration
-
-### Key Configuration Files
-
-#### AI Development Tools
-- **`aider/.aider.conf.yml`** - Aider AI assistant configuration
-  - **Primary model**: qwen (qwen3-coder)
-  - **Weak model**: ernie (baidu/ernie-4.5-300b-a47b)
-  - **Model aliases**: Support for multiple AI providers (OpenAI, DeepSeek, Moonshot, etc.)
-  - **Issue**: Missing `CONVENTIONS.md` file referenced in configuration
-
-#### Git Configuration
-- **`.gitignore`** - Excludes build artifacts, data directories, and sensitive files
-- **No git submodules** - All submodules have been removed from the repository
-
-## Setup Instructions
-
-### Prerequisites
-1. **GNU Stow** - Required for dotfile installation
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install stow
-   # Arch Linux
-   sudo pacman -S stow
-   # macOS
-   brew install stow
-   ```
-
-### Installation Process
-1. Clone the repository
-2. Use stow to create symbolic links:
-   ```bash
-   cd dotfiles
-   stow zsh
-   stow nvim
-   stow awesome
-   # etc.
-   ```
-
-### Docker Services Setup
-Each service has its own docker-compose.yml file. Use these commands:
-
 ```bash
-# Navigate to service directory
-cd docker/docker-services/[service-name]
-
-# Start service
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
+cd docker/docker-services/<service-name>
+docker-compose up -d    # Start service
+docker-compose logs -f   # View logs
+docker-compose pull      # Update images
 ```
 
-## Environment Variables
-Several docker services require environment variables:
+## Code Style Guidelines
 
-- **Transmission**: `TZ`, `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD`, `OPENVPN_CONFIG`, `LOCAL_NETWORK`, `TRANSMISSION_PEER_PORT`
-- **OpenWebUI**: `OLLAMA_BASE_URL` (defaults to local Ollama instance)
+### Lua (Neovim Config)
+- **Indentation**: 2 spaces, expand tabs
+- **Imports**: Use `require()` at top of file, group related imports
+- **Type hints**: Use `---@type <type>` annotations for LuaLS
+- **Variables**: snake_case for local variables
+- **Functions**: Define with `local function_name()` or table methods
+- **Error handling**: Use `pcall()` for optional module loading:
+  ```lua
+  pcall(function()
+      require("custom-settings")
+  end)
+  ```
+- **Vim options**: Use `vim.o.<option>` or `vim.opt.<option>`
+- **Autocommands**: Create augroups with descriptive names:
+  ```lua
+  local augroup_name = vim.api.nvim_create_augroup("groupname", { clear = true })
+  vim.api.nvim_create_autocmd({ "Event" }, {
+      group = augroup_name,
+      callback = function() end,
+  })
+  ```
 
-## Development Environment Details
+### Python (Qtile Config)
+- **Indentation**: 4 spaces
+- **Imports**: Standard library → third-party → local imports
+- **Type hints**: Use inline type hints with `# type: <type>` for older Python
+- **Variables**: snake_case for all variables and functions
+- **Classes**: PascalCase for class names
+- **Constants**: UPPER_CASE for constants
+- **Configuration**: Use descriptive variable names, add comments for clarity
 
-### Neovim Configuration
-- **Plugin manager**: Lazy.nvim (evidenced by lazy-lock.json)
-- **LSP servers**: Pre-configured for multiple languages
-  - jsonls (JSON)
-  - svelte (Svelte)
-  - prismals (Prisma)
-  - html (HTML)
-  - lua_ls (Lua)
-  - graphql (GraphQL)
-  - basedpyright (Python)
-  - emmet_language_server (Emmet)
+### General Guidelines
+- **Comments**: Concise, explain "why" not "what"
+- **Line length**: No strict limit, favor readability
+- **Whitespace**: No trailing whitespace, trim automatically
+- **Files**: Keep configs modular, split into logical directories
+- **Keybindings**: Use consistent prefixes (e.g., `<leader>t` for tests)
 
-### Shell Configuration
-- **Primary shell**: Zsh with custom .zshrc and .zprofile
-- **Configuration location**: `zsh/.zshrc` and `zsh/.zprofile`
+## LSP and Language Support
 
-### Window Managers
-- **Awesome WM**: Configuration in `awesome/.config/awesome/` (submodules removed)
-- **Qtile**: Python-based configuration with dunst notifications
+### Available LSP Servers
+- Python: basedpyright
+- Lua: lua_ls
+- JavaScript/TypeScript: vtsls with Vue and Astro plugins
+- JSON: jsonls
+- HTML: htmlls
+- GraphQL: graphql
+- Prisma: prismals
+- Emmet: emmet_language_server
+- Svelte: svelte
 
-## Storage and Data Management
+### LSP Configuration
+- Server configs in `nvim/.config/nvim/lsp/`
+- Common setup in `nvim/.config/nvim/lua/config/lsp.lua`
+- Enable LSP for new servers: Add config file to lsp/ directory
 
-### Docker Volumes
-- **OpenWebUI**: Uses external volume `open-webui`
-- **Jellyfin**: Mounts media directories `/stash/` and `/stash2/` for content
-- **Transmission**: Mounts media directories for downloads and VPN configuration
-- **MySQL**: Uses persistent data directory `mysql_data/` (gitignored)
+## File Structure Conventions
 
-### Gitignore Rules
-Key exclusions include:
-- Build artifacts and cache files
-- Sensitive data directories (`mysql_data/`)
-- Personal configuration files (`custom-settings.lua`)
-- Aider chat history files
+### Neovim Config
+- `init.lua` - Entry point, requires all configs
+- `lua/config/` - Core configuration (settings, mappings, LSP, diagnostics)
+- `lua/plugins/` - Plugin specifications (one file per plugin or plugin group)
+- `lsp/` - Individual LSP server configurations
+- `lua/utils/` - Utility functions
 
-## Known Issues and Considerations
+### Qtile Config
+- `config.py` - Main Qtile configuration
+- `utils/` - Helper modules (bars, process management)
+- `widgets/` - Custom widgets
+- `autostart/` - Autostart scripts
 
-### Critical Issues
-1. **Missing CONVENTIONS.md**: The `aider/.aider.conf.yml` references `CONVENTIONS.md` which does not exist
-2. **Empty directories**: `wezterm/` directory exists but is empty
-3. **Missing services**: Documented services "fishnet" and "python" do not exist in docker/docker-services/
+## Common Tasks
 
-### Migration Notes
-1. **Media directories**: Services expect `/stash/` and `/stash2/` directories to exist
-2. **User IDs**: Docker services use user ID 1000:1000 - adjust if your system uses different IDs
-3. **VPN configuration**: Transmission requires valid VPN credentials to function
+### Adding a Neovim Plugin
+1. Create spec in `lua/plugins/<plugin-name>.lua`
+2. Use Lazy.nvim format with table return
+3. Add keybindings in `keys` table with `desc` field
+4. Configure dependencies if needed
 
-### Dependencies and Requirements
-- **GNU Stow** (required for dotfile management)
-- **Docker and Docker Compose** (for services)
-- **Git**
-- **Neovim 0.8+** (for nvim configuration)
-- **Zsh** (for shell configuration)
+### Modifying Dotfiles with Stow
+1. Edit files directly in their directories (e.g., `nvim/.config/nvim/`)
+2. Symlinks created by stow will automatically reflect changes
+3. Test changes before committing
 
-## Quick Start for New Developers
+### Docker Service Changes
+1. Edit `docker/docker-services/<service>/docker-compose.yml`
+2. Restart service: `docker-compose up -d --force-recreate`
+3. Check logs: `docker-compose logs -f`
 
-1. **Initial Setup**:
-   ```bash
-   git clone <repository-url>
-   cd dotfiles
-   ```
-
-2. **Install dotfiles**:
-   ```bash
-   # Install specific configs
-   stow zsh nvim kitty
-
-   # Or install everything
-   stow */
-   ```
-
-3. **Start essential services**:
-   ```bash
-   cd docker/docker-services/jellyfin
-   docker-compose up -d
-
-   cd ../openwebui
-   docker-compose up -d
-   ```
-
-4. **Fix missing files**:
-   ```bash
-   # Create missing CONVENTIONS.md
-   touch CONVENTIONS.md
-   ```
-
-## Maintenance Notes
-
-### Regular Tasks
-- Update neovim plugins: `:Lazy update` in nvim
-- Update docker images: `docker-compose pull && docker-compose up -d`
-- Review service logs: `docker-compose logs -f [service-name]`
-
-### Backup Considerations
-- Docker volumes need separate backup strategy
-- Configuration files are version controlled
-- Media directories (`/stash/` and `/stash2/`) are external to git
-- MySQL data is stored in docker volumes and should be backed up separately
-
-This repository represents a complete development environment setup with media services, AI tools, and development configurations. New developers should focus on understanding the stow-based installation process and service dependencies before making changes.
+## Important Notes
+- Custom settings should go in `custom-settings.lua` (gitignored)
+- Aider config references `CONVENTIONS.md` which should contain project-specific conventions
+- Always test Qtile config changes with `<mod+shift+r` before committing
+- Use `<leader>tf` to toggle auto-format if needed during editing

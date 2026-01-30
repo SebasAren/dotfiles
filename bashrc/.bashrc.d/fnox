@@ -1,0 +1,6 @@
+#!/bin/bash
+fnox-reencrypt() {
+  fnox list | awk '/provider \(age\)/ {print $1}' | while read env_key; do
+    fnox set "$env_key" "$(fnox get "$env_key")" --provider age
+  done
+}
