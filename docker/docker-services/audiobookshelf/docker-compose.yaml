@@ -10,3 +10,8 @@ services:
       - /stash2/media/Audiobooks:/audiobooks
       - /stash2/audiobookshelf:/config
       - /stash2/audiobookmeta:/metadata
+
+networks:
+  default:
+    external: true
+    name: nginx

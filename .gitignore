@@ -12,3 +12,5 @@ history.txt
 .aider*
 !aider/.aider*
 *.pyz
+data/
+letsencrypt/
