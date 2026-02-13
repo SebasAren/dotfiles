@@ -1,2 +1,3 @@
 #!/bin/bash
 export EDITOR=nvim
+source ~/.bashenv
