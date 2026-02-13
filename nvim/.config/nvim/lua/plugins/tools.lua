@@ -1,4 +1,3 @@
-local filetypes = require("config.treesitter-autocmd")
 return {
 	{
 		"lukas-reineke/indent-blankline.nvim",
@@ -14,7 +13,7 @@ return {
 			local treesitter = require("nvim-treesitter")
 			treesitter.setup({
 				sync_install = false,
-				ensure_installed = filetypes,
+				ensure_installed = require("config.treesitter-autocmd"),
 			})
 		end,
 	},
