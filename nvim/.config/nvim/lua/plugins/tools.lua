@@ -11,10 +11,9 @@ return {
 		branch = "main",
 		config = function()
 			local treesitter = require("nvim-treesitter")
-			treesitter.setup({
-				sync_install = false,
-				ensure_installed = require("config.treesitter-autocmd"),
-			})
+			local ts_config = require("config.treesitter-autocmd")
+			ts_config.setup()
+			treesitter.install(ts_config.filetypes)
 		end,
 	},
 	{
