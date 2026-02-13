@@ -99,7 +99,6 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 #
 alias vi="nvim"
-alias ssh="TERM=xterm-256color kitty +kitten ssh"
 export EDITOR="nvim"
 export ZSH_DOTENV_PROMPT=false
 export MAKEFLAGS="-j12"

@@ -14,3 +14,4 @@ history.txt
 *.pyz
 data/
 letsencrypt/
+tailscale-state/
