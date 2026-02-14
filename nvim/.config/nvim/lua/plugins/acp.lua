@@ -18,6 +18,14 @@ return {
 					adapter = "mistral_vibe",
 				},
 			},
+			-- Configure prompt library to include markdown prompts
+			prompt_library = {
+				markdown = {
+					dirs = {
+						vim.fn.expand("~/.config/nvim/prompts"),
+					},
+				},
+			},
 		},
 		-- Required dependencies for codecompanion
 		dependencies = {
@@ -36,6 +44,12 @@ return {
 			{ "<leader>ac", "<cmd>CodeCompanionChat Add<cr>", mode = "v", desc = "Add to AI Chat" },
 			-- Refresh chat cache
 			{ "<leader>ar", "<cmd>CodeCompanionChat RefreshCache<cr>", desc = "Refresh AI Chat Cache" },
+			-- Generate commit message for current changes
+			{ "<leader>agc", "<cmd>CodeCompanion /commit<cr>", desc = "Generate Commit Message" },
+			-- Execute commit workflow to actually commit changes
+			{ "<leader>agC", "<cmd>CodeCompanion /commit-execute<cr>", desc = "Execute Commit Workflow" },
+			-- Interactive step-by-step commit process
+			{ "<leader>agS", "<cmd>CodeCompanion /commit-step<cr>", desc = "Step-by-Step Commit" },
 		},
 	},
 }
