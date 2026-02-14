@@ -112,3 +112,4 @@ eval "$(uv generate-shell-completion zsh)"
 
 # opencode
 export PATH=/home/sebas/.opencode/bin:$PATH
+alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'

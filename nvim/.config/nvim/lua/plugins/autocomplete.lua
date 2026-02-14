@@ -63,11 +63,16 @@ return {
 			},
 			snippets = { preset = "mini_snippets" },
 			sources = {
-				default = { "lsp", "path", "snippets", "buffer", "minuet" },
+				default = { "avante", "lsp", "path", "snippets", "buffer", "minuet" },
 				per_filetype = {
 					codecompanion = { "codecompanion" },
+					AvanteInput = { "avante", "lsp", "path", "snippets", "buffer" },
 				},
 				providers = {
+					avante = {
+						module = "blink-cmp-avante",
+						name = "Avante",
+					},
 					minuet = {
 						name = "minuet",
 						module = "minuet.blink",
@@ -81,3 +86,4 @@ return {
 		opts_extend = { "sources.default" },
 	},
 }
+
