@@ -37,9 +37,7 @@ Please provide well-formatted conventional commit message(s) that follow these r
 - For each commit, specify which files should be included
 
 After generating the commit messages, execute the git commands to actually commit the changes using your built-in bash tool. Use the following approach:
-1. Use the bash tool to stage all changes: `git add -A`
+1. Use the bash tool to stage changes for the commit
 2. Use the bash tool to commit with the generated message: `git commit -m "<message>"`
 3. Provide confirmation of the successful commit
-
-
-
+4. Repeat for any additonal commits you made
