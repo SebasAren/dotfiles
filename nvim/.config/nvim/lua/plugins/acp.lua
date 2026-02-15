@@ -26,6 +26,14 @@ return {
 					},
 				},
 			},
+			-- Hide built-in prompts to avoid conflicts with custom prompts
+			display = {
+				action_palette = {
+					opts = {
+						show_prompt_library_builtins = false,
+					},
+				},
+			},
 		},
 		-- Required dependencies for codecompanion
 		dependencies = {
@@ -45,11 +53,7 @@ return {
 			-- Refresh chat cache
 			{ "<leader>ar", "<cmd>CodeCompanionChat RefreshCache<cr>", desc = "Refresh AI Chat Cache" },
 			-- Generate commit message for current changes
-			{ "<leader>agc", "<cmd>CodeCompanion /commit<cr>", desc = "Generate Commit Message" },
-			-- Execute commit workflow to actually commit changes
-			{ "<leader>agC", "<cmd>CodeCompanion /commit-execute<cr>", desc = "Execute Commit Workflow" },
-			-- Interactive step-by-step commit process
-			{ "<leader>agS", "<cmd>CodeCompanion /commit-step<cr>", desc = "Step-by-Step Commit" },
+			{ "<leader>agc", "<cmd>CodeCompanion /commit-full<cr>", desc = "Generate Commit Message" },
 		},
 	},
 }
