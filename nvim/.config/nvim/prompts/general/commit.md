@@ -36,5 +36,10 @@ Please provide well-formatted conventional commit message(s) that follow these r
 - If changes are logically separate, provide multiple commit messages
 - For each commit, specify which files should be included
 
-After generating the commit messages, execute the git commands to actually commit the changes. Use the ${commit.execute_commit} function to execute the git commit with the generated message.
+After generating the commit messages, execute the git commands to actually commit the changes using your built-in bash tool. Use the following approach:
+1. Use the bash tool to stage all changes: `git add -A`
+2. Use the bash tool to commit with the generated message: `git commit -m "<message>"`
+3. Provide confirmation of the successful commit
+
+
 
