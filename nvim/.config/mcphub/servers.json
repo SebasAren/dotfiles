@@ -110,7 +110,7 @@
         "tavily-search"
       ],
       "command": "npx",
-      "disabled": false,
+      "disabled": true,
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }

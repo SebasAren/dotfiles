@@ -9,37 +9,39 @@ return {
 	-- Note: Using develop branch for latest features (may be less stable)
 	{
 		"olimorris/codecompanion.nvim",
-		-- version = "^18.0.0",  -- Commented out to use develop branch
 		branch = "develop",
-		opts = {
-			interactions = {
-				chat = {
-					-- Configure chat interactions to use mistral_vibe adapter
-					adapter = "mistral_vibe",
-				},
-			},
-			-- Configure prompt library to include markdown prompts
-			prompt_library = {
-				markdown = {
-					dirs = {
-						vim.fn.stdpath("config") .. "/lua/prompts",
-					},
-				},
-			},
-			-- Hide built-in prompts to avoid conflicts with custom prompts
-			display = {
-				action_palette = {
-					opts = {
-						show_prompt_library_builtins = false,
-					},
-				},
-			},
-		},
 		-- Required dependencies for codecompanion
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"nvim-treesitter/nvim-treesitter",
 		},
+		-- Setup function to configure both codecompanion and mcphub integration
+		config = function()
+			-- Add debugging to verify mcphub tools registration
+			require("codecompanion").setup({
+				interactions = {
+					chat = {
+						adapter = "mistral_vibe",
+						variables = {}, -- Initialize variables table for mcphub extension
+						tools = {}, -- Initialize tools table for mcphub extension
+					},
+				},
+				prompt_library = {
+					markdown = {
+						dirs = {
+							vim.fn.stdpath("config") .. "/lua/prompts",
+						},
+					},
+				},
+				display = {
+					action_palette = {
+						opts = {
+							show_prompt_library_builtins = false,
+						},
+					},
+				},
+			})
+		end,
 		-- AI Code Companion Hotkeys using <leader>a prefix
 		keys = {
 			-- Toggle chat buffer
