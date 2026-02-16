@@ -18,11 +18,12 @@ return {
 					adapter = "mistral_vibe",
 				},
 			},
-			-- Configure prompt library to include markdown prompts
+			-- Configure prompt library to include both markdown and Lua prompts
 			prompt_library = {
+				["Branch Code Review"] = require("prompts.code_review.branch_review"),
 				markdown = {
 					dirs = {
-						vim.fn.expand("~/.config/nvim/prompts"),
+						vim.fn.stdpath("config") .. "/lua/prompts",
 					},
 				},
 			},
@@ -54,6 +55,8 @@ return {
 			{ "<leader>ar", "<cmd>CodeCompanionChat RefreshCache<cr>", desc = "Refresh AI Chat Cache" },
 			-- Generate commit message for current changes
 			{ "<leader>agc", "<cmd>CodeCompanion /commit-full<cr>", desc = "Generate Commit Message" },
+			-- Perform code review between branches
+			{ "<leader>agr", "<cmd>CodeCompanion /review-branches<cr>", desc = "Review Branch Changes" },
 		},
 	},
 }
