@@ -12,6 +12,7 @@ vim.lsp.config("vtsls", {
 	filetypes = { "javascript", "typescript", "vue", "typescriptreact", "javascriptreact" },
 	settings = {
 		vtsls = {
+			autoUseWorkspaceTsdk = true,
 			tsserver = {
 				globalPlugins = {
 					{
