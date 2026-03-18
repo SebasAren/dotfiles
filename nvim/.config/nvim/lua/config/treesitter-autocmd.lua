@@ -41,8 +41,11 @@ function M.setup()
 		group = "TreesitterAutoAttach",
 		callback = function()
 			vim.treesitter.start()
-			vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
-			vim.wo[0][0].foldmethod = "expr"
+			local ft = vim.bo.filetype
+			if ft ~= "markdown" then
+				vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+				vim.wo[0][0].foldmethod = "expr"
+			end
 			vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
 		end,
 	})
