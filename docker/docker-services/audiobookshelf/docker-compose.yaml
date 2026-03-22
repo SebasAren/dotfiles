@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   audiobookshelf:
     restart: unless-stopped
@@ -7,9 +5,9 @@ services:
     ports:
       - 13378:80
     volumes:
-      - /stash2/media/Audiobooks:/audiobooks
-      - /stash2/audiobookshelf:/config
-      - /stash2/audiobookmeta:/metadata
+      - /var/stash2/media/Audiobooks:/audiobooks:ro
+      - /var/stash2/audiobookshelf:/config
+      - /var/stash2/audiobookmeta:/metadata
 
 networks:
   default:

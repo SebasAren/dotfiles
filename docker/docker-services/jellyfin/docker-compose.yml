@@ -3,25 +3,18 @@ version: "2.3"
 services:
   jellyfin:
     image: jellyfin/jellyfin
-    user: 1000:1000
     restart: unless-stopped
     volumes:
-      - /stash2/config:/config
-      - /stash2/cache:/cache
-      - /stash2/media:/media:ro
-      - /stash/media:/media2:ro
+      - /var/stash2/config:/config:U,z
+      - /var/stash2/cache:/cache:U,z
+      - /var/stash2/media:/media:ro,z
+      - /var/stash/media:/media2:ro,z
     ports:
       - 8096:8096
       - 8920:8920
       - 1900:1900/udp
       - 7359:7359/udp
       - 18800:18800
-
-  jellyfin-vue:
-    image: ghcr.io/jellyfin/jellyfin-vue:unstable
-    restart: unless-stopped
-    ports:
-      - 7070:80
 
 networks:
   default:

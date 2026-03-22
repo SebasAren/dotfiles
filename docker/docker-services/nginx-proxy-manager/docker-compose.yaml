@@ -5,9 +5,9 @@ services:
 
     ports:
       # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
+      - '8000:80' # Public HTTP Port
+      - '4430:443' # Public HTTPS Port
+      - '8100:81' # Admin Web Port
       # Add any other Stream port you want to expose
       # - '21:21' # FTP
 
@@ -22,8 +22,8 @@ services:
       # DISABLE_IPV6: 'true'
 
     volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
+      - ./data:/data:U,z
+      - ./letsencrypt:/etc/letsencrypt:U,z
 
 networks:
   default:

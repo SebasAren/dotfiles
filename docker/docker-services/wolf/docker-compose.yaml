@@ -28,8 +28,3 @@ services:
       - /dev/dri
       - /dev/uinput
       - /dev/uhid
-
-networks:
-  default:
-    external: true
-    name: nginx

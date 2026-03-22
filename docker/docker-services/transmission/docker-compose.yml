@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   transmission-openvpn:
     container_name: transmission
@@ -6,8 +5,10 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
-      - /stash2/media/:/data
-      - /stash/media/:/data2
+      - /var/stash2/media/:/data
+      - /var/stash/media/:/data2
+      - ./vpn/:/etc/openvpn/custom
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro
     restart: unless-stopped
     devices:
       - /dev/net/tun:/dev/net/tun
@@ -26,6 +27,7 @@ services:
       - TRANSMISSION_PEER_PORT
       - CREATE_TUN_DEVICE=false
       - TRANSMISSION_WEB_UI=combustion
+      - DISABLE_SYSTEMD_RESOLVED=true
     logging:
       driver: json-file
       options:
