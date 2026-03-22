@@ -7,27 +7,25 @@ stow tmux
 tmux  # TPM auto-installs plugins on first run
 ```
 
-## Prefix
-
-`Ctrl+a` (instead of default `Ctrl+b`)
-
 ## Keybindings
 
-### No prefix needed
+All daily bindings use `Alt` — no prefix needed.
 
 | Key | Action |
 |-----|--------|
 | `Alt+h/j/k/l` | Navigate panes (left/down/up/right) |
+| `Alt+Shift+h/j/k/l` | Resize panes |
+| `Alt+v` | Split horizontally |
+| `Alt+s` | Split vertically |
+| `Alt+n` | New window |
 | `Alt+1..9` | Switch to window by number |
+| `Alt+<` / `Alt+>` | Move window left/right |
+| `Alt+{` / `Alt+}` | Swap pane with prev/next |
 
-### With prefix (`Ctrl+a`)
+### Prefix (`Ctrl+a`) — rare ops only
 
 | Key | Action |
 |-----|--------|
-| `\|` | Split horizontally |
-| `-` | Split vertically |
-| `c` | New window |
-| `H/J/K/L` | Resize pane (repeatable) |
 | `r` | Reload config |
 | `I` | Install TPM plugins |
 | `U` | Update TPM plugins |
