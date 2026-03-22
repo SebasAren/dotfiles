@@ -15,3 +15,4 @@ history.txt
 data/
 letsencrypt/
 tailscale-state/
+vpn/
