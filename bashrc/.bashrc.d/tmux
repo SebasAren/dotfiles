@@ -1,0 +1,8 @@
+#!/bin/bash
+if command -v tmux &>/dev/null && [ -z "$TMUX" ] && [ -z "$VSCODE_RESOLVING_ENVIRONMENT" ]; then
+  if tmux has-session -t main 2>/dev/null; then
+    exec tmux new-session -t main
+  else
+    exec tmux new-session -s main
+  fi
+fi
