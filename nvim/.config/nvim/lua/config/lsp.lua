@@ -1,13 +1,5 @@
 local lsp_servers = { "vtsls", "astro" }
 
-local get_vue_lsp_location = function()
-	return vim.fn.expand("$MASON/packages/vue-language-server")
-end
-
-local get_astro_lsp_location = function()
-	return vim.fn.expand("$MASON/packages/astro-language-server")
-end
-
 vim.lsp.config("vtsls", {
 	filetypes = { "javascript", "typescript", "vue", "typescriptreact", "javascriptreact" },
 	settings = {
@@ -17,7 +9,7 @@ vim.lsp.config("vtsls", {
 				globalPlugins = {
 					{
 						name = "@vue/typescript-plugin",
-						location = get_vue_lsp_location() .. "/node_modules/@vue/language-server",
+						location = vim.fn.getcwd() .. "/node_modules/@vue/typescript-plugin",
 						languages = { "vue" },
 						configNamespace = "typescript",
 						enableForWorkspaceTypeScriptVersions = true,
@@ -31,7 +23,7 @@ vim.lsp.config("vtsls", {
 vim.lsp.config("astro", {
 	init_options = {
 		typescript = {
-			tsdk = get_astro_lsp_location() .. "/node_modules/typescript/lib",
+			tsdk = vim.fn.getcwd() .. "/node_modules/typescript/lib",
 		},
 	},
 })

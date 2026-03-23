@@ -16,3 +16,4 @@ data/
 letsencrypt/
 tailscale-state/
 vpn/
+tmux/.config/tmux/plugins/
