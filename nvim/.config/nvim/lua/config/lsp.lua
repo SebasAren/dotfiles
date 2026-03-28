@@ -36,3 +36,5 @@ for _, file in ipairs(vim.fn.readdir(vim.fn.stdpath("config") .. "/lsp")) do
 end
 
 vim.lsp.enable(lsp_servers)
+
+require("mason-lspconfig").setup()

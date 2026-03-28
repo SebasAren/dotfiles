@@ -22,13 +22,12 @@ return {
 		"williamboman/mason.nvim",
 		dependencies = {
 			"neovim/nvim-lspconfig",
+			"williamboman/mason-lspconfig.nvim",
 			"b0o/schemastore.nvim",
 			"saghen/blink.cmp",
 		},
 		lazy = false,
 		config = function()
-			--
-			-- Setup Mason and Mason-LSPConfig
 			require("mason").setup()
 		end,
 	},
