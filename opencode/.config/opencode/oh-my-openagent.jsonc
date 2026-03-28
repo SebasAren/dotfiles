@@ -1,48 +1,135 @@
 {
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
 
+  // Feature flags
+  "hashline_edit": true,
+  "model_fallback": true,
+
+  // Auto-retry with fallback on provider errors
+  "runtime_fallback": {
+    "enabled": true,
+    "retry_on_errors": [400, 429, 503, 529],
+    "max_fallback_attempts": 3,
+    "cooldown_seconds": 60
+  },
+
   "agents": {
     // Planning agents - GLM-5
-    "prometheus": { "model": "zai-coding-plan/glm-5.1" },
-    "metis": { "model": "zai-coding-plan/glm-5.1" },
-    "momus": { "model": "zai-coding-plan/glm-5.1" },
-    "oracle": { "model": "zai-coding-plan/glm-5.1" },
-    "atlas": { "model": "zai-coding-plan/glm-5.1" },
-    "plan": { "model": "zai-coding-plan/glm-5.1" },
+    "prometheus": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "metis": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "momus": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "oracle": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"],
+      "reasoningEffort": "xhigh"
+    },
+    "atlas": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "plan": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
 
-    // Implementation agents - MiniMax M2.7
-    "sisyphus": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "sisyphus-junior": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    // Implementation agents - GLM-5 for orchestration, MiniMax for execution
+    "sisyphus": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"],
+      "compaction": { "model": "mistral/mistral-small-latest" },
+      "prompt_append": "<GLM_DELEGATION_OVERRIDE>\n## DELEGATION IS MANDATORY — YOU ARE NOT AN IMPLEMENTER\n\n**You have a strong tendency to do work yourself after exploration. RESIST THIS.**\n\nYou are an ORCHESTRATOR. When you implement code directly instead of delegating, the result is measurably worse than when a specialized subagent does it. Subagents have domain-specific configurations, loaded skills, and tuned prompts that you lack.\n\n**EVERY TIME you are about to write code or make changes directly:**\n→ STOP. Ask: 'Is there a category + skills combination for this?'\n→ If YES (almost always): delegate via `task()`\n→ If NO (extremely rare): proceed, but this should happen less than 5% of the time\n\n**YOUR SPECIFIC FAILURE MODE:** After completing exploration (explore/librarian agents return results), you have full context and feel confident. This is EXACTLY when you MUST delegate. Having context makes you a BETTER delegator, not an implementer. Your job is to write crystal-clear prompts to subagents who will execute the actual work.\n\n**SELF-CHECK before EVERY direct code change:**\n1. Am I about to write/edit code myself? → Delegate to `deep` or `unspecified-high` category instead.\n2. Is this 'too simple' to delegate? → Delegate anyway. Your 'simple fix' is slower and worse than a subagent's.\n3. Do I already have all the context? → GOOD. Use it to write a better delegation prompt.\n4. Would this take <2 lines? → Only then proceed yourself. Otherwise delegate.\n\n**The user chose an orchestrator model specifically because they want delegation and parallel execution. If you do work yourself, you are failing your purpose.**\n</GLM_DELEGATION_OVERRIDE>"
+    },
+    "sisyphus-junior": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
 
     // Deep autonomous work - GLM-5 (hardest task, needs best reasoning)
-    "hephaestus": { "model": "zai-coding-plan/glm-5.1" },
+    "hephaestus": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
 
     // Research/execution - MiniMax M2.7
-    "librarian": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "explore": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "multimodal-looker": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "OpenCode-Builder": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "build": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "librarian": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "explore": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "multimodal-looker": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "OpenCode-Builder": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "build": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
 
     // Fast parallel/exploration agent
-    "scout": { "model": "mistral/mistral-small-latest" }
+    "scout": {
+      "model": "mistral/mistral-small-latest",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    }
   },
 
   "categories": {
     // Planning categories - GLM-5
-    "unspecified-high": { "model": "zai-coding-plan/glm-5.1" },
-    "ultrabrain": { "model": "zai-coding-plan/glm-5.1" },
-    "deep": { "model": "zai-coding-plan/glm-5.1" },
+    "unspecified-high": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "ultrabrain": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "deep": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
 
     // Implementation categories - MiniMax M2.7
-    "quick": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "visual-engineering": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "writing": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "unspecified-low": { "model": "minimax-coding-plan/MiniMax-M2.7" },
-    "artistry": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "quick": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "visual-engineering": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "writing": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "unspecified-low": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "artistry": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
 
     // For truly trivial stuff
-    "trivial": { "model": "mistral/mistral-small-latest" }
+    "trivial": {
+      "model": "mistral/mistral-small-latest",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    }
   },
 
   "background_task": {
@@ -50,6 +137,11 @@
       "zai": 10,
       "minimax-coding-plan": 10,
       "mistral": 10
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "maxToolCalls": 200,
+      "consecutiveThreshold": 5
     }
   }
 }
