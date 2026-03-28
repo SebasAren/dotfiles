@@ -69,8 +69,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "multimodal-looker": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "moonshotai/kimi-k2.5",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "OpenCode-Builder": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
@@ -79,6 +79,20 @@
     "build": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
       "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+
+    // Custom project agents (prompt from .claude/agents/*.md, model overridden here)
+    "gitlab-code-reviewer": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "cross-app-impact-reviewer": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
+    },
+    "typescript-test-engineer": {
+      "model": "zai-coding-plan/glm-5.1",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     }
   },
 
@@ -107,8 +121,8 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "writing": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "moonshotai/kimi-k2.5",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "unspecified-low": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
