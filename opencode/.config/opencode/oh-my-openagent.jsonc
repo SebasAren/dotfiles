@@ -1,0 +1,55 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
+
+  "agents": {
+    // Planning agents - GLM-5
+    "prometheus": { "model": "zai-coding-plan/glm-5.1" },
+    "metis": { "model": "zai-coding-plan/glm-5.1" },
+    "momus": { "model": "zai-coding-plan/glm-5.1" },
+    "oracle": { "model": "zai-coding-plan/glm-5.1" },
+    "atlas": { "model": "zai-coding-plan/glm-5.1" },
+    "plan": { "model": "zai-coding-plan/glm-5.1" },
+
+    // Implementation agents - MiniMax M2.7
+    "sisyphus": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "sisyphus-junior": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+
+    // Deep autonomous work - GLM-5 (hardest task, needs best reasoning)
+    "hephaestus": { "model": "zai-coding-plan/glm-5.1" },
+
+    // Research/execution - MiniMax M2.7
+    "librarian": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "explore": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "multimodal-looker": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "OpenCode-Builder": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "build": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+
+    // Fast parallel/exploration agent
+    "scout": { "model": "mistral/mistral-small-latest" }
+  },
+
+  "categories": {
+    // Planning categories - GLM-5
+    "unspecified-high": { "model": "zai-coding-plan/glm-5.1" },
+    "ultrabrain": { "model": "zai-coding-plan/glm-5.1" },
+    "deep": { "model": "zai-coding-plan/glm-5.1" },
+
+    // Implementation categories - MiniMax M2.7
+    "quick": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "visual-engineering": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "writing": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "unspecified-low": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+    "artistry": { "model": "minimax-coding-plan/MiniMax-M2.7" },
+
+    // For truly trivial stuff
+    "trivial": { "model": "mistral/mistral-small-latest" }
+  },
+
+  "background_task": {
+    "providerConcurrency": {
+      "zai": 10,
+      "minimax-coding-plan": 10,
+      "mistral": 10
+    }
+  }
+}

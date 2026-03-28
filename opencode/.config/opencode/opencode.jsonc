@@ -1,57 +1,5 @@
 {
+  "plugin": ["oh-my-openagent@latest"],
   "$schema": "https://opencode.ai/config.json",
-  "model": "zai/glm-5",
-  "lsp": {
-    "typescript": {
-      "disabled": true
-    },
-    "vtsls": {
-      "command": ["vtsls", "--stdio"],
-      "extensions": [".js", ".ts", ".vue", ".jsx", ".tsx"],
-      "initialization": {
-        "vtsls": {
-          "tsserver": {
-            "globalPlugins": [
-              {
-                "name": "@vue/typescript-plugin",
-                "location": "./node_modules/@vue/language-server",
-                "languages": ["vue"],
-                "configNamespace": "typescript",
-                "enableForWorkspaceTypeScriptVersions": true
-              }
-            ]
-          }
-        }
-      }
-    },
-    "vue_ls": {
-      "command": ["vue-language-server", "--stdio"],
-      "extensions": [".vue"],
-      "initialization": {
-        "typescript": {
-          "tsdk": "./node_modules/typescript/lib"
-        }
-      }
-    }
-  },
-  "mcp": {
-    "context7": {
-      "type": "local",
-      "command": ["npx", "-y", "@upstash/context7-mcp"],
-      "enabled": true,
-      "environment": {
-        "DEFAULT_MINIMUM_TOKENS": "1000"
-      }
-    },
-    "sequentialthinking": {
-      "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
-      "enabled": true
-    },
-    "tavily": {
-      "type": "local",
-      "command": ["npx", "-y", "tavily-mcp"],
-      "enabled": true
-    }
-  }
+  "model": "minimax-coding-plan/MiniMax-M2.7"
 }
