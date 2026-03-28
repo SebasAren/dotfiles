@@ -65,8 +65,8 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "mistral/mistral-small-latest",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "multimodal-looker": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
@@ -79,12 +79,6 @@
     "build": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
       "fallback_models": ["zai-coding-plan/glm-5.1"]
-    },
-
-    // Fast parallel/exploration agent
-    "scout": {
-      "model": "mistral/mistral-small-latest",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     }
   },
 
