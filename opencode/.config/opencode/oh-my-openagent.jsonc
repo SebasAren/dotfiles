@@ -8,7 +8,7 @@
   // Auto-retry with fallback on provider errors
   "runtime_fallback": {
     "enabled": true,
-    "retry_on_errors": [400, 429, 503, 529],
+    "retry_on_errors": [400, 402, 429, 500, 502, 503, 504, 529],
     "max_fallback_attempts": 3,
     "cooldown_seconds": 60
   },
