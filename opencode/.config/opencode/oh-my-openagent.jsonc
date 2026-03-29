@@ -65,8 +65,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "opencode/nemotron-3-super-free",
-      "fallback_models": ["nvidia/nemotron-3-super-120b-a12b:free", "mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"]
+      "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+      "fallback_models": ["opencode/nemotron-3-super-free", "mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "multimodal-looker": {
       "model": "moonshotai/kimi-k2.5",
