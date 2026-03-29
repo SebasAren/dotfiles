@@ -28,8 +28,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "oracle": {
-      "model": "openrouter/xiaomi/mimo-v2-pro",
-      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["openrouter/xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "xhigh"
     },
     "atlas": {
@@ -55,8 +55,8 @@
 
     // Deep autonomous work - Mimo V2 Pro (hardest task, needs best reasoning)
     "hephaestus": {
-      "model": "openrouter/xiaomi/mimo-v2-pro",
-      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["openrouter/xiaomi/mimo-v2-pro", "opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
     // Research/execution - Kimi K2.5 for comprehension, MiniMax for builds
@@ -65,8 +65,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "mistral/mistral-small-latest",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "opencode/nemotron-3-super-free",
+      "fallback_models": ["nvidia/nemotron-3-super-120b-a12b:free", "mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "multimodal-looker": {
       "model": "moonshotai/kimi-k2.5",
@@ -74,16 +74,16 @@
     },
     "OpenCode-Builder": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1"]
     },
     "build": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1"]
     },
 
     // Custom project agents (prompt from .claude/agents/*.md, model overridden here)
     "gitlab-code-reviewer": {
-      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "model": "opencode/mimo-v2-pro-free",
       "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "cross-app-impact-reviewer": {
@@ -103,12 +103,12 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "ultrabrain": {
-      "model": "openrouter/xiaomi/mimo-v2-pro",
-      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "deep": {
-      "model": "openrouter/xiaomi/mimo-v2-pro",
-      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
     // Implementation categories - MiniMax M2.7
@@ -144,7 +144,8 @@
     "providerConcurrency": {
       "zai": 10,
       "minimax-coding-plan": 10,
-      "mistral": 10
+      "mistral": 10,
+      "opencode": 10
     },
     "circuitBreaker": {
       "enabled": true,
