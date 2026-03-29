@@ -28,8 +28,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "oracle": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"],
+      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "xhigh"
     },
     "atlas": {
@@ -53,16 +53,16 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
 
-    // Deep autonomous work - GLM-5 (hardest task, needs best reasoning)
+    // Deep autonomous work - Mimo V2 Pro (hardest task, needs best reasoning)
     "hephaestus": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
-    // Research/execution - MiniMax M2.7
+    // Research/execution - Kimi K2.5 for comprehension, MiniMax for builds
     "librarian": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "moonshotai/kimi-k2.5",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
       "model": "mistral/mistral-small-latest",
@@ -83,16 +83,16 @@
 
     // Custom project agents (prompt from .claude/agents/*.md, model overridden here)
     "gitlab-code-reviewer": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "cross-app-impact-reviewer": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
-    },
-    "typescript-test-engineer": {
       "model": "zai-coding-plan/glm-5.1",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+    },
+    "typescript-test-engineer": {
+      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "fallback_models": ["zai-coding-plan/glm-5.1"]
     }
   },
 
@@ -103,12 +103,12 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "ultrabrain": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "deep": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "openrouter/xiaomi/mimo-v2-pro",
+      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
     // Implementation categories - MiniMax M2.7
@@ -117,8 +117,8 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "visual-engineering": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "moonshotai/kimi-k2.5",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "writing": {
       "model": "moonshotai/kimi-k2.5",
@@ -129,8 +129,8 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "artistry": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "model": "moonshotai/kimi-k2.5",
+      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
 
     // For truly trivial stuff
