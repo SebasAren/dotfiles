@@ -1,5 +1,27 @@
 {
   "plugin": ["oh-my-openagent@latest"],
   "$schema": "https://opencode.ai/config.json",
-  "model": "minimax-coding-plan/MiniMax-M2.7"
+  "model": "minimax-coding-plan/MiniMax-M2.7",
+
+  // LSP config mirroring nvim vtsls + @vue/typescript-plugin setup
+  "lsp": {
+    "typescript": {
+      "initialization": {
+        "plugins": [
+          {
+            "name": "@vue/typescript-plugin",
+            "location": "./node_modules/@vue/typescript-plugin",
+            "languages": ["vue"]
+          }
+        ]
+      }
+    },
+    "vue": {
+      "initialization": {
+        "typescript": {
+          "tsdk": "./node_modules/typescript/lib"
+        }
+      }
+    }
+  }
 }
