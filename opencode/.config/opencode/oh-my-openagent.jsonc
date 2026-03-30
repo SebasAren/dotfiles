@@ -44,7 +44,6 @@
     // Implementation agents - GLM-5 for orchestration, MiniMax for execution
     "sisyphus": {
       "model": "deepinfra/moonshotai/Kimi-K2.5",
-      "reasoningEffort": "none",
       "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
       "compaction": { "model": "mistral/mistral-small-latest" },
       "prompt_append": "<DELEGATION_RULES>\n## YOU ARE AN ORCHESTRATOR, NOT AN IMPLEMENTER\n\n**Code work** → delegate via `task()` to specialized categories\n**Research** (docs, library behavior, config) → `librarian` agent in background\n**Codebase exploration** (patterns, structure) → `explore` agent in background\n\nDo NOT use websearch/webfetch directly. Do NOT implement code yourself.\nWrite prompts, not code. Your value is orchestration and quality control.\n</DELEGATION_RULES>"
@@ -66,8 +65,8 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "mistral/mistral-small-latest",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "groq/openai/gpt-oss-20b",
+      "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"]
     },
     "multimodal-looker": {
       "model": "moonshotai/kimi-k2.5",
