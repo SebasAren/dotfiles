@@ -41,7 +41,6 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
 
-    // Implementation agents - GLM-5 for orchestration, MiniMax for execution
     "sisyphus": {
       "model": "deepinfra/moonshotai/Kimi-K2.5",
       "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
@@ -61,15 +60,16 @@
 
     // Research/execution - Kimi K2.5 for comprehension, MiniMax for builds
     "librarian": {
-      "model": "moonshotai/kimi-k2.5",
+      "model": "minimax-coding-plan/MiniMax-M2.7",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
       "model": "groq/openai/gpt-oss-20b",
-      "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"]
+      "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"],
+      "reasoningEffort": "none"
     },
     "multimodal-looker": {
-      "model": "moonshotai/kimi-k2.5",
+      "model": "deepinfra/moonshotai/Kimi-K2.5",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "OpenCode-Builder": {
@@ -117,11 +117,11 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "visual-engineering": {
-      "model": "moonshotai/kimi-k2.5",
+      "model": "minimax-coding-plan/MiniMax-M2.7",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "writing": {
-      "model": "moonshotai/kimi-k2.5",
+      "model": "deepinfra/moonshotai/Kimi-K2.5",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "unspecified-low": {
@@ -129,7 +129,7 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "artistry": {
-      "model": "moonshotai/kimi-k2.5",
+      "model": "zai-coding-plan/glm-5.1",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
 
