@@ -15,7 +15,8 @@ Environment=MISE_DATA_DIR=%h/.local/share/mise
 Environment=MISE_CONFIG_DIR=%h/.config/mise
 # CRITICAL: Add mise shims to PATH so opencode's subprocesses (node, etc) route through mise
 # This fixes project tools not being found - shims auto-detect project mise.toml via PWD
-Environment=PATH=%h/.local/share/mise/shims:/home/linuxbrew/.linuxbrew/shims:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=%h/.local/share/opencode/bin/lua-language-server-x64-linux/bin:%h/.local/share/opencode/bin/vscode-eslint/node_modules/.bin:%h/.local/share/opencode/bin/node_modules/.bin:%h/.local/share/opencode/bin:%h/.local/share/mise/shims:/home/linuxbrew/.linuxbrew/shims:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=%h/.config/systemd/user/opencode-serve.env
 
 # Ensure proper runtime directory
 RuntimeDirectory=%t/opencode
