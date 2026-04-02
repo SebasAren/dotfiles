@@ -56,11 +56,11 @@
 
     // Research/execution - Kimi K2.5 for comprehension, MiniMax for builds
     "librarian": {
-      "model": "mistral/mistral-small-latest",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
+      "model": "xiaomi/mimo-v2-flash",
+      "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "mistral/mistral-small-latest",
+      "model": "xiaomi/mimi-v2-flash",
       "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "none"
     },
