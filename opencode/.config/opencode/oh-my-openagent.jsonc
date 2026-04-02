@@ -24,25 +24,21 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "momus": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
     "oracle": {
       "model": "opencode/mimo-v2-pro-free",
-      "fallback_models": ["openrouter/xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "xhigh"
     },
     "atlas": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
-    "plan": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
-    },
 
     "sisyphus": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
+      "model": "xiaomi/mimo-v2-omni",
       "fallback_models": ["zai-coding-plan/glm-5.1", "mistral/mistral-small-latest"],
       "compaction": { "model": "mistral/mistral-small-latest" },
       "prompt_append": "<DELEGATION_RULES>\n## YOU ARE AN ORCHESTRATOR, NOT AN IMPLEMENTER\n\n**Code work** → delegate via `task()` to specialized categories\n**Research** (docs, library behavior, config) → `librarian` agent in background\n**Codebase exploration** (patterns, structure) → `explore` agent in background\n\nDo NOT use websearch/webfetch directly. Do NOT implement code yourself.\nWrite prompts, not code. Your value is orchestration and quality control.\n</DELEGATION_RULES>"
@@ -69,22 +65,14 @@
       "reasoningEffort": "none"
     },
     "multimodal-looker": {
-      "model": "deepinfra/moonshotai/Kimi-K2.5",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
-    },
-    "OpenCode-Builder": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1"]
-    },
-    "build": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1"]
+      "model": "xioami/mimo-v2-omni",
+      "fallback_models": ["moonshotai/kimi-k2.5"]
     },
 
     // Custom project agents (prompt from .claude/agents/*.md, model overridden here)
     "gitlab-code-reviewer": {
       "model": "opencode/mimo-v2-pro-free",
-      "fallback_models": ["zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "fallback_models": ["xiaomi/mimo-v2-pro-free", "zai-coding-plan/glm-5.1"]
     },
     "cross-app-impact-reviewer": {
       "model": "zai-coding-plan/glm-5.1",
@@ -104,11 +92,11 @@
     },
     "ultrabrain": {
       "model": "opencode/mimo-v2-pro-free",
-      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
     "deep": {
       "model": "opencode/mimo-v2-pro-free",
-      "fallback_models": ["opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
     // Implementation categories - MiniMax M2.7
@@ -117,20 +105,20 @@
       "fallback_models": ["zai-coding-plan/glm-5.1"]
     },
     "visual-engineering": {
-      "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
+      "model": "xiaomi/mimo-v2-omni",
+      "fallback_models": ["moonshotai/kimi-k2.5"]
     },
     "writing": {
-      "model": "deepinfra/moonshotai/Kimi-K2.5",
+      "model": "mistral/mistral-small-latest",
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "unspecified-low": {
       "model": "minimax-coding-plan/MiniMax-M2.7",
-      "fallback_models": ["zai-coding-plan/glm-5.1"]
+      "fallback_models": ["mistral/mistral-small-latest"]
     },
     "artistry": {
-      "model": "zai-coding-plan/glm-5.1",
-      "fallback_models": ["minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
 
     // For truly trivial stuff
