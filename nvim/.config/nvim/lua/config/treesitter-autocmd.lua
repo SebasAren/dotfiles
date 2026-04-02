@@ -25,6 +25,7 @@ M.filetypes = {
 	"vim",
 	"vimdoc",
 	"vue",
+	"svelte",
 	"xml",
 	"yaml",
 	"prisma",
