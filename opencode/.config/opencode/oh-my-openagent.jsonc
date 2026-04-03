@@ -24,11 +24,11 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "momus": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
     "oracle": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "xhigh"
     },
@@ -50,7 +50,7 @@
 
     // Deep autonomous work - Mimo V2 Pro (hardest task, needs best reasoning)
     "hephaestus": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["openrouter/xiaomi/mimo-v2-pro", "opencode/nemotron-3-super-free", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
@@ -60,19 +60,19 @@
       "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7", "zai-coding-plan/glm-5.1"]
     },
     "explore": {
-      "model": "xiaomi/mimi-v2-flash",
+      "model": "xiaomi/mimo-v2-flash",
       "fallback_models": ["mistral/mistral-small-latest", "minimax-coding-plan/MiniMax-M2.7"],
       "reasoningEffort": "none"
     },
     "multimodal-looker": {
-      "model": "xioami/mimo-v2-omni",
+      "model": "xiaomi/mimo-v2-omni",
       "fallback_models": ["moonshotai/kimi-k2.5"]
     },
 
     // Custom project agents (prompt from .claude/agents/*.md, model overridden here)
     "gitlab-code-reviewer": {
-      "model": "opencode/mimo-v2-pro-free",
-      "fallback_models": ["xiaomi/mimo-v2-pro-free", "zai-coding-plan/glm-5.1"]
+      "model": "xiaomi/mimo-v2-pro",
+      "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
     "cross-app-impact-reviewer": {
       "model": "zai-coding-plan/glm-5.1",
@@ -91,11 +91,11 @@
       "fallback_models": ["minimax-coding-plan/MiniMax-M2.7"]
     },
     "ultrabrain": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
     "deep": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1", "minimax-coding-plan/MiniMax-M2.7"]
     },
 
@@ -117,7 +117,7 @@
       "fallback_models": ["mistral/mistral-small-latest"]
     },
     "artistry": {
-      "model": "opencode/mimo-v2-pro-free",
+      "model": "xiaomi/mimo-v2-pro",
       "fallback_models": ["xiaomi/mimo-v2-pro", "zai-coding-plan/glm-5.1"]
     },
 
