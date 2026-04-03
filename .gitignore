@@ -20,6 +20,7 @@ tmux/.config/tmux/plugins/
 .sisyphus
 opencode/.config/systemd/user/opencode-serve.env
 pi/.pi/agent/sessions/
+pi/.pi/agent/settings.json
 pi/.pi/agent/auth.json
 
 # Taskplane runtime artifacts (machine-specific, do not commit)

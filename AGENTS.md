@@ -91,3 +91,5 @@ Prefix: `Ctrl+a`, vi copy-mode, TPM plugins, tokyo-night theme.
 - **Linting**: nvim-lint (ruff, luacheck, hadolint)
 - **Testing**: neotest (`<leader>t` prefix)
 - **AI**: CodeCompanion.nvim with Venice AI adapter
+- **Pi extensions**: `pi/.pi/agent/extensions/`
+- **Context7 API**: `pi/.pi/agent/extensions/context7/` (requires CONTEXT7_API_KEY)
