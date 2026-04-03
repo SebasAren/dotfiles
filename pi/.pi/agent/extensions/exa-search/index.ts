@@ -81,7 +81,7 @@ const WebSearchParams = Type.Object({
 });
 
 interface SearchResult {
-	title: string;
+	title: string | null;
 	url: string;
 	score?: number;
 	highlights?: string[];
@@ -162,7 +162,7 @@ export default function (pi: ExtensionAPI) {
 
 				// Decide whether to include contents
 				let results: Array<{
-					title: string;
+					title: string | null;
 					url: string;
 					score?: number;
 					highlights?: string[];
@@ -175,7 +175,7 @@ export default function (pi: ExtensionAPI) {
 					// Use searchAndContents for highlights
 					const response = await exa.searchAndContents(query, {
 						...searchOptions,
-						highlights: { maxCharacters: highlightsMaxChars },
+						highlights: { numSentences: Math.ceil(highlightsMaxChars / 200), highlightsPerUrl: 3 },
 					});
 					results = response.results;
 				} else {
