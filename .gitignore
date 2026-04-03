@@ -37,3 +37,5 @@ pi/.pi/agent/auth.json
 
 # Pi project-local packages (if using pi install -l)
 .pi/npm/
+
+node_modules/
