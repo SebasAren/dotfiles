@@ -43,7 +43,8 @@ function parseInlineArray(value: string): string[] | null {
   if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null;
   try {
     const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed)) return parsed.filter((v) => typeof v === "string");
+    if (Array.isArray(parsed))
+      return parsed.filter((v) => typeof v === "string");
   } catch {
     // Not valid JSON, fall through
   }
@@ -175,7 +176,9 @@ function loadRules(projectRoot: string): ClaudeRule[] {
           const inlineArray = parseInlineArray(frontmatter.globs);
           globs = inlineArray ?? [frontmatter.globs];
         } else if (Array.isArray(frontmatter.globs)) {
-          globs = frontmatter.globs.filter((g): g is string => typeof g === "string");
+          globs = frontmatter.globs.filter(
+            (g): g is string => typeof g === "string",
+          );
         }
       }
 
@@ -206,8 +209,12 @@ function loadRules(projectRoot: string): ClaudeRule[] {
 export default function claudeRulesExtension(pi: ExtensionAPI) {
   let rules: ClaudeRule[] = [];
   let projectRoot: string = "";
-  /** Track which rules have been injected this agent turn to avoid duplicates */
-  const injectedRules = new Set<string>();
+  /**
+   * Track which rules have been injected to avoid duplicates.
+   * Maps ruleFilePath -> toolCallId of the tool_result where it was injected.
+   * Used to check if an injection is still in the current branch after tree navigation.
+   */
+  const injectedRules = new Map<string, string>();
 
   pi.on("session_start", async (_event, ctx) => {
     projectRoot = ctx.cwd;
@@ -269,9 +276,9 @@ export default function claudeRulesExtension(pi: ExtensionAPI) {
 
     if (matchingRules.length === 0) return;
 
-    // Mark as injected so we don't duplicate in this agent turn
+    // Mark as injected, keyed by toolCallId for tree navigation checks
     for (const r of matchingRules) {
-      injectedRules.add(r.filePath);
+      injectedRules.set(r.filePath, event.toolCallId);
     }
 
     // Build the appendix
@@ -294,9 +301,29 @@ export default function claudeRulesExtension(pi: ExtensionAPI) {
     };
   });
 
-  // Reset injected rules tracker on new agent turns so rules get
-  // re-injected if compaction or branching loses them
-  pi.on("agent_start", async () => {
+  // Compaction summarizes away previous injections — always clear all
+  pi.on("session_compact", async () => {
     injectedRules.clear();
+  });
+
+  // Tree navigation may branch to a point before some injections.
+  // Only clear rules whose injection entry is no longer in the branch.
+  pi.on("session_tree", async (_event, ctx) => {
+    const branchEntries = ctx.sessionManager.getBranch();
+    const branchToolCallIds = new Set<string>();
+    for (const entry of branchEntries) {
+      if (
+        entry.type === "message" &&
+        entry.message?.role === "toolResult" &&
+        entry.message?.toolCallId
+      ) {
+        branchToolCallIds.add(entry.message.toolCallId);
+      }
+    }
+    for (const [rulePath, toolCallId] of injectedRules) {
+      if (!branchToolCallIds.has(toolCallId)) {
+        injectedRules.delete(rulePath);
+      }
+    }
   });
 }
