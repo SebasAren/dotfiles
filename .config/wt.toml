@@ -1,0 +1,17 @@
+# Worktrunk project config for dotfiles
+
+[pre-start]
+pi-install = "cd pi/.pi/agent/extensions && bun install"
+
+[post-start]
+copy = "wt step copy-ignored"
+
+[post-switch]
+tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
+
+[pre-commit]
+stylua = "stylua --check nvim/.config/nvim/"
+shellcheck = "shellcheck bashrc/.bashrc.d/*"
+
+[pre-merge]
+test = "cd pi/.pi/agent/extensions && bun test"
