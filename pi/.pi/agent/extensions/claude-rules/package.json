@@ -1,17 +1,12 @@
 {
-  "name": "pi-extension-claude-rules",
-  "private": true,
+  "name": "@pi-ext/claude-rules",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "pi": {
-    "extensions": [
-      "./index.ts"
-    ]
-  },
   "dependencies": {
     "picomatch": "^4.0.2"
   },
-  "devDependencies": {
-    "@types/picomatch": "^3.0.1"
+  "pi": {
+    "extensions": ["./index.ts"]
   }
 }

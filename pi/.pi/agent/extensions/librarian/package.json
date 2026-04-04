@@ -1,18 +1,9 @@
 {
-  "name": "librarian",
+  "name": "@pi-ext/librarian",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "devDependencies": {
-    "@mariozechner/pi-ai": "^0.65.0",
-    "@mariozechner/pi-coding-agent": "^0.65.0",
-    "@mariozechner/pi-tui": "^0.65.0",
-    "@sinclair/typebox": "^0.34.0",
-    "@types/node": "^24.0.0"
-  },
   "pi": {
-    "extensions": [
-      "./index.ts"
-    ]
+    "extensions": ["./index.ts"]
   }
 }
