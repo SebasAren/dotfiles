@@ -52,11 +52,13 @@ For each step in the plan, execute these three phases **in strict order**:
 
 ## User Verification
 
-After completing each step (the full Red-Green-Refactor cycle), **pause and ask the user to verify** before proceeding to the next step. Show:
+After completing each step (the full Red-Green-Refactor cycle), **commit using the commit skill** (`/skill:commit`) with a message like `feat(<scope>): <description> (step N/M)`. The commit skill will handle reflection, rules updates, and the actual commit.
+
+After committing, **pause and ask the user to verify** before proceeding to the next step. Show:
 
 1. A brief summary of what was done (test written, implementation added, refactoring applied).
 2. The final test output.
-3. The git commit that was made.
+3. The commit that was made.
 
 Then ask: "Step N/M complete. Continue to the next step?" Do not proceed until the user confirms. If the user requests changes, address them and re-verify before moving on.
 
@@ -136,7 +138,7 @@ After the user confirms a full step is complete, also update the step heading:
 6. **Stop on unexpected failure.** If a test fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain the problem. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after each step.** After completing a full Red-Green-Refactor cycle, commit the changes with a descriptive message following conventional commits format. Example: `feat(auth): add JWT token generation (step 1/N)`.
+9. **Commit after each step using the commit skill.** After completing a full Red-Green-Refactor cycle, invoke `/skill:commit` with a descriptive message following conventional commits format. Example: `/skill:commit feat(auth): add JWT token generation (step 1/N)`. This ensures each step commit also benefits from reflection and `.claude/rules/` updates.
 
 ## Test Commands
 
