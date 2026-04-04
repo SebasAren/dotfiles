@@ -250,11 +250,10 @@ async function runExplore(
 				// Split tmux pane running the pretty-printer
 				execSync(
 					`tmux split-window -h -l 35% "node '${ppScriptPath}' '${tmpDir}'; rm -rf '${tmpDir}'"`,
-					{ stdio: "ignore" },
-				);
-				console.log(`[explore] tmux pane opened, output: ${tmuxOutputPath}`);
+				{ stdio: "ignore" },
+			);
 			} catch (err) {
-				console.log(`[explore] tmux pane setup failed, continuing without pane: ${err}`);
+				// tmux pane setup failed, continuing without pane
 				tmuxOutputPath = null;
 			}
 		}
@@ -267,8 +266,6 @@ async function runExplore(
 
 		const exitCode = await new Promise<number>((resolve) => {
 			const invocation = getPiInvocation(args);
-			console.log(`[explore] spawning: ${invocation.command} ${invocation.args.join(" ")}`);
-			console.log(`[explore] cwd: ${cwd}`);
 			const proc = spawn(invocation.command, invocation.args, {
 				cwd,
 				shell: false,
@@ -279,7 +276,6 @@ async function runExplore(
 
 			// Helper to kill the subprocess with a reason
 			const killProc = (reason: string) => {
-				console.log(`[explore] ${reason}, killing subprocess`);
 				proc.kill("SIGTERM");
 				setTimeout(() => {
 					if (!proc.killed) proc.kill("SIGKILL");
@@ -308,7 +304,6 @@ async function runExplore(
 						name: event.toolName,
 						argsSignature: argsSignature(args),
 					});
-					console.log(`[explore] tool call #${toolHistory.length}: ${event.toolName}`);
 
 					// Hard limit on total tool calls
 					if (toolHistory.length > MAX_TOOL_CALLS) {
@@ -369,15 +364,12 @@ async function runExplore(
 			});
 
 			proc.stderr.on("data", (data) => {
-				const str = data.toString();
-				result.stderr += str;
-				console.log(`[explore] stderr: ${str.slice(0, 200)}`);
+				result.stderr += data.toString();
 			});
 
 			proc.on("close", (code) => {
 				clearTimeout(timeout);
 				if (buffer.trim()) processLine(buffer);
-				console.log(`[explore] subprocess exited with code ${code}, output length: ${result.output.length}`);
 				resolve(code ?? 0);
 			});
 
