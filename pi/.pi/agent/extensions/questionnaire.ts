@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth } from "@mariozechner/pi-tui";
+import { Editor, type EditorTheme, Key, matchesKey, Text, truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
 // Types
@@ -265,6 +265,15 @@ export default function questionnaire(pi: ExtensionAPI) {
 					// Helper to add truncated line
 					const add = (s: string) => lines.push(truncateToWidth(s, width));
 
+					// Helper to add wrapped and styled text (preserves ANSI across lines)
+					const addWrapped = (styledText: string, indent = " ") => {
+						const indentWidth = visibleWidth(indent);
+						const contentWidth = Math.max(1, width - indentWidth);
+						for (const line of wrapTextWithAnsi(styledText, contentWidth)) {
+							lines.push(truncateToWidth(indent + line, width));
+						}
+					};
+
 					add(theme.fg("accent", "─".repeat(width)));
 
 					// Tab bar (multi-question only)
@@ -313,7 +322,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 
 					// Content
 					if (inputMode && q) {
-						add(theme.fg("text", ` ${q.prompt}`));
+						addWrapped(theme.fg("text", q.prompt));
 						lines.push("");
 						// Show options for reference
 						renderOptions();
@@ -345,7 +354,7 @@ export default function questionnaire(pi: ExtensionAPI) {
 							add(theme.fg("warning", ` Unanswered: ${missing}`));
 						}
 					} else if (q) {
-						add(theme.fg("text", ` ${q.prompt}`));
+						addWrapped(theme.fg("text", q.prompt));
 						lines.push("");
 						renderOptions();
 					}
