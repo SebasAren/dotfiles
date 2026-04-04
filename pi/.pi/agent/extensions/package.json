@@ -10,7 +10,8 @@
     "explore",
     "librarian",
     "shared",
-    "wt-worktree"
+    "wt-worktree",
+    "worktree-scope"
   ],
   "devDependencies": {
     "@mariozechner/pi-ai": "^0.65.0",

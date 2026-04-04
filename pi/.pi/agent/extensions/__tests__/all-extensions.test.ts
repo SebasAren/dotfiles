@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
  * and verifies exit code 0.
  */
 describe("all extensions verification", () => {
-	const extensionDirs = ["shared", "explore", "librarian", "wt-worktree"];
+	const extensionDirs = ["shared", "explore", "librarian", "wt-worktree", "worktree-scope"];
 
 	for (const dir of extensionDirs) {
 		it(`${dir}: all tests pass`, async () => {
