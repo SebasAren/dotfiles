@@ -19,7 +19,7 @@ base="$2"
 echo "▸ Creating worktree '$branch' from '$base'..."
 echo
 
-if $WT_CMD switch --create "$branch" --base "$base"; then
+if $WT_CMD switch --create "$branch" --base "$base" --no-cd; then
     echo
     echo "▸ Switching to worktree directory..."
     worktree_path=$($WT_CMD list --format=json | $JQ_CMD -r ".[] | select(.branch==\"$branch\") | .path")

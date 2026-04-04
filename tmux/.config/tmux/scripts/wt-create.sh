@@ -21,8 +21,11 @@ if [[ -z "$base_branch" ]]; then
 fi
 
 # Ask for new branch name via fzf prompt
+# --disabled: skip filtering so fzf always exits 0 even with typed query
+# --print-query: first output line is the user's typed text
+# head -1: grab the query (the typed branch name)
 _wt_fzf_opts 30% "new branch ▸ "
-new_branch=$(echo "" | fzf "${FZF_OPTS[@]}" --print-query --no-preview | tail -1)
+new_branch=$(echo "" | fzf "${FZF_OPTS[@]}" --disabled --print-query --no-preview | head -1)
 if [[ -z "$new_branch" ]]; then
     exit 1
 fi
