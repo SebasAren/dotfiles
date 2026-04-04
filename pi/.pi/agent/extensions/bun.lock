@@ -36,14 +36,27 @@
     "explore": {
       "name": "@pi-ext/explore",
       "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
     },
     "librarian": {
       "name": "@pi-ext/librarian",
+      "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+    },
+    "shared": {
+      "name": "@pi-ext/shared",
       "version": "1.0.0",
     },
     "wt-worktree": {
       "name": "@pi-ext/wt-worktree",
       "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
     },
   },
   "packages": {
@@ -164,6 +177,8 @@
     "@pi-ext/explore": ["@pi-ext/explore@workspace:explore"],
 
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
+
+    "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
 
     "@pi-ext/wt-worktree": ["@pi-ext/wt-worktree@workspace:wt-worktree"],
 

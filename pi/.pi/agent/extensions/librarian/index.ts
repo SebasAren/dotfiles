@@ -21,18 +21,15 @@ import {
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
-function resolveRealCwd(cwd: string): string {
-  // Bun virtualizes process.cwd() into /$bunfs/... which doesn't exist for subprocesses.
-  // Try to resolve to a real filesystem path.
-  try {
-    const real = fs.realpathSync(cwd);
-    if (fs.existsSync(real)) return real;
-  } catch {
-    // ignore
-  }
-  if (process.env.PWD && fs.existsSync(process.env.PWD)) return process.env.PWD;
-  return process.cwd();
-}
+import {
+  resolveRealCwd,
+  formatTokens,
+  parseSections,
+  getSectionSummary,
+  formatUsageLine,
+  getPiInvocation,
+  type SubagentResult,
+} from "@pi-ext/shared";
 
 const LIBRARIAN_SYSTEM_PROMPT = `You are a documentation librarian. Your job is to research external documentation and return structured, actionable findings.
 
@@ -68,56 +65,7 @@ Concise summary answering the research query with specific details.
 ## Recommendations
 If applicable, suggest best practices or patterns discovered from the documentation.`;
 
-function formatTokens(count: number): string {
-  if (count < 1000) return count.toString();
-  if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
-  if (count < 1000000) return `${Math.round(count / 1000)}k`;
-  return `${(count / 1000000).toFixed(1)}M`;
-}
 
-/** Parse `## Title` sections from subagent markdown output */
-function parseSections(output: string): { title: string; content: string }[] {
-  const sections: { title: string; content: string }[] = [];
-  const parts = output.split(/^## /m);
-  for (const part of parts) {
-    const newlineIdx = part.indexOf("\n");
-    if (newlineIdx === -1) {
-      const title = part.trim();
-      if (title) sections.push({ title, content: "" });
-      continue;
-    }
-    const title = part.slice(0, newlineIdx).trim();
-    const content = part.slice(newlineIdx + 1).trim();
-    if (title) sections.push({ title, content });
-  }
-  return sections;
-}
-
-/** Get a one-line summary from section content */
-function getSectionSummary(content: string, maxLen = 100): string {
-  const firstLine =
-    content
-      .split("\n")
-      .find((l) => l.trim())
-      ?.trim() ?? "";
-  if (firstLine.length <= maxLen) return firstLine;
-  return firstLine.slice(0, maxLen - 1) + "…";
-}
-
-/** Format usage stats as a dim string */
-function formatUsageLine(
-  usage: { input: number; output: number; turns: number; cost: number },
-  usedModel?: string,
-): string {
-  const parts: string[] = [];
-  if (usage.turns)
-    parts.push(`${usage.turns} turn${usage.turns > 1 ? "s" : ""}`);
-  if (usage.input) parts.push(`↑${formatTokens(usage.input)}`);
-  if (usage.output) parts.push(`↓${formatTokens(usage.output)}`);
-  if (usage.cost) parts.push(`$${usage.cost.toFixed(4)}`);
-  if (usedModel) parts.push(usedModel);
-  return parts.join(" ");
-}
 
 function getLibrarianModel(): string | undefined {
   const env = process.env.CHEAP_MODEL;
@@ -125,35 +73,9 @@ function getLibrarianModel(): string | undefined {
   return undefined;
 }
 
-function getPiInvocation(args: string[]): { command: string; args: string[] } {
-  const currentScript = process.argv[1];
-  if (currentScript && fs.existsSync(currentScript)) {
-    return { command: process.execPath, args: [currentScript, ...args] };
-  }
-  const execName = path.basename(process.execPath).toLowerCase();
-  const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
-  if (!isGenericRuntime) {
-    return { command: process.execPath, args };
-  }
-  return { command: "pi", args };
-}
 
-interface LibrarianResult {
-  exitCode: number;
-  output: string;
-  stderr: string;
-  usage: {
-    input: number;
-    output: number;
-    cacheRead: number;
-    cacheWrite: number;
-    cost: number;
-    contextTokens: number;
-    turns: number;
-  };
-  model?: string;
-  errorMessage?: string;
-}
+
+type LibrarianResult = SubagentResult;
 
 async function runLibrarian(
   cwd: string,

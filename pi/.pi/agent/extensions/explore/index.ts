@@ -18,23 +18,18 @@ import { type ExtensionAPI, getMarkdownTheme } from "@mariozechner/pi-coding-age
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
-function resolveRealCwd(cwd: string): string {
-	// Bun virtualizes process.cwd() into /$bunfs/... which doesn't exist for subprocesses.
-	// First check if we have a real cwd passed via environment (from parent explore process)
-	if (process.env.PI_REAL_CWD && fs.existsSync(process.env.PI_REAL_CWD)) {
-		return process.env.PI_REAL_CWD;
-	}
-	// Try to resolve to a real filesystem path.
-	try {
-		const real = fs.realpathSync(cwd);
-		if (fs.existsSync(real)) return real;
-	} catch {
-		// ignore
-	}
-	// Fall back to PWD or process.cwd()
-	if (process.env.PWD && fs.existsSync(process.env.PWD)) return process.env.PWD;
-	return process.cwd();
-}
+import {
+	resolveRealCwd,
+	formatTokens,
+	parseSections,
+	getSectionSummary,
+	formatUsageLine,
+	getPiInvocation,
+	type SubagentResult,
+	type UsageStats,
+} from "@pi-ext/shared";
+
+
 
 const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. Your job is to investigate the codebase and return structured findings.
 
@@ -61,51 +56,16 @@ Brief explanation of how the pieces connect.
 ## Summary
 Concise answer to the exploration query.`;
 
-function formatTokens(count: number): string {
-	if (count < 1000) return count.toString();
-	if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
-	if (count < 1000000) return `${Math.round(count / 1000)}k`;
-	return `${(count / 1000000).toFixed(1)}M}`;
-}
+
 
 /** Parse `## Title` sections from subagent markdown output */
-function parseSections(output: string): { title: string; content: string }[] {
-	const sections: { title: string; content: string }[] = [];
-	const parts = output.split(/^## /m);
-	for (const part of parts) {
-		const newlineIdx = part.indexOf("\n");
-		if (newlineIdx === -1) {
-			const title = part.trim();
-			if (title) sections.push({ title, content: "" });
-			continue;
-		}
-		const title = part.slice(0, newlineIdx).trim();
-		const content = part.slice(newlineIdx + 1).trim();
-		if (title) sections.push({ title, content });
-	}
-	return sections;
-}
+
 
 /** Get a one-line summary from section content */
-function getSectionSummary(content: string, maxLen = 100): string {
-	const firstLine = content.split("\n").find((l) => l.trim())?.trim() ?? "";
-	if (firstLine.length <= maxLen) return firstLine;
-	return firstLine.slice(0, maxLen - 1) + "…";
-}
+
 
 /** Format usage stats as a dim string */
-function formatUsageLine(
-	usage: { input: number; output: number; turns: number; cost: number },
-	usedModel?: string,
-): string {
-	const parts: string[] = [];
-	if (usage.turns) parts.push(`${usage.turns} turn${usage.turns > 1 ? "s" : ""}`);
-	if (usage.input) parts.push(`↑${formatTokens(usage.input)}`);
-	if (usage.output) parts.push(`↓${formatTokens(usage.output)}`);
-	if (usage.cost) parts.push(`$${usage.cost.toFixed(4)}`);
-	if (usedModel) parts.push(usedModel);
-	return parts.join(" ");
-}
+
 
 function getExploreModel(): string | undefined {
 	const env = process.env.CHEAP_MODEL;
@@ -113,42 +73,16 @@ function getExploreModel(): string | undefined {
 	return undefined;
 }
 
-function getPiInvocation(args: string[]): { command: string; args: string[] } {
-	const currentScript = process.argv[1];
-	if (currentScript && fs.existsSync(currentScript)) {
-		return { command: process.execPath, args: [currentScript, ...args] };
-	}
-	const execName = path.basename(process.execPath).toLowerCase();
-	const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
-	if (!isGenericRuntime) {
-		return { command: process.execPath, args };
-	}
-	return { command: "pi", args };
-}
 
-interface ExploreResult {
-	exitCode: number;
-	output: string;
-	stderr: string;
-	usage: {
-		input: number;
-		output: number;
-		cacheRead: number;
-		cacheWrite: number;
-		cost: number;
-		contextTokens: number;
-		turns: number;
-	};
-	model?: string;
-	errorMessage?: string;
-}
+
+
 
 async function runExplore(
 	cwd: string,
 	query: string,
 	signal: AbortSignal | undefined,
 	onUpdate: ((text: string) => void) | undefined,
-): Promise<ExploreResult> {
+): Promise<SubagentResult> {
 	const model = getExploreModel();
 	const args: string[] = ["--mode", "json", "-p", "--no-session", "--no-extensions", "--no-skills", "--no-prompt-templates", "--tools", "read,grep,find,ls,bash"];
 	if (model) args.push("--model", model);
@@ -157,7 +91,7 @@ async function runExplore(
 	let tmpDir: string | null = null;
 	let tmpPromptPath: string | null = null;
 
-	const result: ExploreResult = {
+	const result: SubagentResult = {
 		exitCode: 0,
 		output: "",
 		stderr: "",

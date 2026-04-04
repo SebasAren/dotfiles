@@ -20,6 +20,13 @@ import { type ExtensionAPI, getMarkdownTheme } from "@mariozechner/pi-coding-age
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 
+import {
+	resolveRealCwd,
+	formatTokens,
+	getPiInvocation,
+	type SubagentResult as SubagentResultType,
+} from "@pi-ext/shared";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -28,32 +35,6 @@ import { Type } from "@sinclair/typebox";
 const CHILD_ENV_VAR = "WT_WORKTREE_CHILD";
 
 const TIMEOUT_MS = 600_000; // 10 minutes default for implementation tasks
-
-function formatTokens(count: number): string {
-	if (count < 1000) return count.toString();
-	if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
-	if (count < 1000000) return `${Math.round(count / 1000)}k`;
-	return `${(count / 1000000).toFixed(1)}M}`;
-}
-
-function formatDuration(ms: number): string {
-	const s = Math.round(ms / 1000);
-	if (s < 60) return `${s}s`;
-	const m = Math.floor(s / 60);
-	const rem = s % 60;
-	return `${m}m${rem}s`;
-}
-
-function resolveRealCwd(cwd: string): string {
-	try {
-		const real = fs.realpathSync(cwd);
-		if (fs.existsSync(real)) return real;
-	} catch {
-		/* ignore */
-	}
-	if (process.env.PWD && fs.existsSync(process.env.PWD)) return process.env.PWD;
-	return process.cwd();
-}
 
 function generateBranchName(task: string): string {
 	const slug = task
@@ -67,21 +48,16 @@ function generateBranchName(task: string): string {
 	return `agent/${slug || "task"}-${suffix}`;
 }
 
-function getSubagentModel(): string | undefined {
-	return process.env.CHEAP_MODEL || undefined;
+function formatDuration(ms: number): string {
+	const s = Math.round(ms / 1000);
+	if (s < 60) return `${s}s`;
+	const m = Math.floor(s / 60);
+	const rem = s % 60;
+	return `${m}m${rem}s`;
 }
 
-function getPiInvocation(args: string[]): { command: string; args: string[] } {
-	const currentScript = process.argv[1];
-	if (currentScript && fs.existsSync(currentScript)) {
-		return { command: process.execPath, args: [currentScript, ...args] };
-	}
-	const execName = path.basename(process.execPath).toLowerCase();
-	const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
-	if (!isGenericRuntime) {
-		return { command: process.execPath, args };
-	}
-	return { command: "pi", args };
+function getSubagentModel(): string | undefined {
+	return process.env.CHEAP_MODEL || undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,22 +190,7 @@ Guidelines:
 
 Your changes will be automatically merged back to the default branch after you finish.`;
 
-interface SubagentResult {
-	exitCode: number;
-	output: string;
-	stderr: string;
-	usage: {
-		input: number;
-		output: number;
-		cacheRead: number;
-		cacheWrite: number;
-		cost: number;
-		contextTokens: number;
-		turns: number;
-	};
-	model?: string;
-	errorMessage?: string;
-}
+type SubagentResult = SubagentResultType;
 
 async function runSubagent(
 	worktreePath: string,

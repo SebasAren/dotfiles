@@ -9,6 +9,7 @@
     "exa-search",
     "explore",
     "librarian",
+    "shared",
     "wt-worktree"
   ],
   "devDependencies": {
