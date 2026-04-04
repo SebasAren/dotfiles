@@ -1,5 +1,12 @@
 {
   "providers": {
+    "mistral": {
+      "modelOverrides": {
+        "mistral-small-latest": {
+          "reasoning": false
+        }
+      }
+    },
     "minimax": {
       "baseUrl": "https://api.minimax.io/anthropic",
       "api": "anthropic-messages",
