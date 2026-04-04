@@ -35,7 +35,6 @@ fi
 _wt_fzf_opts 50% "remove ▸ "
 selected=$(echo "$branches" | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$selected" ]]; then
-    echo "No worktree selected" >&2
     exit 0
 fi
 
@@ -65,7 +64,7 @@ if ! $WT_CMD remove "$selected_branch"; then
 fi
 
 # Kill tmux window if it exists
-window_name=$(echo "$selected_branch" | tr './' '--')
+window_name=$(_wt_sanitize_window_name "$selected_branch")
 if _wt_tmux_window_exists "$window_name"; then
     $TMUX_CMD kill-window -t "$window_name"
 fi

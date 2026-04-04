@@ -11,53 +11,29 @@ if ! git rev-parse --git-dir &>/dev/null; then
     exit 1
 fi
 
-# Get default branch
-default_branch=$(_wt_get_default_branch)
+start_dir="$(pwd)"
 
 # Pick base branch via fzf
-echo "Select base branch:"
 _wt_fzf_opts 40% "base ▸ "
 base_branch=$(git branch -a --format='%(refname:short)' | grep -v 'HEAD' | sort -u | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$base_branch" ]]; then
-    echo "No base branch selected" >&2
     exit 1
 fi
 
 # Ask for new branch name via fzf prompt
-echo "Enter new branch name:"
 _wt_fzf_opts 30% "new branch ▸ "
 new_branch=$(echo "" | fzf "${FZF_OPTS[@]}" --print-query --no-preview | tail -1)
 if [[ -z "$new_branch" ]]; then
-    echo "No branch name provided" >&2
     exit 1
 fi
 
-# Pick tool
-tool=$(_wt_tool_picker)
-if [[ -z "$tool" ]]; then
-    echo "No tool selected" >&2
-    exit 1
+# Sanitize window name
+window_name=$(_wt_sanitize_window_name "$new_branch")
+
+# Open new tmux window where wt switch --create executes
+if _wt_tmux_window_exists "$window_name"; then
+    $TMUX_CMD select-window -t "$window_name"
+else
+    $TMUX_CMD new-window -n "$window_name" -c "$start_dir" \
+        "bash $SCRIPT_DIR/wt-open-create.sh '$new_branch' '$base_branch'"
 fi
-
-# Create worktree and switch
-echo "Creating worktree for branch '$new_branch' based on '$base_branch'..."
-if ! wt switch --create "$new_branch" --base "$base_branch"; then
-    echo "Failed to create worktree" >&2
-    exit 1
-fi
-
-# Get worktree path for the new branch
-worktree_path=$(_wt_get_worktree_path "$new_branch")
-if [[ -z "$worktree_path" ]]; then
-    # Fallback: assume worktree created in parent directory with branch name
-    worktree_path="$(git rev-parse --show-toplevel)/../$new_branch"
-    if [[ ! -d "$worktree_path" ]]; then
-        echo "Could not determine worktree path" >&2
-        exit 1
-    fi
-fi
-
-# Open worktree in tmux window
-_wt_open_worktree "$new_branch" "$worktree_path" "$tool"
-
-echo "Worktree '$new_branch' created and opened."

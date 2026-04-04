@@ -12,7 +12,7 @@ if [[ "$worktree_json" == "[]" ]]; then
     exit 0
 fi
 
-# Get current worktree branch (if any)
+# Get current branch
 current_branch=$(git branch --show-current 2>/dev/null || echo "")
 
 # Build fzf input: branch names with current marked
@@ -29,7 +29,6 @@ branches=$(echo "$worktree_json" | $JQ_CMD -r --arg cur "$current_branch" '
 _wt_fzf_opts 50% "switch ▸ "
 selected=$(echo "$branches" | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$selected" ]]; then
-    echo "No worktree selected" >&2
     exit 0
 fi
 
@@ -43,14 +42,12 @@ if [[ -z "$worktree_path" ]]; then
     exit 1
 fi
 
-# Ask for tool
-tool=$(_wt_tool_picker)
-if [[ -z "$tool" ]]; then
-    echo "No tool selected" >&2
-    exit 1
+# Sanitize window name
+window_name=$(_wt_sanitize_window_name "$selected_branch")
+
+# Open new tmux window at the worktree path
+if _wt_tmux_window_exists "$window_name"; then
+    $TMUX_CMD select-window -t "$window_name"
+else
+    $TMUX_CMD new-window -n "$window_name" -c "$worktree_path"
 fi
-
-# Open worktree in tmux window
-_wt_open_worktree "$selected_branch" "$worktree_path" "$tool"
-
-echo "Switched to worktree '$selected_branch'."

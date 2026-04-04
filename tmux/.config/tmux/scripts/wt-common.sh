@@ -6,9 +6,6 @@ if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
-# The popup's cwd is already set via display-popup -d '#{pane_current_path}'
-# in tmux.conf, so no manual cd is needed.
-
 # Command paths
 WT_CMD="$(command -v wt 2>/dev/null || echo /home/linuxbrew/.linuxbrew/bin/wt)"
 JQ_CMD="$(command -v jq 2>/dev/null || echo /usr/bin/jq)"
@@ -22,30 +19,11 @@ export FZF_DEFAULT_OPTS=" \
   --color=border:#292e42,preview-bg:#1a1b26,preview-border:#292e42 \
   --border=rounded --margin=0,1 --padding=1"
 
-# Standard popup dimensions
-_wt_popup_size() {
-    echo "70% 70%"
-}
-
 # FZF options for worktree pickers
 _wt_fzf_opts() {
     local height="${1:-70%}"
     local prompt="${2:-▸ }"
     FZF_OPTS=(--height "$height" --border --margin=0,1 --padding=1 --prompt "$prompt" --header-lines 0 --ansi --extended --cycle --reverse)
-}
-
-# Tool picker: choose between pi and shell
-_wt_tool_picker() {
-    local tools=()
-    if command -v pi &>/dev/null; then
-        tools+=("pi")
-    fi
-    tools+=("$SHELL")
-    
-    local selected
-    _wt_fzf_opts 30% "tool ▸ "
-    selected=$(printf '%s\n' "${tools[@]}" | fzf "${FZF_OPTS[@]}" --no-preview)
-    echo "$selected"
 }
 
 # List worktrees as JSON
@@ -60,7 +38,6 @@ _wt_get_default_branch() {
     local default_branch
     default_branch=$(echo "$json" | $JQ_CMD -r '.[] | select(.isDefault == true) | .branch' 2>/dev/null | head -1)
     if [[ -z "$default_branch" ]]; then
-        # Fallback to main or master
         if git show-ref --verify --quiet refs/heads/main; then
             echo "main"
         elif git show-ref --verify --quiet refs/heads/master; then
@@ -87,28 +64,11 @@ _wt_tmux_window_exists() {
     $TMUX_CMD list-windows -F '#{window_name}' 2>/dev/null | grep -q "^${window_name}$"
 }
 
-# Open worktree in a new tmux window
-_wt_open_worktree() {
-    local branch="$1"
-    local path="$2"
-    local tool="$3"
-    local window_name
-    # Sanitize branch name for tmux window (replace dots and slashes)
-    window_name=$(echo "$branch" | tr './' '--')
-    
-    if _wt_tmux_window_exists "$window_name"; then
-        # Switch to existing window
-        $TMUX_CMD select-window -t "$window_name"
-    else
-        # Create new window
-        if [[ "$tool" == "pi" ]]; then
-            $TMUX_CMD new-window -n "$window_name" -c "$path" "pi"
-        else
-            $TMUX_CMD new-window -n "$window_name" -c "$path"
-        fi
-    fi
+# Sanitize branch name for tmux window (replace dots and slashes)
+_wt_sanitize_window_name() {
+    echo "$1" | tr './' '--'
 }
 
 # Export functions
-export -f _wt_fzf_opts _wt_tool_picker _wt_worktree_list _wt_get_default_branch _wt_get_worktree_path _wt_tmux_window_exists _wt_open_worktree _wt_popup_size
+export -f _wt_fzf_opts _wt_worktree_list _wt_get_default_branch _wt_get_worktree_path _wt_tmux_window_exists _wt_sanitize_window_name
 export FZF_OPTS
