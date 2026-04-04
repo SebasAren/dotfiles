@@ -97,6 +97,40 @@ interface WebSearchDetails {
 	searchType?: string;
 }
 
+// Fetch parameters schema
+const WebFetchParams = Type.Object({
+	urls: Type.Array(Type.String(), {
+		description: "URLs to fetch parsed content from (1-5 URLs)",
+		minItems: 1,
+		maxItems: 5,
+	}),
+	format: Type.Optional(
+		StringEnum(["text", "highlights", "summary"], {
+			description:
+				"Content format: text (full parsed page), highlights (key excerpts), summary (LLM-generated abstract). Default: text",
+		}),
+	),
+	query: Type.Optional(
+		Type.String({
+			description:
+				"Query to focus content extraction. Used by 'highlights' and 'summary' modes to find relevant passages.",
+		}),
+	),
+	maxCharacters: Type.Optional(
+		Type.Number({
+			description: "Max characters per URL (default: 10000). Controls token usage and cost.",
+		}),
+	),
+});
+
+interface WebFetchDetails {
+	urls: string[];
+	format: string;
+	successCount: number;
+	errorCount: number;
+	truncated: boolean;
+}
+
 export default function (pi: ExtensionAPI) {
 	// Get API key from environment
 	const apiKey = process.env.EXA_API_KEY;
@@ -336,6 +370,220 @@ export default function (pi: ExtensionAPI) {
 					}
 					if (relevantLines.length > 30) {
 						text += `\n${theme.fg("muted", "... (more results)")}`;
+					}
+				}
+			}
+
+			return new Text(text, 0, 0);
+		},
+	});
+
+	// ── web_fetch tool ──────────────────────────────────────────────────────
+
+	pi.registerTool({
+		name: "web_fetch",
+		label: "Web Fetch",
+		description:
+			"Fetch and parse web page content from URLs. Returns clean, LLM-ready content " +
+			"(text, highlights, or summary). Use after web_search to read specific pages in detail, " +
+			"or to fetch a known documentation URL directly.",
+		promptSnippet: "Fetch and parse web page content from URLs",
+		promptGuidelines: [
+			"Use web_fetch after web_search to read the full content of relevant results",
+			"Use web_fetch when you need detailed page content, not just search highlights",
+			"Use 'highlights' format with a query for the most token-efficient extraction",
+			"Use 'summary' format for quick overviews of long pages",
+		],
+		parameters: WebFetchParams,
+
+		async execute(_toolCallId, params, signal, onUpdate, _ctx) {
+			if (!exa) {
+				throw new Error(
+					"EXA_API_KEY not set. Please set it via: export EXA_API_KEY='your-key'",
+				);
+			}
+
+			const {
+				urls,
+				format = "text",
+				query,
+				maxCharacters = 10000,
+			} = params;
+
+			const urlList = urls.slice(0, 5);
+			onUpdate?.({
+				content: [{ type: "text", text: `Fetching ${urlList.length} page(s)...` }],
+				details: { urls: urlList, format, successCount: 0, errorCount: 0, truncated: false },
+			});
+
+			try {
+				// Build content options based on format — cast to avoid generic inference issues
+				// since format is dynamic and TypeScript can't resolve ContentsResultComponent
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const contentOptions: any = {};
+
+				if (format === "text") {
+					contentOptions.text = { maxCharacters };
+				} else if (format === "highlights") {
+					contentOptions.highlights = {
+						query: query ?? "",
+						numSentences: Math.ceil(maxCharacters / 200),
+						highlightsPerUrl: 5,
+					};
+				} else if (format === "summary") {
+					contentOptions.summary = {
+						query: query ?? "",
+					};
+				}
+
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const response: any = await exa.getContents(urlList, contentOptions);
+
+				if (signal?.aborted) {
+					return {
+						content: [{ type: "text", text: "Fetch cancelled" }],
+						details: { urls: urlList, format, successCount: 0, errorCount: 0, truncated: false },
+					};
+				}
+
+				// Build error map from statuses — Status type lacks error field in types but API returns it
+				const errorMap = new Map<string, string>();
+				if (response.statuses) {
+					for (const s of response.statuses) {
+						if (s.status === "error") {
+							errorMap.set(s.id, s.error?.tag || "unknown error");
+						}
+					}
+				}
+
+				// Format output
+				let output = "";
+				let successCount = 0;
+				let errorCount = 0;
+
+				for (const result of response.results) {
+					const error = errorMap.get(result.id);
+					if (error) {
+						errorCount++;
+						output += `## ${result.title ?? "Untitled"}\n`;
+						output += `URL: ${result.url}\n`;
+						output += `**Error: ${error}**\n\n`;
+						continue;
+					}
+
+					successCount++;
+					output += `## ${result.title ?? "Untitled"}\n`;
+					output += `URL: ${result.url}\n`;
+					if (result.publishedDate) output += `Published: ${result.publishedDate}\n`;
+					if (result.author) output += `Author: ${result.author}\n`;
+					output += "\n";
+
+					if (format === "text" && result.text) {
+						output += result.text;
+					} else if (format === "highlights" && result.highlights?.length) {
+						output += result.highlights.join("\n\n");
+					} else if (format === "summary" && result.summary) {
+						output += result.summary;
+					} else {
+						output += "(no content available)";
+					}
+					output += "\n\n";
+				}
+
+				// Apply truncation
+				const truncation = truncateHead(output, {
+					maxLines: DEFAULT_MAX_LINES,
+					maxBytes: DEFAULT_MAX_BYTES,
+				});
+
+				let finalOutput = truncation.content;
+				if (truncation.truncated) {
+					finalOutput += `\n\n[Content truncated. Reduce maxCharacters or fetch fewer URLs for complete results.]`;
+				}
+
+				return {
+					content: [{ type: "text", text: finalOutput }],
+					details: {
+						urls: urlList,
+						format,
+						successCount,
+						errorCount,
+						truncated: truncation.truncated,
+					} satisfies WebFetchDetails,
+				};
+			} catch (error: unknown) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				throw new Error(`Exa getContents failed: ${errorMessage}`);
+			}
+		},
+
+		renderCall(args, theme, context) {
+			const urlCount = args.urls?.length ?? 0;
+			const first = args.urls?.[0] ?? "";
+			const display =
+				urlCount === 1
+					? first.length > 60
+						? `${first.slice(0, 57)}...`
+						: first
+					: `${urlCount} URLs`;
+			let content =
+				theme.fg("toolTitle", theme.bold("web_fetch ")) +
+				theme.fg("accent", display);
+			if (args.format && args.format !== "text") {
+				content += theme.fg("muted", ` [${args.format}]`);
+			}
+			const text =
+				(context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+			text.setText(content);
+			return text;
+		},
+
+		renderResult(result, { expanded, isPartial }, theme, _context) {
+			if (isPartial) {
+				return new Text(theme.fg("warning", "Fetching pages..."), 0, 0);
+			}
+
+			const details = result.details as WebFetchDetails | undefined;
+
+			if (!details) {
+				const content = result.content[0];
+				if (content?.type === "text") {
+					return new Text(theme.fg("error", content.text.slice(0, 100)), 0, 0);
+				}
+				return new Text(theme.fg("error", "Fetch failed"), 0, 0);
+			}
+
+			const icon =
+				details.errorCount > 0 && details.successCount === 0
+					? theme.fg("error", "✗")
+					: theme.fg("success", "✓");
+
+			let text = `${icon} ${theme.fg("toolTitle", theme.bold("web_fetch"))}`;
+			text += theme.fg(
+				"dim",
+				` ${details.successCount}/${details.urls.length} fetched`,
+			);
+			if (details.errorCount > 0) {
+				text += theme.fg("error", ` (${details.errorCount} failed)`);
+			}
+			if (details.truncated) {
+				text += theme.fg("warning", " (truncated)");
+			}
+
+			if (expanded) {
+				const content = result.content[0];
+				if (content?.type === "text") {
+					const lines = content.text.split("\n");
+					const relevantLines = lines.filter(
+						(line) =>
+							line.startsWith("## ") || line.startsWith("URL: "),
+					);
+					for (const line of relevantLines) {
+						if (line.startsWith("## ")) {
+							text += `\n${theme.fg("accent", line)}`;
+						} else {
+							text += `\n${theme.fg("dim", line)}`;
+						}
 					}
 				}
 			}
