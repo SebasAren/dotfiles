@@ -41,3 +41,4 @@ pi/.pi/agent/auth.json
 
 node_modules/
 wt/.config/worktrunk/approvals*
+.worktrees
