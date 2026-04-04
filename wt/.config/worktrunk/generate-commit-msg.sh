@@ -1,101 +1,47 @@
 #!/usr/bin/env bash
-# Generate a commit message from a diff passed via stdin.
-# Used by wt's squash commit generation.
+# Generate a commit message from the prompt wt sends via stdin.
+# Used by wt's squash/commit generation.
 #
-# This script uses pi (AI coding assistant) to generate a commit message.
-# If pi fails (timeout, missing API key, network error), it falls back to
-# a generic commit message based on the diff stats.
-#
-# Required environment variables:
-#   - MIMO_API_KEY for xiaomi-mimo/* models
-#   - GEMINI_API_KEY or Google OAuth for google/* models
-#
-# The CHEAP_MODEL variable (sourced from ~/.bashrc.d/pi_models) determines
-# which model to use. If empty, pi uses its default model.
+# wt sends its own built-in prompt (task, format, style, diff, context)
+# to stdin. We just need to pipe it to pi and return the output.
 set -euo pipefail
 
-# Source pi model settings if available (CHEAP_MODEL may be defined there)
+# Source pi model settings if available
 if [[ -f ~/.bashrc.d/pi_models ]]; then
   source ~/.bashrc.d/pi_models
 fi
 
-prompt='Write a commit message for the diff below.
+# Read wt's full prompt from stdin
+prompt=$(cat)
 
-Format:
-- Subject line in conventional commits format: type(scope): description (under 50 chars)
-- For non-trivial changes, add a blank line then a bulleted body describing key changes
-- Use imperative mood: "Add feature" not "Added feature"
-- Types: feat, fix, refactor, docs, style, chore, perf, test, ci, build
-
-Output only the commit message. No quotes, no code blocks, no explanation.'
-
-# wt pipes the squash diff to stdin; pi reads it as the prompt argument
-diff_text=$(cat)
-
-# Timeout for pi command (seconds)
-TIMEOUT=30
-
-# Check for missing API key for common providers
+# Build pi arguments
+pi_args=("-p" "--no-tools" "--no-extensions" "--no-skills" "--no-session" "--no-prompt-templates" "--thinking" "off")
 if [[ -n "${CHEAP_MODEL:-}" ]]; then
-  case "$CHEAP_MODEL" in
-    xiaomi-mimo/*)
-      if [[ -z "${MIMO_API_KEY:-}" ]]; then
-        echo "WARNING: MIMO_API_KEY environment variable is not set." >&2
-        echo "Pi will fail to authenticate. Set MIMO_API_KEY in your environment or auth.json." >&2
-        echo "Example: export MIMO_API_KEY=your-key  (add to ~/.bashrc.d/pi_models)" >&2
-      fi
-      ;;
-    google/*)
-      if [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-        echo "WARNING: No Google API key found." >&2
-        echo "Run 'pi /login' to authenticate with Google Gemini CLI (free)." >&2
-      fi
-      ;;
-  esac
+  pi_args+=("--model" "$CHEAP_MODEL")
 fi
 
 # Temporary file for pi output
 tmp_out=$(mktemp)
 trap 'rm -f "$tmp_out"' EXIT
 
-# Build pi command arguments
-pi_args=("-p" "--no-tools" "--no-extensions" "--no-skills" "--no-session" "--no-prompt-templates" "--thinking" "off" "--system-prompt" <(echo "$prompt"))
-if [[ -n "${CHEAP_MODEL:-}" ]]; then
-  pi_args+=("--model" "$CHEAP_MODEL")
-fi
-
-# Run pi with timeout, capture stdout and stderr
-if timeout "$TIMEOUT" pi "${pi_args[@]}" "$diff_text" > "$tmp_out" 2>&1; then
-  # pi succeeded, read output
+# Run pi with timeout, capture output
+if timeout 30 pi "${pi_args[@]}" "$prompt" > "$tmp_out" 2>&1; then
   commit_msg=$(cat "$tmp_out")
-  # Trim leading/trailing whitespace from the whole output
+  # Trim leading/trailing blank lines
   commit_msg=$(echo "$commit_msg" | sed -e '/./,$!d' -e ':a' -e '/^\n*$/{$d;N;ba}')
-  # Ensure output is not empty
   if [[ -n "$commit_msg" ]]; then
-    # Validate conventional commit format on the subject (first line)
-    subject=$(echo "$commit_msg" | head -1)
-    if ! [[ "$subject" =~ ^[a-z]+(:|\([a-z]+\)?:) ]]; then
-      # Not a conventional commit, prepend 'chore: ' to subject
-      commit_msg="chore: $commit_msg"
-    fi
     echo "$commit_msg"
     exit 0
   fi
 fi
 
-# If we reach here, pi failed or produced empty output
-# Log error to stderr (visible in wt logs)
-echo "WARNING: pi failed to generate commit message (timeout or error)." >&2
-echo "Falling back to generic commit message." >&2
-
-# Fallback: generate a simple commit message based on diff stats
-# Count number of files changed (ignore grep exit code)
-files_changed=$(echo "$diff_text" | grep -c '^diff --git' || echo 0)
+# Fallback: generate generic commit message from diff stats in the prompt
+echo "WARNING: pi failed to generate commit message." >&2
+files_changed=$(echo "$prompt" | grep -c '^diff --git' || echo 0)
 if [[ $files_changed -eq 0 ]]; then
   echo "Update"
 elif [[ $files_changed -eq 1 ]]; then
-  # Extract filename from first diff header
-  filename=$(echo "$diff_text" | grep -m1 '^diff --git' | sed 's|^diff --git a/||;s| b/.*||')
+  filename=$(echo "$prompt" | grep -m1 '^diff --git' | sed 's|^diff --git a/||;s| b/.*||')
   echo "Update $filename"
 else
   echo "Update $files_changed files"
