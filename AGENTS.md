@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal dotfiles repo managed with GNU Stow. 15 tool directories, 287 config files.
+Personal dotfiles repo managed with GNU Stow. 8 tool directories, 128 config files.
 
 ## OVERVIEW
 
@@ -9,19 +9,14 @@ Stow creates symlinks from `~/.dotfiles/tool-name/.config/tool/` to `~/.config/t
 ## STRUCTURE
 
 ```
-nvim/.config/nvim/     # Neovim: Lazy.nvim, blink.cmp, 17 LSP servers
-qtile/.config/qtile/    # Qtile: hostname-aware (henk=home), custom widgets
-docker/docker-services/ # 5 services: jellyfin, audiobookshelf, nginx-proxy-manager, transmission+VPN, wolf
-zsh/.zshrc              # Zsh + .zprofile
-bashrc/.bashrc.d/        # Modular bash: alias, config, fnox, mise, tmux
-kitty/.config/kitty/     # Kitty terminal
-tmux/.config/tmux/       # Tmux: Ctrl+a prefix, vi copy, TPM, tokyo-night
-picom/.config/picom/    # Compositor
-opencode/.config/opencode/  # Opencode AI assistant
-m908/.config/m908/      # Mouse config
-aider/.config/aider/    # Aider AI pair programming
-asdf/.config/asdf/      # Version manager
-wt/.config/worktrunk/  # Worktrunk: git worktree management, pi-powered commits
+nvim/.config/nvim/         # Neovim: Lazy.nvim, blink.cmp, 17 LSP servers
+docker/docker-services/    # 5 services: jellyfin, audiobookshelf, nginx-proxy-manager, transmission+VPN, wolf
+bashrc/.bashrc.d/          # Modular bash: alias, config, fnox, mise, tmux
+tmux/.config/tmux/         # Tmux: Ctrl+a prefix, vi copy, TPM, tokyo-night
+opencode/.config/opencode/ # Opencode AI assistant
+m908/.config/m908/         # Mouse config
+wt/.config/worktrunk/      # Worktrunk: git worktree management, pi-powered commits
+pi/.pi/                    # Pi agent extensions, skills, plans
 ```
 
 ## WHERE TO LOOK
@@ -31,8 +26,6 @@ wt/.config/worktrunk/  # Worktrunk: git worktree management, pi-powered commits
 | Add/remove plugin | `nvim/.config/nvim/lua/plugins/` |
 | LSP server config | `nvim/.config/nvim/lsp/*.lua` |
 | Neovim settings | `nvim/.config/nvim/lua/config/settings.lua` |
-| Qtile layout/wm | `qtile/.config/qtile/config.py` |
-| Qtile widgets | `qtile/.config/qtile/widgets/` |
 | Docker service | `docker/docker-services/<service>/` |
 | Shell aliases | `bashrc/.bashrc.d/alias` |
 | Tmux plugins | `tmux/.config/tmux/.tmux.conf` |
@@ -41,7 +34,7 @@ wt/.config/worktrunk/  # Worktrunk: git worktree management, pi-powered commits
 ## STOW MANAGEMENT
 
 ```bash
-stow nvim zsh docker qtile kitty tmux     # install
+stow nvim docker bashrc tmux              # install
 stow -D nvim                               # uninstall
 stow -n nvim                               # dry-run
 stow */                                     # install all
@@ -57,14 +50,11 @@ stow */                                     # install all
 
 ## ANTI-PATTERNS
 
-- **Qutebrowser**: Docs reference it but directory does not exist. Do not add.
 - **YAML inconsistency**: Some docker services use `.yml`, others `.yaml`. Accept this.
 - **Minimal install.sh**: Only runs `stow nvim`. Do not expect it to install everything.
-- **No qutebrowser stow target**: Despite docs, qutebrowser is not stowed.
 
 ## NOTES
 
-- Qtile autostart scripts in `autostart/` are hostname-gated (`home.sh`, `work.sh`, `base.sh`)
 - Neovim `:Lazy sync` updates plugins; `:ConformInfo` shows formatters
 - Pre-commit hooks: StyLua (Lua), YAML/JSON validation, whitespace trimming
 - Custom Neovim overrides: `custom-settings.lua` (gitignored)
@@ -82,7 +72,6 @@ Prefix: `Ctrl+a`, vi copy-mode, TPM plugins, tokyo-night theme.
 
 ## SHELL
 
-- **Zsh**: `.zshrc` + `.zprofile`
 - **Bash**: modular `.bashrc.d/` (alias, config, fnox, mise)
 - **EDITOR**: `nvim`; **mise** for runtime version management
 

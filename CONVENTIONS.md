@@ -48,7 +48,6 @@
 - Set up persistent storage for databases and user data
 
 ### AI Development Tools
-- Configure Aider with appropriate model aliases
 - Use local LLM services when possible for privacy
 - Document AI model configurations and usage patterns
 - Keep AI assistant configurations version controlled
@@ -60,7 +59,7 @@
 - Docker and Docker Compose for services
 - Git for version control
 - Neovim 0.8+ for editor configuration
-- Zsh for shell configuration
+- Bash for shell configuration
 
 ### Directory Structure
 ```

@@ -13,7 +13,7 @@ pre-commit run --all-files  # Test hooks
 ### Install dotfiles
 ```bash
 # Install specific tool configs
-stow nvim zsh docker qtile qutebrowser
+stow nvim docker bashrc tmux m908 opencode wt
 
 # Install Neovim plugins
 nvim --headless "+Lazy! sync" +qa
