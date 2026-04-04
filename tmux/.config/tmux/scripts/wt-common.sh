@@ -6,6 +6,15 @@ if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
+# cd to the invoking pane's working directory (popup may start elsewhere)
+if [[ -n "${TMUX:-}" ]]; then
+    _popup_cwd=$(tmux display-message -p '#{pane_current_path}' -t '{last}' 2>/dev/null || true)
+    if [[ -n "$_popup_cwd" && -d "$_popup_cwd" ]]; then
+        cd "$_popup_cwd"
+    fi
+fi
+unset _popup_cwd
+
 # Command paths
 WT_CMD="$(command -v wt 2>/dev/null || echo /home/linuxbrew/.linuxbrew/bin/wt)"
 JQ_CMD="$(command -v jq 2>/dev/null || echo /usr/bin/jq)"
