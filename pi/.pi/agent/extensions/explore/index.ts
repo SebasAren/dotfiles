@@ -51,15 +51,22 @@ function argsSignature(args: Record<string, unknown>): string {
 /**
  * Detects loops by tracking recent tool call signatures.
  * Returns a description of the loop if detected, or null otherwise.
+ *
+ * We only flag repeated subsequences when the sequence contains at least
+ * 2 *different* tools. A run of identical tools (e.g. grep, grep, grep)
+ * with the same args is handled by the consecutive-call check below,
+ * and that requires 4+ identical calls before flagging.
  */
 function detectLoop(
 	toolHistory: Array<{ name: string; argsSignature: string }>,
-	windowSize: number = 6,
+	windowSize: number = 8,
 ): string | null {
 	const recent = toolHistory.slice(-windowSize);
-	if (recent.length < 3) return null;
+	if (recent.length < 4) return null;
 
 	// Check for repeated subsequences of length 2+ (A,B,A,B pattern)
+	// Only flag when the subsequence contains at least 2 distinct tools —
+	// homogeneous sequences like (grep, grep, grep) are not real loops.
 	for (let seqLen = 2; seqLen <= Math.floor(recent.length / 2); seqLen++) {
 		const first = recent.slice(-seqLen * 2, -seqLen);
 		const second = recent.slice(-seqLen);
@@ -72,13 +79,18 @@ function detectLoop(
 				}
 			}
 			if (match) {
+				// Require at least 2 distinct tools in the subsequence
+				const uniqueTools = new Set(second.map((t) => t.name));
+				if (uniqueTools.size < 2) continue;
+
 				const toolNames = second.map((t) => t.name).join(", ");
 				return `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`;
 			}
 		}
 	}
 
-	// Check for 3+ identical consecutive calls
+	// Check for 4+ identical consecutive calls (raised from 3 to avoid
+	// false positives when the agent legitimately runs several greps)
 	const lastSig = recent[recent.length - 1];
 	let identicalCount = 0;
 	for (let i = recent.length - 1; i >= 0; i--) {
@@ -88,7 +100,7 @@ function detectLoop(
 			break;
 		}
 	}
-	if (identicalCount >= 3) {
+	if (identicalCount >= 4) {
 		return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
 	}
 
