@@ -1,2 +1,2 @@
 #!/bin/bash
-export CHEAP_MODEL=xiaomi-mimo/mimo-v2-flash
+export CHEAP_MODEL=mistral/mistral-small-latest
