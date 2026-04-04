@@ -40,6 +40,9 @@ return {
 		-- Basic configuration
 		ufo.setup({
 			provider_selector = function(bufnr, filetype, buftype)
+				if filetype == "markdown" then
+					return "indent"
+				end
 				return { "treesitter", "indent" }
 			end,
 			fold_virt_text_handler = function(virtText, lnum, endLnum, width, truncate)
