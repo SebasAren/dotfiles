@@ -1,14 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "types": ["node"]
-  },
+  "extends": "../tsconfig.base.json",
   "include": ["index.ts"]
 }
