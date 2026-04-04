@@ -50,6 +50,18 @@ Note any refactoring opportunities. Skip if the code is already clean.
 | 2 | ... | ... |
 | N | ... | ... |
 
+### Progress Log
+
+> This section is maintained by the tdd-implement skill. Do not edit manually.
+
+**Status:** Not started
+
+| Step | 🔴 RED | 🟢 GREEN | 🔵 REFACTOR |
+|------|--------|----------|-------------|
+| 1 | ⬜ | ⬜ | ⬜ |
+| 2 | ⬜ | ⬜ | ⬜ |
+| N | ⬜ | ⬜ | ⬜ |
+
 ### Notes
 - Edge cases discovered during planning
 - Integration points to verify
@@ -76,7 +88,7 @@ When this skill is invoked:
 2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
 3. **Draft the plan.** Follow the output format above with all RED/GREEN/REFACTOR steps.
 4. **Review for completeness.** Check that every piece of functionality has a corresponding test.
-5. **Write the plan.** Always write the plan to `.pi/plans/<slug>.md` where `<slug>` is a short kebab-case description derived from the feature name (e.g., `user-jwt-auth.md`). Create the `.pi/plans/` directory if it doesn't exist. After writing, present the plan inline and ask the user to confirm before proceeding with implementation.
+5. **Write the plan.** Always write the plan to `.pi/plans/<slug>.md` where `<slug>` is a short kebab-case description derived from the feature name (e.g., `user-jwt-auth.md`). Create the `.pi/plans/` directory if it doesn't exist. The plan MUST include the Progress Log section from the template above — fill in one row per step with all phases set to ⬜. After writing, present the plan inline and ask the user to confirm before proceeding with implementation.
 
 ## Usage
 

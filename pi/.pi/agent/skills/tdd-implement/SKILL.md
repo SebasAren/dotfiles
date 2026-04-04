@@ -22,26 +22,32 @@ For each step in the plan, execute these three phases **in strict order**:
 
 ### 🔴 RED — Write the failing test
 
+- **Update progress:** Set Status to `Step N/M — 🔴 RED`, mark the RED cell 🔄 in the Progress Log table.
 - Read the step's RED section for the test description.
 - Write the test file or add the test case to the existing test file.
 - Run the test suite to **confirm the test fails** with the expected error.
 - If the test passes or fails with an unexpected error, stop and report the issue. Do not proceed to GREEN.
+- **Update progress:** Mark the RED cell ✅ in the Progress Log table.
 - Output the failing test output for the user to see.
 
 ### 🟢 GREEN — Make it pass
 
+- **Update progress:** Set Status to `Step N/M — 🟢 GREEN`, mark the GREEN cell 🔄 in the Progress Log table.
 - Read the step's GREEN section for the minimal implementation.
 - Write the **simplest code** that makes the test pass. No gold-plating, no speculative abstractions.
 - Run the test suite to **confirm the test passes**.
 - If the test still fails, iterate on the implementation — but stay minimal. Do not add extra features.
+- **Update progress:** Mark the GREEN cell ✅ in the Progress Log table.
 - Output the passing test output for the user to see.
 
 ### 🔵 REFACTOR — Clean up (if applicable)
 
+- **Update progress:** Set Status to `Step N/M — 🔵 REFACTOR`, mark the REFACTOR cell 🔄 in the Progress Log table. If skipping, mark it ⏭️ instead and update Status to `Step N/M — ✅ Complete`.
 - Read the step's REFACTOR section. Skip this phase entirely if the section says to skip or is empty.
 - Apply the described refactoring while keeping all tests green.
 - Run the **full** test suite (not just the current test) to confirm nothing broke.
 - If any test fails, revert the refactoring and try again.
+- **Update progress:** Mark the REFACTOR cell ✅ in the Progress Log table.
 - Output the full test suite result.
 
 ## User Verification
@@ -56,20 +62,69 @@ Then ask: "Step N/M complete. Continue to the next step?" Do not proceed until t
 
 ## Progress Tracking
 
-After the user confirms a step, update the plan file by marking the step:
+Update the plan file's Progress Log section **at every phase transition**, not just at step boundaries. This ensures that if the session is interrupted, the plan file always accurately reflects what has been completed.
+
+### When to update
+
+Update the plan file immediately after **each** of these events:
+
+1. **After confirming a failing test in RED** — mark the RED cell ✅ for that step, update the Status line.
+2. **After confirming a passing test in GREEN** — mark the GREEN cell ✅, update the Status line.
+3. **After completing REFACTOR** (or skipping it) — mark the REFACTOR cell ✅, update the Status line.
+4. **After user confirms the step** — mark the step title with ~~strikethrough~~ ✅.
+
+### Status line
+
+Keep a `**Status:**` line at the top of the Progress Log that always reflects the current state:
+
+```
+**Status:** Step 2/5 — 🟢 GREEN (writing minimal implementation)
+```
+
+Update this line at every phase transition. Use these patterns:
+- `Not started`
+- `Step N/M — 🔴 RED (writing failing test)`
+- `Step N/M — 🟢 GREEN (writing minimal implementation)`
+- `Step N/M — 🔵 REFACTOR (cleaning up)`
+- `Step N/M — ✅ Complete`
+- `All steps complete ✅`
+
+### Progress Log table format
+
+Each row tracks the three phases independently:
+
+```markdown
+| Step | 🔴 RED | 🟢 GREEN | 🔵 REFACTOR |
+|------|--------|----------|-------------|
+| 1 | ✅ | ✅ | ✅ |
+| 2 | ✅ | 🔄 | ⬜ |   ← currently in GREEN phase
+| 3 | ⬜ | ⬜ | ⬜ |
+```
+
+Use these markers:
+- ⬜ Not started
+- 🔄 In progress
+- ✅ Done
+- ⏭️ Skipped (refactor phase only)
+
+### Step title marking
+
+After the user confirms a full step is complete, also update the step heading:
 
 ```markdown
 ### ~~Step 1: [Step Name]~~ ✅
 ```
 
-Also maintain a progress log at the bottom of the plan file:
+### Example: full progression for one step
 
-```markdown
-## Progress Log
-
-- [x] Step 1: [Step Name] — completed
-- [ ] Step 2: [Step Name] — next
-```
+1. Start RED: update Status to `Step 1/3 — 🔴 RED`, mark RED cell 🔄
+2. RED test confirmed failing: mark RED cell ✅
+3. Start GREEN: update Status to `Step 1/3 — 🟢 GREEN`, mark GREEN cell 🔄
+4. GREEN test confirmed passing: mark GREEN cell ✅
+5. Start REFACTOR: update Status to `Step 1/3 — 🔵 REFACTOR`, mark REFACTOR cell 🔄
+6. REFACTOR complete: mark REFACTOR cell ✅ (or ⏭️ if skipped)
+7. User confirms step: update Status to `Step 1/3 — ✅ Complete`, strike through step title
+8. Move to next step
 
 ## Rules
 
