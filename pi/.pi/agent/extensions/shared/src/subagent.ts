@@ -56,6 +56,8 @@ export interface RunSubagentOptions {
 	tmpPrefix?: string;
 	/** Debug label for console.log messages (omit to suppress logs) */
 	debugLabel?: string;
+	/** Extra environment variables to set on the child process */
+	env?: Record<string, string>;
 }
 
 /** Default timeout: 2 minutes */
@@ -224,7 +226,7 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
 				cwd,
 				shell: false,
 				stdio: ["pipe", "pipe", "pipe"],
-				env: { ...process.env, PI_REAL_CWD: cwd },
+				env: { ...process.env, PI_REAL_CWD: cwd, ...options.env },
 			});
 			proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
 

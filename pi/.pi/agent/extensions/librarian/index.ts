@@ -27,6 +27,9 @@ import {
   getModel,
 } from "@pi-ext/shared";
 
+/** Env var set on child processes to prevent recursive librarian registration */
+const CHILD_ENV_VAR = "PI_LIBRARIAN_CHILD";
+
 const LIBRARIAN_SYSTEM_PROMPT = `You are a documentation librarian. Your job is to research external documentation and return structured, actionable findings.
 
 You have access to these tools:
@@ -94,6 +97,11 @@ const LibrarianParams = Type.Object({
 });
 
 export default function (pi: ExtensionAPI) {
+  // Prevent recursive registration in child subagent processes
+  if (process.env[CHILD_ENV_VAR] === "1") {
+    return;
+  }
+
   pi.registerTool({
     name: "librarian",
     label: "Librarian",
@@ -144,6 +152,7 @@ export default function (pi: ExtensionAPI) {
         tmux: { label: "librarian" },
         tmpPrefix: "pi-librarian-",
         debugLabel: "librarian",
+        env: { [CHILD_ENV_VAR]: "1" },
       });
 
       const isError = result.exitCode !== 0 || !!result.errorMessage;
