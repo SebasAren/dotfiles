@@ -44,9 +44,19 @@ For each step in the plan, execute these three phases **in strict order**:
 - If any test fails, revert the refactoring and try again.
 - Output the full test suite result.
 
+## User Verification
+
+After completing each step (the full Red-Green-Refactor cycle), **pause and ask the user to verify** before proceeding to the next step. Show:
+
+1. A brief summary of what was done (test written, implementation added, refactoring applied).
+2. The final test output.
+3. The git commit that was made.
+
+Then ask: "Step N/M complete. Continue to the next step?" Do not proceed until the user confirms. If the user requests changes, address them and re-verify before moving on.
+
 ## Progress Tracking
 
-After completing each step, update the plan file by marking the step:
+After the user confirms a step, update the plan file by marking the step:
 
 ```markdown
 ### ~~Step 1: [Step Name]~~ ✅
