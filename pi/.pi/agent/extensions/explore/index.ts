@@ -20,6 +20,10 @@ import { Type } from "@sinclair/typebox";
 
 function resolveRealCwd(cwd: string): string {
 	// Bun virtualizes process.cwd() into /$bunfs/... which doesn't exist for subprocesses.
+	// First check if we have a real cwd passed via environment (from parent explore process)
+	if (process.env.PI_REAL_CWD && fs.existsSync(process.env.PI_REAL_CWD)) {
+		return process.env.PI_REAL_CWD;
+	}
 	// Try to resolve to a real filesystem path.
 	try {
 		const real = fs.realpathSync(cwd);
@@ -143,6 +147,7 @@ async function runExplore(
 				cwd,
 				shell: false,
 				stdio: ["pipe", "pipe", "pipe"],
+				env: { ...process.env, PI_REAL_CWD: cwd },
 			});
 			proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
 
