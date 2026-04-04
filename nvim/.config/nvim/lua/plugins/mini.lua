@@ -8,6 +8,13 @@ return {
 		config = function()
 			-- Highlight the word under the cursor
 			require("mini.cursorword").setup({})
+			-- Disable cursorword for markdown (expensive scan on every cursor move in large files)
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "markdown",
+				callback = function()
+					vim.b.minicursorword_disable = true
+				end,
+			})
 			-- Automatically insert or delete pairs (e.g., brackets, quotes)
 			require("mini.pairs").setup({})
 			-- Highlight trailing whitespace
