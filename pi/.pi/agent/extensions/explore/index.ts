@@ -313,17 +313,20 @@ export default function (pi: ExtensionAPI) {
 			};
 		},
 
-		renderCall(args, theme, _context) {
+		renderCall(args, theme, context) {
 			const model = getExploreModel();
 			const preview = args.query.length > 80 ? `${args.query.slice(0, 80)}...` : args.query;
-			let text =
+			let content =
 				theme.fg("toolTitle", theme.bold("explore ")) +
 				(model ? theme.fg("muted", `[${model}] `) : "") +
 				theme.fg("dim", preview);
 			if (args.directory) {
-				text += `\n  ${theme.fg("muted", `in ${args.directory}`)}`;
+				content += `\n  ${theme.fg("muted", `in ${args.directory}`)}`;
 			}
-			return new Text(text, 0, 0);
+			// Reuse existing component if available to avoid duplicate renders
+			const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+			text.setText(content);
+			return text;
 		},
 
 		renderResult(result, { expanded }, theme, _context) {

@@ -149,11 +149,14 @@ export default function (pi: ExtensionAPI) {
     },
 
     // Custom rendering of the tool call
-    renderCall(args, theme, _context) {
-      let text = theme.fg("toolTitle", theme.bold("context7_search "));
-      text += theme.fg("accent", `"${args.libraryName}"`);
-      text += theme.fg("dim", ` for "${args.query}"`);
-      return new Text(text, 0, 0);
+    renderCall(args, theme, context) {
+      let content = theme.fg("toolTitle", theme.bold("context7_search "));
+      content += theme.fg("accent", `"${args.libraryName}"`);
+      content += theme.fg("dim", ` for "${args.query}"`);
+      // Reuse existing component if available to avoid duplicate renders
+      const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+      text.setText(content);
+      return text;
     },
 
     // Custom rendering of the tool result
@@ -299,11 +302,14 @@ export default function (pi: ExtensionAPI) {
     },
 
     // Custom rendering of the tool call
-    renderCall(args, theme, _context) {
-      let text = theme.fg("toolTitle", theme.bold("context7_docs "));
-      text += theme.fg("accent", `${args.libraryId}`);
-      text += theme.fg("dim", ` for "${args.query}"`);
-      return new Text(text, 0, 0);
+    renderCall(args, theme, context) {
+      let content = theme.fg("toolTitle", theme.bold("context7_docs "));
+      content += theme.fg("accent", `${args.libraryId}`);
+      content += theme.fg("dim", ` for "${args.query}"`);
+      // Reuse existing component if available to avoid duplicate renders
+      const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+      text.setText(content);
+      return text;
     },
 
     // Custom rendering of the tool result

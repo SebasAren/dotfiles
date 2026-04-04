@@ -552,19 +552,22 @@ export default function (pi: ExtensionAPI) {
 			}
 		},
 
-		renderCall(args, theme, _context) {
+		renderCall(args, theme, context) {
 			const branch = args.branch || "(auto)";
 			const model = args.model || getSubagentModel() || "default";
 			const preview = args.task.length > 80 ? `${args.task.slice(0, 80)}...` : args.task;
-			let text =
+			let content =
 				theme.fg("toolTitle", theme.bold("wt_worktree_task ")) +
 				theme.fg("accent", branch) +
 				theme.fg("muted", ` [${model}]`);
-			text += `\n  ${theme.fg("dim", preview)}`;
+			content += `\n  ${theme.fg("dim", preview)}`;
 			if (!args.auto_merge && args.auto_merge !== undefined) {
-				text += `\n  ${theme.fg("warning", "no auto-merge")}`;
+				content += `\n  ${theme.fg("warning", "no auto-merge")}`;
 			}
-			return new Text(text, 0, 0);
+			// Reuse existing component if available to avoid duplicate renders
+			const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+			text.setText(content);
+			return text;
 		},
 
 		renderResult(result, { expanded }, theme, _context) {

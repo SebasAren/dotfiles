@@ -348,20 +348,23 @@ export default function (pi: ExtensionAPI) {
 			};
 		},
 
-		renderCall(args, theme, _context) {
+		renderCall(args, theme, context) {
 			const model = getLibrarianModel();
 			const preview = args.query.length > 80 ? `${args.query.slice(0, 80)}...` : args.query;
-			let text =
+			let content =
 				theme.fg("toolTitle", theme.bold("librarian ")) +
 				(model ? theme.fg("muted", `[${model}] `) : "") +
 				theme.fg("dim", preview);
 			if (args.library) {
-				text += `\n  ${theme.fg("accent", args.library)}`;
+				content += `\n  ${theme.fg("accent", args.library)}`;
 			}
 			if (args.focus) {
-				text += theme.fg("muted", ` · focus: ${args.focus}`);
+				content += theme.fg("muted", ` · focus: ${args.focus}`);
 			}
-			return new Text(text, 0, 0);
+			// Reuse existing component if available to avoid duplicate renders
+			const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+			text.setText(content);
+			return text;
 		},
 
 		renderResult(result, { expanded }, theme, _context) {

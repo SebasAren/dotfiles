@@ -263,16 +263,19 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		// Custom rendering of the tool call
-		renderCall(args, theme, _context) {
-			let text = theme.fg("toolTitle", theme.bold("web_search "));
-			text += theme.fg("accent", `"${args.query}"`);
+		renderCall(args, theme, context) {
+			let content = theme.fg("toolTitle", theme.bold("web_search "));
+			content += theme.fg("accent", `"${args.query}"`);
 			if (args.type && args.type !== "auto") {
-				text += theme.fg("muted", ` [${args.type}]`);
+				content += theme.fg("muted", ` [${args.type}]`);
 			}
 			if (args.category) {
-				text += theme.fg("dim", ` (${args.category})`);
+				content += theme.fg("dim", ` (${args.category})`);
 			}
-			return new Text(text, 0, 0);
+			// Reuse existing component if available to avoid duplicate renders
+			const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
+			text.setText(content);
+			return text;
 		},
 
 		// Custom rendering of the tool result
