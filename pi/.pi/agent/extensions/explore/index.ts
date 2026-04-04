@@ -10,7 +10,7 @@
  * without modifying any files.
  */
 
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -124,7 +124,70 @@ Only the code snippets directly relevant to the query.
 ## Summary
 2-5 sentence answer to the query. Nothing else.`;
 
+/** Pretty-printer script for tmux pane.
+ *  Reads a growing JSONL file and renders tool calls + assistant text in real-time.
+ *  Uses String.raw to preserve \x1b and \n as literal escape sequences in the output file. */
+const EXPLORE_PP_SCRIPT = String.raw`#!/usr/bin/env node
+const fs = require("fs");
+const path = require("path");
+const tmpDir = process.argv[2] || "";
+const R = "\x1b[0m", B = "\x1b[1m", D = "\x1b[2m", C = "\x1b[36m", G = "\x1b[32m";
 
+let query = "";
+try { query = fs.readFileSync(path.join(tmpDir, "query.txt"), "utf8").trim(); } catch {}
+if (query) {
+  const firstLine = query.split("\n")[0];
+  const preview = firstLine.length > 80 ? firstLine.slice(0, 80) + "..." : firstLine;
+  process.stdout.write(B + C + "\u25b6 explore" + R + " " + D + preview + R + "\n");
+  process.stdout.write(D + "\u2500".repeat(50) + R + "\n\n");
+}
+
+const outputPath = path.join(tmpDir, "explore-output.jsonl");
+let fd = -1;
+let offset = 0;
+let toolCount = 0;
+
+function poll() {
+  try {
+    if (fd === -1) fd = fs.openSync(outputPath, "r");
+    const stat = fs.fstatSync(fd);
+    if (stat.size > offset) {
+      const buf = Buffer.alloc(stat.size - offset);
+      fs.readSync(fd, buf, 0, buf.length, offset);
+      offset += buf.length;
+      const newContent = buf.toString("utf8");
+      for (const line of newContent.split("\n")) {
+        if (!line.trim()) continue;
+        let e;
+        try { e = JSON.parse(line); } catch { continue; }
+        if (e.type === "tool_execution_start") {
+          toolCount++;
+          const name = e.toolName || "?";
+          let detail = "";
+          if (e.args && e.args.query) detail = String(e.args.query).slice(0, 60);
+          else if (e.args && e.args.path) detail = e.args.path;
+          else if (e.args && e.args.command) detail = String(e.args.command).slice(0, 50);
+          else if (e.args && e.args.pattern) detail = String(e.args.pattern).slice(0, 50);
+          process.stdout.write(D + "[" + toolCount + "]" + R + " " + C + name + R + (detail ? ": " + D + detail + R : "") + "\n");
+        } else if (e.type === "message_end" && e.message && e.message.role === "assistant") {
+          for (const p of (e.message.content || [])) {
+            if (p.type === "text" && p.text) process.stdout.write("\n" + p.text + "\n");
+          }
+        } else if (e.type === "explore_done") {
+          process.stdout.write("\n" + D + "\u2500".repeat(50) + R + "\n");
+          process.stdout.write(G + B + "\u2713 explore complete" + R + " (" + toolCount + " tool calls)\n");
+          if (fd !== -1) fs.closeSync(fd);
+          process.exit(0);
+        }
+      }
+    }
+  } catch (e) {
+    if (e.code === "ENOENT") { process.exit(0); }
+  }
+  setTimeout(poll, 150);
+}
+poll();
+`;
 
 function getExploreModel(): string | undefined {
 	const env = process.env.CHEAP_MODEL;
@@ -149,6 +212,7 @@ async function runExplore(
 
 	let tmpDir: string | null = null;
 	let tmpPromptPath: string | null = null;
+	let tmuxOutputPath: string | null = null;
 
 	const result: SubagentResult = {
 		exitCode: 0,
@@ -167,6 +231,33 @@ async function runExplore(
 		tmpPromptPath = path.join(tmpDir, "system-prompt.md");
 		await fs.promises.writeFile(tmpPromptPath, EXPLORE_SYSTEM_PROMPT, { encoding: "utf-8", mode: 0o600 });
 		args.splice(args.indexOf("--no-session") + 1, 0, "--append-system-prompt", tmpPromptPath);
+
+		// --- Tmux pane: tee JSONL to a file, pretty-print in a split pane ---
+
+		if (process.env.TMUX) {
+			try {
+				// Write query for pane header
+				await fs.promises.writeFile(path.join(tmpDir, "query.txt"), query, "utf8");
+
+				// Write pretty-printer script
+				const ppScriptPath = path.join(tmpDir, "explore-pp.js");
+				await fs.promises.writeFile(ppScriptPath, EXPLORE_PP_SCRIPT, { mode: 0o755 });
+
+				// Create empty output file
+				tmuxOutputPath = path.join(tmpDir, "explore-output.jsonl");
+				await fs.promises.writeFile(tmuxOutputPath, "", "utf8");
+
+				// Split tmux pane running the pretty-printer
+				execSync(
+					`tmux split-window -h -l 35% "node '${ppScriptPath}' '${tmpDir}'; rm -rf '${tmpDir}'"`,
+					{ stdio: "ignore" },
+				);
+				console.log(`[explore] tmux pane opened, output: ${tmuxOutputPath}`);
+			} catch (err) {
+				console.log(`[explore] tmux pane setup failed, continuing without pane: ${err}`);
+				tmuxOutputPath = null;
+			}
+		}
 
 		let wasAborted = false;
 		let loopDetected = false;
@@ -267,7 +358,11 @@ async function runExplore(
 			};
 
 			proc.stdout.on("data", (data) => {
-				buffer += data.toString();
+				const chunk = data.toString();
+				if (tmuxOutputPath) {
+					try { fs.appendFileSync(tmuxOutputPath, chunk); } catch { /* ignore */ }
+				}
+				buffer += chunk;
 				const lines = buffer.split("\n");
 				buffer = lines.pop() || "";
 				for (const line of lines) processLine(line);
@@ -307,7 +402,10 @@ async function runExplore(
 		if (tmpPromptPath) {
 			try { fs.unlinkSync(tmpPromptPath); } catch { /* ignore */ }
 		}
-		if (tmpDir) {
+		if (tmuxOutputPath) {
+			// Signal the tmux pretty-printer to stop; its shell command cleans up tmpDir
+			try { fs.appendFileSync(tmuxOutputPath, JSON.stringify({ type: "explore_done" }) + "\n"); } catch { /* ignore */ }
+		} else if (tmpDir) {
 			try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
 		}
 	}
