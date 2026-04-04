@@ -16,7 +16,8 @@ default_branch=$(_wt_get_default_branch)
 
 # Pick base branch via fzf
 echo "Select base branch:"
-base_branch=$(git branch -a --format='%(refname:short)' | grep -v 'HEAD' | sort -u | fzf $(_wt_fzf_opts 40% "base ▸ ") --no-preview)
+_wt_fzf_opts 40% "base ▸ "
+base_branch=$(git branch -a --format='%(refname:short)' | grep -v 'HEAD' | sort -u | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$base_branch" ]]; then
     echo "No base branch selected" >&2
     exit 1
@@ -24,7 +25,8 @@ fi
 
 # Ask for new branch name via fzf prompt
 echo "Enter new branch name:"
-new_branch=$(echo "" | fzf $(_wt_fzf_opts 30% "new branch ▸ ") --print-query --no-preview | tail -1)
+_wt_fzf_opts 30% "new branch ▸ "
+new_branch=$(echo "" | fzf "${FZF_OPTS[@]}" --print-query --no-preview | tail -1)
 if [[ -z "$new_branch" ]]; then
     echo "No branch name provided" >&2
     exit 1

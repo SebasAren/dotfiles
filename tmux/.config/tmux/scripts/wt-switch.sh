@@ -26,7 +26,8 @@ branches=$(echo "$worktree_json" | $JQ_CMD -r --arg cur "$current_branch" '
 ')
 
 # Present fzf picker
-selected=$(echo "$branches" | fzf $(_wt_fzf_opts 50% "switch ▸ ") --no-preview)
+_wt_fzf_opts 50% "switch ▸ "
+selected=$(echo "$branches" | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$selected" ]]; then
     echo "No worktree selected" >&2
     exit 0

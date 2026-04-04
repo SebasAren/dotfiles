@@ -6,14 +6,8 @@ if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
-# cd to the invoking pane's working directory (popup may start elsewhere)
-if [[ -n "${TMUX:-}" ]]; then
-    _popup_cwd=$(tmux display-message -p '#{pane_current_path}' -t '{last}' 2>/dev/null || true)
-    if [[ -n "$_popup_cwd" && -d "$_popup_cwd" ]]; then
-        cd "$_popup_cwd"
-    fi
-fi
-unset _popup_cwd
+# The popup's cwd is already set via display-popup -d '#{pane_current_path}'
+# in tmux.conf, so no manual cd is needed.
 
 # Command paths
 WT_CMD="$(command -v wt 2>/dev/null || echo /home/linuxbrew/.linuxbrew/bin/wt)"
@@ -37,7 +31,7 @@ _wt_popup_size() {
 _wt_fzf_opts() {
     local height="${1:-70%}"
     local prompt="${2:-▸ }"
-    echo "--height ${height} --border --margin=0,1 --padding=1 --prompt '${prompt}' --header-lines 0 --ansi --extended --cycle --reverse"
+    FZF_OPTS=(--height "$height" --border --margin=0,1 --padding=1 --prompt "$prompt" --header-lines 0 --ansi --extended --cycle --reverse)
 }
 
 # Tool picker: choose between pi and shell
@@ -49,7 +43,8 @@ _wt_tool_picker() {
     tools+=("$SHELL")
     
     local selected
-    selected=$(printf '%s\n' "${tools[@]}" | fzf $(_wt_fzf_opts 30% "tool ▸ ") --no-preview)
+    _wt_fzf_opts 30% "tool ▸ "
+    selected=$(printf '%s\n' "${tools[@]}" | fzf "${FZF_OPTS[@]}" --no-preview)
     echo "$selected"
 }
 
@@ -116,3 +111,4 @@ _wt_open_worktree() {
 
 # Export functions
 export -f _wt_fzf_opts _wt_tool_picker _wt_worktree_list _wt_get_default_branch _wt_get_worktree_path _wt_tmux_window_exists _wt_open_worktree _wt_popup_size
+export FZF_OPTS

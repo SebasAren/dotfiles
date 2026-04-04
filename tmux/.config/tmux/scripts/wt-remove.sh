@@ -32,7 +32,8 @@ if [[ -z "$branches" ]]; then
 fi
 
 # Present fzf picker
-selected=$(echo "$branches" | fzf $(_wt_fzf_opts 50% "remove ▸ ") --no-preview)
+_wt_fzf_opts 50% "remove ▸ "
+selected=$(echo "$branches" | fzf "${FZF_OPTS[@]}" --no-preview)
 if [[ -z "$selected" ]]; then
     echo "No worktree selected" >&2
     exit 0
