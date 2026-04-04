@@ -8,7 +8,8 @@
     "context7",
     "exa-search",
     "explore",
-    "librarian"
+    "librarian",
+    "wt-worktree"
   ],
   "devDependencies": {
     "@mariozechner/pi-ai": "^0.65.0",
