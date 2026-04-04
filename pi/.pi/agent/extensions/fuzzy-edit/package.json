@@ -1,0 +1,12 @@
+{
+  "name": "@pi-ext/fuzzy-edit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "diff": "^8.0.2"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}
