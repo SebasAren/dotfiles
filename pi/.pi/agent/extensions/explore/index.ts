@@ -68,6 +68,45 @@ function formatTokens(count: number): string {
 	return `${(count / 1000000).toFixed(1)}M}`;
 }
 
+/** Parse `## Title` sections from subagent markdown output */
+function parseSections(output: string): { title: string; content: string }[] {
+	const sections: { title: string; content: string }[] = [];
+	const parts = output.split(/^## /m);
+	for (const part of parts) {
+		const newlineIdx = part.indexOf("\n");
+		if (newlineIdx === -1) {
+			const title = part.trim();
+			if (title) sections.push({ title, content: "" });
+			continue;
+		}
+		const title = part.slice(0, newlineIdx).trim();
+		const content = part.slice(newlineIdx + 1).trim();
+		if (title) sections.push({ title, content });
+	}
+	return sections;
+}
+
+/** Get a one-line summary from section content */
+function getSectionSummary(content: string, maxLen = 100): string {
+	const firstLine = content.split("\n").find((l) => l.trim())?.trim() ?? "";
+	if (firstLine.length <= maxLen) return firstLine;
+	return firstLine.slice(0, maxLen - 1) + "…";
+}
+
+/** Format usage stats as a dim string */
+function formatUsageLine(
+	usage: { input: number; output: number; turns: number; cost: number },
+	usedModel?: string,
+): string {
+	const parts: string[] = [];
+	if (usage.turns) parts.push(`${usage.turns} turn${usage.turns > 1 ? "s" : ""}`);
+	if (usage.input) parts.push(`↑${formatTokens(usage.input)}`);
+	if (usage.output) parts.push(`↓${formatTokens(usage.output)}`);
+	if (usage.cost) parts.push(`$${usage.cost.toFixed(4)}`);
+	if (usedModel) parts.push(usedModel);
+	return parts.join(" ");
+}
+
 function getExploreModel(): string | undefined {
 	const env = process.env.CHEAP_MODEL;
 	if (env) return env;
@@ -298,7 +337,7 @@ export default function (pi: ExtensionAPI) {
 				const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
 				return {
 					content: [{ type: "text", text: `Explore failed: ${errorMsg}` }],
-					details: { model: getExploreModel(), query, usage: result.usage },
+					details: { model: getExploreModel(), query, usage: result.usage, success: false },
 				};
 			}
 
@@ -309,6 +348,7 @@ export default function (pi: ExtensionAPI) {
 					usedModel: result.model,
 					query,
 					usage: result.usage,
+					success: true,
 				},
 			};
 		},
@@ -329,53 +369,93 @@ export default function (pi: ExtensionAPI) {
 			return text;
 		},
 
-		renderResult(result, { expanded }, theme, _context) {
+		renderResult(result, { expanded, isPartial }, theme, _context) {
 			const details = result.details as {
 				model?: string;
 				usedModel?: string;
 				query?: string;
+				success?: boolean;
 				usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
 			} | undefined;
 
 			const text = result.content[0];
 			const output = text?.type === "text" ? text.text : "(no output)";
+			const isError = details?.success === false;
+			const icon = isError ? theme.fg("error", "✗") : theme.fg("success", "✓");
+			const sections = parseSections(output);
+
+			// Streaming/partial: show progress with parsed sections so far
+			if (isPartial) {
+				if (sections.length === 0) {
+					return new Text(theme.fg("warning", "⏳ exploring..."), 0, 0);
+				}
+				let content = theme.fg("warning", "⏳ ") + theme.fg("toolTitle", theme.bold("explore"));
+				for (const section of sections) {
+					const summary = getSectionSummary(section.content);
+					content += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
+				}
+				return new Text(content, 0, 0);
+			}
+
+			const mdTheme = getMarkdownTheme();
 
 			if (expanded) {
-				const mdTheme = getMarkdownTheme();
 				const container = new Container();
-				container.addChild(new Text(theme.fg("toolTitle", theme.bold("explore")), 0, 0));
+				container.addChild(new Text(`${icon} ${theme.fg("toolTitle", theme.bold("explore"))}`, 0, 0));
 				if (details?.query) {
 					container.addChild(new Text(theme.fg("muted", "Query: ") + theme.fg("dim", details.query), 0, 0));
 				}
-				container.addChild(new Spacer(1));
-				container.addChild(new Markdown(output.trim(), 0, 0, mdTheme));
-				if (details?.usage) {
-					const parts: string[] = [];
-					if (details.usage.turns) parts.push(`${details.usage.turns} turn${details.usage.turns > 1 ? "s" : ""}`);
-					if (details.usage.input) parts.push(`↑${formatTokens(details.usage.input)}`);
-					if (details.usage.output) parts.push(`↓${formatTokens(details.usage.output)}`);
-					if (details.usage.cost) parts.push(`$${details.usage.cost.toFixed(4)}`);
-					if (details.usedModel) parts.push(details.usedModel);
-					if (parts.length > 0) {
+
+				if (isError) {
+					container.addChild(new Spacer(1));
+					container.addChild(new Text(theme.fg("error", output), 0, 0));
+				} else if (sections.length > 0) {
+					for (const section of sections) {
 						container.addChild(new Spacer(1));
-						container.addChild(new Text(theme.fg("dim", parts.join(" ")), 0, 0));
+						container.addChild(new Text(theme.fg("muted", `─── ${section.title} ───`), 0, 0));
+						if (section.content) {
+							container.addChild(new Markdown(section.content, 0, 0, mdTheme));
+						}
+					}
+				} else {
+					container.addChild(new Spacer(1));
+					container.addChild(new Markdown(output.trim(), 0, 0, mdTheme));
+				}
+
+				if (details?.usage) {
+					const usageLine = formatUsageLine(details.usage, details.usedModel);
+					if (usageLine) {
+						container.addChild(new Spacer(1));
+						container.addChild(new Text(theme.fg("dim", usageLine), 0, 0));
 					}
 				}
 				return container;
 			}
 
-			// Collapsed: show first few lines
-			const lines = output.split("\n");
-			const preview = lines.slice(0, 5).join("\n");
-			let rendered = preview;
-			if (lines.length > 5) rendered += `\n${theme.fg("muted", `... ${lines.length - 5} more lines (Ctrl+O to expand)`)}`;
-			if (details?.usage) {
-				const parts: string[] = [];
-				if (details.usage.turns) parts.push(`${details.usage.turns} turn${details.usage.turns > 1 ? "s" : ""}`);
-				if (details.usage.cost) parts.push(`$${details.usage.cost.toFixed(4)}`);
-				if (details.usedModel) parts.push(details.usedModel);
-				if (parts.length > 0) rendered += `\n${theme.fg("dim", parts.join(" "))}`;
+			// Collapsed: structured section summaries
+			let rendered = `${icon} ${theme.fg("toolTitle", theme.bold("explore"))}`;
+
+			if (isError) {
+				const errorPreview = output.length > 120 ? `${output.slice(0, 120)}...` : output;
+				rendered += `\n  ${theme.fg("error", errorPreview)}`;
+			} else if (sections.length > 0) {
+				for (const section of sections) {
+					const summary = getSectionSummary(section.content);
+					rendered += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
+				}
+			} else {
+				// Fallback for unstructured output
+				const lines = output.split("\n");
+				const preview = lines.slice(0, 3).join("\n");
+				rendered += `\n  ${theme.fg("dim", preview)}`;
+				if (lines.length > 3) rendered += `\n  ${theme.fg("muted", `... ${lines.length - 3} more lines`)}`;
 			}
+
+			if (details?.usage) {
+				const usageLine = formatUsageLine(details.usage, details.usedModel);
+				if (usageLine) rendered += `\n  ${theme.fg("dim", usageLine)}`;
+			}
+			rendered += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
 			return new Text(rendered, 0, 0);
 		},
 	});
