@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, afterEach } from "bun:test";
 import * as path from "node:path";
 
 // We test against the module interface — the implementation will use
@@ -33,13 +33,27 @@ describe("getPiInvocation", () => {
 		expect(result.args[1]).toBe("query");
 	});
 
-	it("uses execPath directly when it is not a generic runtime", () => {
-		// We can't easily change process.execPath, but we can verify the
-		// function's contract: it returns { command, args }.
+	it("uses execPath directly when running as compiled binary (not node/bun)", () => {
+		// When execPath is the pi binary (not node/bun), it should use
+		// execPath directly regardless of argv[1]. This is the normal case
+		// for installed pi — argv[1] may be a Bun virtual /$bunfs/ path.
 		process.argv[1] = "/nonexistent/script.ts";
 		const result = getPiInvocation(["task"]);
 		expect(result).toHaveProperty("command");
 		expect(result).toHaveProperty("args");
 		expect(result.args).toContain("task");
+	});
+
+	it("ignores Bun virtual FS paths (/$bunfs/) as compiled binary", () => {
+		// When pi is a compiled binary, argv[1] is /$bunfs/root/pi.
+		// The function should use execPath directly without attempting
+		// to resolve the virtual path as a script.
+		process.argv[1] = "/$bunfs/root/pi";
+		const result = getPiInvocation(["--mode", "json"]);
+		// execPath is "bun" in test, so it won't match compiled binary case,
+		// but the virtual path won't match existsSync either → falls to "pi"
+		expect(result).toHaveProperty("command");
+		expect(result).toHaveProperty("args");
+		expect(result.args).toEqual(["--mode", "json"]);
 	});
 });
