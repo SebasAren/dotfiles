@@ -34,3 +34,11 @@ export function extendUsage(base: UsageStats, extra: UsageStats): UsageStats {
 		turns: base.turns + extra.turns,
 	};
 }
+
+/** Options for spawning a subprocess. */
+export interface SpawnOptions {
+	/** Working directory for the subprocess */
+	cwd: string;
+	/** Command-line arguments */
+	args: string[];
+}

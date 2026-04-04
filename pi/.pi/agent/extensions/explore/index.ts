@@ -33,46 +33,35 @@ import {
 
 
 
-const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. Your job is to investigate the codebase and return structured findings.
+const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. You MUST stay strictly on-topic.
 
-You have read-only tools (read, grep, find, ls, bash). Do NOT modify any files.
+## ABSOLUTE RULES
+1. NEVER read files unrelated to the query keywords.
+2. NEVER list directory contents out of curiosity — only grep/find for query terms.
+3. NEVER follow tangents. If a file contains a mention of something unrelated, ignore it.
+4. NEVER read config files (package.json, tsconfig.json, README, .env) unless the query explicitly asks about configuration.
+5. Maximum 10 tool calls total. Stop and summarize once you have enough information.
+6. If you cannot find relevant files after 3 grep/find attempts, report that and STOP. Do NOT broaden the search.
 
-IMPORTANT — Stay on topic:
-- The user query contains specific keywords. Use them to target your search.
-- Do NOT enumerate or read unrelated files, directories, or extensions.
-- If the query mentions "tmux" and "worktree", only look at tmux and worktree files.
-- Start with targeted grep/find, not broad directory listings.
+## STRATEGY (follow this order exactly)
+1. Extract the 2-4 most specific keywords from the query.
+2. Run grep -r with those exact keywords to locate relevant files.
+3. Read ONLY matching files or sections.
+4. If imports point to other directly-relevant files, follow them. Otherwise, do NOT.
+5. Summarize your findings.
 
-Strategy:
-1. Extract key terms from the query. Use grep/find with those exact terms first.
-2. Read ONLY the files that match. Skip anything unrelated.
-3. Follow imports/dependencies only when directly relevant to the query.
-4. Do not read package.json, tsconfig.json, or README files unless the query asks about config.
-
-Output format:
+## OUTPUT FORMAT
+Produce exactly these sections:
 
 ## Files Retrieved
-List with exact line ranges:
-1. \`path/to/file\` (lines 10-50) - Description of what's here
+Numbered list with line ranges: 1. \`path/to/file\` (lines X-Y) — one-line description
 
 ## Key Code
-Critical types, interfaces, or functions with actual code snippets.
-
-## Architecture
-Brief explanation of how the pieces connect.
+Only the code snippets directly relevant to the query.
 
 ## Summary
-Concise answer to the exploration query.`;
+2-5 sentence answer to the query. Nothing else.`;
 
-
-
-/** Parse `## Title` sections from subagent markdown output */
-
-
-/** Get a one-line summary from section content */
-
-
-/** Format usage stats as a dim string */
 
 
 function getExploreModel(): string | undefined {
@@ -260,7 +249,15 @@ export default function (pi: ExtensionAPI) {
 		async execute(_toolCallId, params, signal, onUpdate, ctx) {
 			const realCwd = resolveRealCwd(ctx.cwd);
 			const cwd = params.directory ? path.resolve(realCwd, params.directory) : realCwd;
-			const query = params.query;
+
+			// Build query with thoroughness hint
+			const thoroughness = params.thoroughness || "medium";
+			const toolBudget = thoroughness === "quick" ? 5 : thoroughness === "thorough" ? 20 : 10;
+			let query = params.query;
+			query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${toolBudget} tool calls, stay strictly on-topic]`;
+			if (params.directory) {
+				query += `\n[Scope: only look in ${params.directory}]`;
+			}
 
 			const result = await runExplore(
 				cwd,
