@@ -1,6 +1,10 @@
 export { resolveRealCwd } from "./cwd";
 export { formatTokens, formatUsageLine } from "./format";
+export { argsSignature, detectLoop } from "./loop-detection";
 export { parseSections, getSectionSummary } from "./markdown";
+export { getModel } from "./model";
+export { runSubagent } from "./subagent";
+export type { RunSubagentOptions } from "./subagent";
 export { splitIntoSentences, formatAsBulletList } from "./sentences";
 export type { SentenceFragment } from "./sentences";
 export { getPiInvocation } from "./subprocess";

@@ -10,10 +10,6 @@
  * structured findings without modifying any files.
  */
 
-import { spawn } from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import {
   type ExtensionAPI,
   getMarkdownTheme,
@@ -23,13 +19,12 @@ import { Type } from "@sinclair/typebox";
 
 import {
   resolveRealCwd,
-  formatTokens,
   parseSections,
   getSectionSummary,
   formatUsageLine,
   splitIntoSentences,
-  getPiInvocation,
-  type SubagentResult,
+  runSubagent,
+  getModel,
 } from "@pi-ext/shared";
 
 const LIBRARIAN_SYSTEM_PROMPT = `You are a documentation librarian. Your job is to research external documentation and return structured, actionable findings.
@@ -47,6 +42,7 @@ Research strategy:
 3. Use web_search for supplementary information: tutorials, blog posts, changelogs, comparisons
 4. If initial results are insufficient, refine your search and try again
 5. Cross-reference multiple sources when possible
+6. Maximum 15 tool calls total. Stop and summarize once you have enough information.
 
 Output format:
 
@@ -66,201 +62,17 @@ Concise summary answering the research query with specific details.
 ## Recommendations
 If applicable, suggest best practices or patterns discovered from the documentation.`;
 
-
-
-function getLibrarianModel(): string | undefined {
-  const env = process.env.CHEAP_MODEL;
-  if (env) return env;
-  return undefined;
-}
-
-
-
-type LibrarianResult = SubagentResult;
-
-async function runLibrarian(
-  cwd: string,
-  query: string,
-  signal: AbortSignal | undefined,
-  onUpdate: ((text: string) => void) | undefined,
-): Promise<LibrarianResult> {
-  const model = getLibrarianModel();
-  // Note: we intentionally omit --no-extensions so that the exa-search and context7
-  // extensions load, providing web_search, context7_search, and context7_docs tools.
-  // We use --no-tools to skip built-in filesystem tools since the librarian only
-  // needs external documentation tools.
-  const args: string[] = [
-    "--mode",
-    "json",
-    "-p",
-    "--no-session",
-    "--no-tools",
-    "--no-skills",
-    "--no-prompt-templates",
-  ];
-  if (model) args.push("--model", model);
-  args.push(query);
-
-  let tmpDir: string | null = null;
-  let tmpPromptPath: string | null = null;
-
-  const result: LibrarianResult = {
-    exitCode: 0,
-    output: "",
-    stderr: "",
-    usage: {
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      cost: 0,
-      contextTokens: 0,
-      turns: 0,
-    },
-  };
-
-  const emitUpdate = () => {
-    onUpdate?.(result.output || "(researching...)");
-  };
-
-  try {
-    // Write system prompt to temp file
-    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-librarian-"));
-    tmpPromptPath = path.join(tmpDir, "system-prompt.md");
-    await fs.promises.writeFile(tmpPromptPath, LIBRARIAN_SYSTEM_PROMPT, {
-      encoding: "utf-8",
-      mode: 0o600,
-    });
-    args.splice(
-      args.indexOf("--no-session") + 1,
-      0,
-      "--append-system-prompt",
-      tmpPromptPath,
-    );
-
-    let wasAborted = false;
-    const TIMEOUT_MS = 180_000; // 3 minutes — documentation research can take longer
-
-    const exitCode = await new Promise<number>((resolve) => {
-      const invocation = getPiInvocation(args);
-      console.log(
-        `[librarian] spawning: ${invocation.command} ${invocation.args.join(" ")}`,
-      );
-      console.log(`[librarian] cwd: ${cwd}`);
-      const proc = spawn(invocation.command, invocation.args, {
-        cwd,
-        shell: false,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
-      proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
-
-      // Timeout: kill subprocess if it takes too long
-      const timeout = setTimeout(() => {
-        console.log(
-          `[librarian] timeout after ${TIMEOUT_MS}ms, killing subprocess`,
-        );
-        proc.kill("SIGTERM");
-        setTimeout(() => {
-          if (!proc.killed) proc.kill("SIGKILL");
-        }, 5000);
-      }, TIMEOUT_MS);
-      let buffer = "";
-
-      const processLine = (line: string) => {
-        if (!line.trim()) return;
-        let event: any;
-        try {
-          event = JSON.parse(line);
-        } catch {
-          return;
-        }
-
-        if (event.type === "message_end" && event.message) {
-          const msg = event.message;
-          if (msg.role === "assistant") {
-            result.usage.turns++;
-            const usage = msg.usage;
-            if (usage) {
-              result.usage.input += usage.input || 0;
-              result.usage.output += usage.output || 0;
-              result.usage.cacheRead += usage.cacheRead || 0;
-              result.usage.cacheWrite += usage.cacheWrite || 0;
-              result.usage.cost += usage.cost?.total || 0;
-              result.usage.contextTokens = usage.totalTokens || 0;
-            }
-            if (!result.model && msg.model) result.model = msg.model;
-            if (msg.errorMessage) result.errorMessage = msg.errorMessage;
-
-            // Extract text content
-            for (const part of msg.content) {
-              if (part.type === "text") {
-                result.output += part.text;
-              }
-            }
-            emitUpdate();
-          }
-        }
-      };
-
-      proc.stdout.on("data", (data) => {
-        buffer += data.toString();
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) processLine(line);
-      });
-
-      proc.stderr.on("data", (data) => {
-        const str = data.toString();
-        result.stderr += str;
-        console.log(`[librarian] stderr: ${str.slice(0, 200)}`);
-      });
-
-      proc.on("close", (code) => {
-        clearTimeout(timeout);
-        if (buffer.trim()) processLine(buffer);
-        console.log(
-          `[librarian] subprocess exited with code ${code}, output length: ${result.output.length}`,
-        );
-        resolve(code ?? 0);
-      });
-
-      proc.on("error", () => {
-        resolve(1);
-      });
-
-      if (signal) {
-        const killProc = () => {
-          wasAborted = true;
-          proc.kill("SIGTERM");
-          setTimeout(() => {
-            if (!proc.killed) proc.kill("SIGKILL");
-          }, 5000);
-        };
-        if (signal.aborted) killProc();
-        else signal.addEventListener("abort", killProc, { once: true });
-      }
-    });
-
-    result.exitCode = exitCode;
-    if (wasAborted) throw new Error("Librarian agent was aborted");
-    return result;
-  } finally {
-    if (tmpPromptPath) {
-      try {
-        fs.unlinkSync(tmpPromptPath);
-      } catch {
-        /* ignore */
-      }
-    }
-    if (tmpDir) {
-      try {
-        fs.rmdirSync(tmpDir);
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-}
+/** Base CLI flags for the librarian subagent.
+ *  We omit --no-extensions so that the exa-search and context7 extensions load,
+ *  providing web_search, context7_search, and context7_docs tools.
+ *  We use --no-tools to skip built-in filesystem tools since the librarian only
+ *  needs external documentation tools. */
+const LIBRARIAN_BASE_FLAGS = [
+  "--no-session",
+  "--no-tools",
+  "--no-skills",
+  "--no-prompt-templates",
+];
 
 const LibrarianParams = Type.Object({
   query: Type.String({
@@ -312,19 +124,27 @@ export default function (pi: ExtensionAPI) {
         query += ` Focus on ${params.focus}.`;
       }
 
-      const result = await runLibrarian(
-        realCwd,
+      const result = await runSubagent({
+        cwd: realCwd,
         query,
+        systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
+        baseFlags: LIBRARIAN_BASE_FLAGS,
+        timeoutMs: 180_000, // 3 minutes — documentation research can take longer
         signal,
-        onUpdate
+        onUpdate: onUpdate
           ? (text) => {
               onUpdate({
                 content: [{ type: "text", text }],
-                details: { model: getLibrarianModel(), query: params.query },
+                details: { model: getModel(), query: params.query },
               });
             }
           : undefined,
-      );
+        loopDetection: true,
+        maxToolCalls: 20,
+        tmux: { label: "librarian" },
+        tmpPrefix: "pi-librarian-",
+        debugLabel: "librarian",
+      });
 
       const isError = result.exitCode !== 0 || !!result.errorMessage;
       if (isError) {
@@ -350,7 +170,7 @@ export default function (pi: ExtensionAPI) {
               },
             ],
             details: {
-              model: getLibrarianModel(),
+              model: getModel(),
               query: params.query,
               usage: result.usage,
               success: false,
@@ -360,7 +180,7 @@ export default function (pi: ExtensionAPI) {
         return {
           content: [{ type: "text", text: `Librarian failed: ${errorMsg}` }],
           details: {
-            model: getLibrarianModel(),
+            model: getModel(),
             query: params.query,
             usage: result.usage,
             success: false,
@@ -371,7 +191,7 @@ export default function (pi: ExtensionAPI) {
       return {
         content: [{ type: "text", text: result.output || "(no output)" }],
         details: {
-          model: getLibrarianModel(),
+          model: getModel(),
           usedModel: result.model,
           query: params.query,
           library: params.library,
@@ -382,7 +202,7 @@ export default function (pi: ExtensionAPI) {
     },
 
     renderCall(args, theme, context) {
-      const model = getLibrarianModel();
+      const model = getModel();
       const preview =
         args.query.length > 80 ? `${args.query.slice(0, 80)}...` : args.query;
       let content =
