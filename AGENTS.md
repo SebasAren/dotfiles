@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal dotfiles repo managed with GNU Stow. 14 tool directories, 286 config files.
+Personal dotfiles repo managed with GNU Stow. 15 tool directories, 287 config files.
 
 ## OVERVIEW
 
@@ -21,6 +21,7 @@ opencode/.config/opencode/  # Opencode AI assistant
 m908/.config/m908/      # Mouse config
 aider/.config/aider/    # Aider AI pair programming
 asdf/.config/asdf/      # Version manager
+wt/.config/worktrunk/  # Worktrunk: git worktree management, pi-powered commits
 ```
 
 ## WHERE TO LOOK
@@ -35,6 +36,7 @@ asdf/.config/asdf/      # Version manager
 | Docker service | `docker/docker-services/<service>/` |
 | Shell aliases | `bashrc/.bashrc.d/alias` |
 | Tmux plugins | `tmux/.config/tmux/.tmux.conf` |
+| Worktrunk config | `wt/.config/worktrunk/config.toml` |
 
 ## STOW MANAGEMENT
 

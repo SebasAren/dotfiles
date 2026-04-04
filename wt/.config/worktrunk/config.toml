@@ -1,0 +1,17 @@
+# Worktrunk (wt) configuration
+# Stow target: ~/.config/worktrunk/config.toml
+
+# LLM commit messages via pi agent
+[commit.generation]
+command = "pi -p --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --system-prompt='Output only a commit message. No quotes, no code blocks, no explanation.'"
+
+[commit]
+stage = "all"
+
+[merge]
+squash = true
+commit = true
+rebase = true
+remove = true
+verify = true
+ff = true
