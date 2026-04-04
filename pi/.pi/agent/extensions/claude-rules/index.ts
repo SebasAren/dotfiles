@@ -1,19 +1,23 @@
 // Claude Rules Extension
 //
 // Reads Claude Code-style path-scoped rules from `.claude/rules/*.md`.
-// Each rule file can have YAML frontmatter with a `globs` field (list of
-// path patterns). When the agent reads/writes/edits a file that matches a
-// rule's globs, the rule content is automatically injected into the LLM
-// context alongside the tool result.
+// Each rule file can have YAML frontmatter with a `globs` or `paths` field
+// (list of path patterns). Both fields are supported — `globs` is the legacy
+// name, `paths` is what Claude Code documents officially. When the agent
+// reads/writes/edits a file that matches a rule's patterns, the rule content
+// is automatically injected into the LLM context alongside the tool result.
 //
-// Rule files without globs are always included in the system prompt.
+// Rule files without globs/paths are always included in the system prompt.
 //
-// Rule file format:
+// Rule file format (any of these work):
 //   globs: ["*.ts", "src/**/*.tsx"]
+//   globs: **/*.ts, **/*.tsx
+//   paths: ["*.ts", "src/**/*.tsx"]
+//   paths: **/*.ts, **/*.tsx
 //   description: TypeScript coding standards
 //
-// Supports both inline arrays (`globs: ["*.ts"]`) and multi-line YAML arrays.
-// Frontmatter fields: `globs` (string|string[]), `description` (string).
+// Supports inline JSON arrays, multi-line YAML arrays, and comma-separated values.
+// Frontmatter fields: `globs`|`paths` (string|string[]), `description` (string).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -168,15 +172,25 @@ function loadRules(projectRoot: string): ClaudeRule[] {
       const { frontmatter, body } = parseFrontmatter(raw);
       const relativePath = path.relative(projectRoot, fullPath);
 
-      // Normalize globs to string array
+      // Normalize globs/paths to string array.
+      // Claude Code uses both `globs` and `paths` frontmatter fields.
+      // `paths` values may be comma-separated: "**/*.ts, **/*.tsx"
+      // `globs` values may be inline JSON arrays: ["*.ts"]
       let globs: string[] = [];
-      if (frontmatter.globs) {
-        if (typeof frontmatter.globs === "string") {
-          // Could be a single glob or inline JSON array
-          const inlineArray = parseInlineArray(frontmatter.globs);
-          globs = inlineArray ?? [frontmatter.globs];
-        } else if (Array.isArray(frontmatter.globs)) {
-          globs = frontmatter.globs.filter(
+      const rawGlobs = frontmatter.globs ?? frontmatter.paths;
+      if (rawGlobs) {
+        if (typeof rawGlobs === "string") {
+          // Try inline JSON array first, then comma-separated, then single value
+          const inlineArray = parseInlineArray(rawGlobs);
+          if (inlineArray) {
+            globs = inlineArray;
+          } else if (rawGlobs.includes(",")) {
+            globs = rawGlobs.split(",").map((g) => g.trim()).filter(Boolean);
+          } else {
+            globs = [rawGlobs];
+          }
+        } else if (Array.isArray(rawGlobs)) {
+          globs = rawGlobs.filter(
             (g): g is string => typeof g === "string",
           );
         }
