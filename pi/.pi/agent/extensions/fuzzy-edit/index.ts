@@ -76,14 +76,27 @@ interface FuzzyResult {
  * matching was used.
  */
 function tabFuzzyReplace(content: string, oldText: string, newText: string): FuzzyResult {
-	// Tier 0: exact match
-	const exactIdx = content.indexOf(oldText);
-	if (exactIdx !== -1) {
+	// Tier 0: exact match (must be unique)
+	let searchFrom = 0;
+	const exactMatches: number[] = [];
+	let idx: number;
+	while ((idx = content.indexOf(oldText, searchFrom)) !== -1) {
+		exactMatches.push(idx);
+		searchFrom = idx + 1;
+	}
+	if (exactMatches.length === 1) {
+		const exactIdx = exactMatches[0];
 		return {
 			content: content.slice(0, exactIdx) + newText + content.slice(exactIdx + oldText.length),
 			found: true,
 			fuzzy: false,
 		};
+	}
+	if (exactMatches.length > 1) {
+		throw new Error(
+			`Fuzzy whitespace matching found ${exactMatches.length} matches. ` +
+				"Provide more surrounding context in oldText to make it unique.",
+		);
 	}
 
 	// Tier 1: tab-to-space normalization
@@ -105,8 +118,8 @@ function lineFuzzyMatch(
 	newText: string,
 	normalize: NormalizeFn,
 ): FuzzyResult {
-	const contentLines = content.split("\n");
-	const searchLines = oldText.split("\n");
+	const contentLines = content.replace(/\n+$/, "").split("\n");
+	const searchLines = oldText.replace(/\n+$/, "").split("\n");
 	if (searchLines.length === 0) return { content, found: false, fuzzy: false };
 
 	const normalizedSearch = searchLines.map(normalize);
