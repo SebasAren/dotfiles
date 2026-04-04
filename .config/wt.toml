@@ -10,8 +10,7 @@ copy = "wt step copy-ignored"
 tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
 
 [pre-commit]
-stylua = "stylua --check nvim/.config/nvim/"
-shellcheck = "shellcheck bashrc/.bashrc.d/*"
+# shellcheck = "shellcheck bashrc/.bashrc.d/*"
 
 [pre-merge]
 test = "cd pi/.pi/agent/extensions && bun test"

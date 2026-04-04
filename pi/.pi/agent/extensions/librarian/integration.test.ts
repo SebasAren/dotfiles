@@ -21,6 +21,7 @@ mock.module("@sinclair/typebox", () => ({
 	Type: {
 		Object: (props: any) => ({ type: "object", ...props }),
 		String: (props: any) => ({ type: "string", ...props }),
+		Boolean: (props: any) => ({ type: "boolean", ...props }),
 		Optional: (schema: any) => ({ ...schema, optional: true }),
 	},
 }));

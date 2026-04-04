@@ -38,9 +38,9 @@ export function splitIntoSentences(
 	const { maxLength = 80, minLength = 15 } = options;
 
 	// Split on sentence endings followed by capital letter, or on colon + space
-	// This handles both "Let me check. Now I see" and "check: also see" patterns
+	// This handles "Let me check. Now I see", "check: also see", and "there.Now" (no space after period)
 	const rawFragments = text
-		.split(/(?<=[.!?])\s+(?=[A-Z])|:\s*/)
+		.split(/(?<=[.!?])\s*(?=[A-Z])|:\s*/)
 		.map((s) => s.trim())
 		.filter((s) => s.length >= minLength);
 

@@ -75,6 +75,15 @@ describe("splitIntoSentences", () => {
 		const result = splitIntoSentences(text);
 		expect(result).toHaveLength(3);
 	});
+
+	it("handles missing space after period (e.g., 'there.Now')", () => {
+		const text = "I'll explore the structure there.Now let me check the README:Let me also check package.json";
+		const result = splitIntoSentences(text);
+		expect(result.length).toBeGreaterThanOrEqual(3);
+		expect(result[0].text).toContain("explore");
+		expect(result[1].text).toContain("Now");
+		expect(result[2].text).toContain("Let me");
+	});
 });
 
 describe("formatAsBulletList", () => {
