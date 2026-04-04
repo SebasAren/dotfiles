@@ -1,24 +1,4 @@
-local lsp_servers = { "vtsls", "astro" }
-
-vim.lsp.config("vtsls", {
-	filetypes = { "javascript", "typescript", "vue", "typescriptreact", "javascriptreact" },
-	settings = {
-		vtsls = {
-			autoUseWorkspaceTsdk = true,
-			tsserver = {
-				globalPlugins = {
-					{
-						name = "@vue/typescript-plugin",
-						location = vim.fn.getcwd() .. "/node_modules/@vue/typescript-plugin",
-						languages = { "vue" },
-						configNamespace = "typescript",
-						enableForWorkspaceTypeScriptVersions = true,
-					},
-				},
-			},
-		},
-	},
-})
+local lsp_servers = { "astro" }
 
 vim.lsp.config("astro", {
 	init_options = {
@@ -38,5 +18,5 @@ end
 vim.lsp.enable(lsp_servers)
 
 require("mason-lspconfig").setup({
-  ensure_installed = { "svelte" },
+  ensure_installed = { "svelte", "volar" },
 })
