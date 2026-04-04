@@ -19,7 +19,15 @@ if [[ -f ~/.bashrc.d/pi_models ]]; then
   source ~/.bashrc.d/pi_models
 fi
 
-prompt="You must output a single-line commit message in conventional commits format, starting with a type (e.g., feat, fix, chore, refactor, docs, style, test, ci, build, perf, etc.) followed by a colon and a space, then a concise description. Example: 'chore: remove obsolete configs'. Output only the commit message, nothing else. No quotes, no code blocks, no explanation, no bullet points."
+prompt='Write a commit message for the diff below.
+
+Format:
+- Subject line in conventional commits format: type(scope): description (under 50 chars)
+- For non-trivial changes, add a blank line then a bulleted body describing key changes
+- Use imperative mood: "Add feature" not "Added feature"
+- Types: feat, fix, refactor, docs, style, chore, perf, test, ci, build
+
+Output only the commit message. No quotes, no code blocks, no explanation.'
 
 # wt pipes the squash diff to stdin; pi reads it as the prompt argument
 diff_text=$(cat)
@@ -60,13 +68,14 @@ fi
 if timeout "$TIMEOUT" pi "${pi_args[@]}" "$diff_text" > "$tmp_out" 2>&1; then
   # pi succeeded, read output
   commit_msg=$(cat "$tmp_out")
-  # Trim whitespace and take first line
-  commit_msg=$(echo "$commit_msg" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -1)
+  # Trim leading/trailing whitespace from the whole output
+  commit_msg=$(echo "$commit_msg" | sed -e '/./,$!d' -e ':a' -e '/^\n*$/{$d;N;ba}')
   # Ensure output is not empty
   if [[ -n "$commit_msg" ]]; then
-    # Validate conventional commit format
-    if ! [[ "$commit_msg" =~ ^[a-z]+(:|\([a-z]+\)?:) ]]; then
-      # Not a conventional commit, prepend 'chore: '
+    # Validate conventional commit format on the subject (first line)
+    subject=$(echo "$commit_msg" | head -1)
+    if ! [[ "$subject" =~ ^[a-z]+(:|\([a-z]+\)?:) ]]; then
+      # Not a conventional commit, prepend 'chore: ' to subject
       commit_msg="chore: $commit_msg"
     fi
     echo "$commit_msg"
