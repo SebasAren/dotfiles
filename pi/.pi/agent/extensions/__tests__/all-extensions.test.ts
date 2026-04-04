@@ -13,7 +13,7 @@ describe("all extensions verification", () => {
 		it(`${dir}: all tests pass`, async () => {
 			const exitCode = await new Promise<number>((resolve) => {
 				const proc = spawn("bun", ["test"], {
-					cwd: import.meta.dir + "/" + dir,
+					cwd: import.meta.dir + "/../" + dir,
 					shell: false,
 					stdio: ["ignore", "pipe", "pipe"],
 				});
@@ -37,7 +37,7 @@ describe("all extensions verification", () => {
 	it("all extensions depend on @pi-ext/shared (except unchanged ones)", async () => {
 		const expectedDeps = ["explore", "librarian", "wt-worktree"];
 		for (const ext of expectedDeps) {
-			const pkg = await import(`./${ext}/package.json`);
+			const pkg = await import(`../${ext}/package.json`);
 			expect(pkg.dependencies?.["@pi-ext/shared"]).toBe("workspace:*");
 		}
 	});
@@ -46,7 +46,7 @@ describe("all extensions verification", () => {
 		const unchanged = ["exa-search", "context7", "claude-rules"];
 		for (const ext of unchanged) {
 			try {
-				const pkg = await import(`./${ext}/package.json`);
+				const pkg = await import(`../${ext}/package.json`);
 				expect(pkg.dependencies?.["@pi-ext/shared"]).toBeUndefined();
 			} catch {
 				// package.json may not exist for some extensions — that's fine
