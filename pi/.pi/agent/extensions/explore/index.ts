@@ -248,8 +248,8 @@ async function runExplore(
 				await fs.promises.writeFile(tmuxOutputPath, "", "utf8");
 
 				// Split tmux pane running the pretty-printer
-				execSync(
-					`tmux split-window -h -l 35% "node '${ppScriptPath}' '${tmpDir}'; rm -rf '${tmpDir}'"`,
+execSync(
+						`tmux split-window -h -l 35% -t "${process.env.TMUX_PANE}" "node '${ppScriptPath}' '${tmpDir}'; rm -rf '${tmpDir}'"`,
 				{ stdio: "ignore" },
 			);
 			} catch (err) {
