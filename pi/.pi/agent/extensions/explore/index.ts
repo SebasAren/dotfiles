@@ -31,7 +31,69 @@ import {
 	type UsageStats,
 } from "@pi-ext/shared";
 
+/**
+ * Creates a normalized signature from tool args to detect near-duplicates.
+ * Normalizes paths and trims long values.
+ */
+function argsSignature(args: Record<string, unknown>): string {
+	const entries = Object.entries(args)
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([k, v]) => {
+			const s = typeof v === "string" ? v : JSON.stringify(v);
+			// Normalize paths: strip trailing slashes, resolve ./ prefixes
+			const normalized = s.replace(/\/+$/, "").replace(/^\.\//, "");
+			// Truncate long values to avoid false negatives from minor differences
+			return `${k}:${normalized.length > 100 ? normalized.slice(0, 100) + "..." : normalized}`;
+		});
+	return entries.join("|");
+}
 
+/**
+ * Detects loops by tracking recent tool call signatures.
+ * Returns a description of the loop if detected, or null otherwise.
+ */
+function detectLoop(
+	toolHistory: Array<{ name: string; argsSignature: string }>,
+	windowSize: number = 6,
+): string | null {
+	const recent = toolHistory.slice(-windowSize);
+	if (recent.length < 3) return null;
+
+	// Check for repeated subsequences of length 2+ (A,B,A,B pattern)
+	for (let seqLen = 2; seqLen <= Math.floor(recent.length / 2); seqLen++) {
+		const first = recent.slice(-seqLen * 2, -seqLen);
+		const second = recent.slice(-seqLen);
+		if (first.length === seqLen && second.length === seqLen) {
+			let match = true;
+			for (let i = 0; i < seqLen; i++) {
+				if (first[i].name !== second[i].name || first[i].argsSignature !== second[i].argsSignature) {
+					match = false;
+					break;
+				}
+			}
+			if (match) {
+				const toolNames = second.map((t) => t.name).join(", ");
+				return `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`;
+			}
+		}
+	}
+
+	// Check for 3+ identical consecutive calls
+	const lastSig = recent[recent.length - 1];
+	let identicalCount = 0;
+	for (let i = recent.length - 1; i >= 0; i--) {
+		if (recent[i].name === lastSig.name && recent[i].argsSignature === lastSig.argsSignature) {
+			identicalCount++;
+		} else {
+			break;
+		}
+	}
+	if (identicalCount >= 3) {
+		return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
+	}
+
+	return null;
+}
 
 const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. You MUST stay strictly on-topic.
 
@@ -107,7 +169,10 @@ async function runExplore(
 		args.splice(args.indexOf("--no-session") + 1, 0, "--append-system-prompt", tmpPromptPath);
 
 		let wasAborted = false;
+		let loopDetected = false;
 		const TIMEOUT_MS = 120_000; // 2 minutes
+		const MAX_TOOL_CALLS = 30;
+		const toolHistory: Array<{ name: string; argsSignature: string }> = [];
 
 		const exitCode = await new Promise<number>((resolve) => {
 			const invocation = getPiInvocation(args);
@@ -121,13 +186,18 @@ async function runExplore(
 			});
 			proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
 
-			// Timeout: kill subprocess if it takes too long
-			const timeout = setTimeout(() => {
-				console.log(`[explore] timeout after ${TIMEOUT_MS}ms, killing subprocess`);
+			// Helper to kill the subprocess with a reason
+			const killProc = (reason: string) => {
+				console.log(`[explore] ${reason}, killing subprocess`);
 				proc.kill("SIGTERM");
 				setTimeout(() => {
 					if (!proc.killed) proc.kill("SIGKILL");
 				}, 5000);
+			};
+
+			// Timeout: kill subprocess if it takes too long
+			const timeout = setTimeout(() => {
+				killProc(`timeout after ${TIMEOUT_MS}ms`);
 			}, TIMEOUT_MS);
 			let buffer = "";
 
@@ -138,6 +208,35 @@ async function runExplore(
 					event = JSON.parse(line);
 				} catch {
 					return;
+				}
+
+				// Track tool calls for loop detection
+				if (event.type === "tool_execution_start" && event.toolName) {
+					const args = event.args || {};
+					toolHistory.push({
+						name: event.toolName,
+						argsSignature: argsSignature(args),
+					});
+					console.log(`[explore] tool call #${toolHistory.length}: ${event.toolName}`);
+
+					// Hard limit on total tool calls
+					if (toolHistory.length > MAX_TOOL_CALLS) {
+						loopDetected = true;
+						result.output += `\n\n[Explore stopped: exceeded ${MAX_TOOL_CALLS} tool calls]`;
+						emitUpdate();
+						killProc(`exceeded ${MAX_TOOL_CALLS} tool calls`);
+						return;
+					}
+
+					// Pattern-based loop detection
+					const loopMsg = detectLoop(toolHistory);
+					if (loopMsg) {
+						loopDetected = true;
+						result.output += `\n\n[Explore stopped: ${loopMsg}]`;
+						emitUpdate();
+						killProc(loopMsg);
+						return;
+					}
 				}
 
 				if (event.type === "message_end" && event.message) {
@@ -192,19 +291,16 @@ async function runExplore(
 			});
 
 			if (signal) {
-				const killProc = () => {
+				const abortKill = () => {
 					wasAborted = true;
-					proc.kill("SIGTERM");
-					setTimeout(() => {
-						if (!proc.killed) proc.kill("SIGKILL");
-					}, 5000);
+					killProc("aborted");
 				};
-				if (signal.aborted) killProc();
-				else signal.addEventListener("abort", killProc, { once: true });
+				if (signal.aborted) abortKill();
+				else signal.addEventListener("abort", abortKill, { once: true });
 			}
 		});
 
-		result.exitCode = exitCode;
+		result.exitCode = loopDetected ? 0 : exitCode;
 		if (wasAborted) throw new Error("Explore agent was aborted");
 		return result;
 	} finally {
