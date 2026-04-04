@@ -24,6 +24,8 @@ import {
 	parseSections,
 	getSectionSummary,
 	formatUsageLine,
+	splitIntoSentences,
+	formatAsBulletList,
 	getPiInvocation,
 	type SubagentResult,
 	type UsageStats,
@@ -378,11 +380,21 @@ export default function (pi: ExtensionAPI) {
 					rendered += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
 				}
 			} else {
-				// Fallback for unstructured output
-				const lines = output.split("\n");
-				const preview = lines.slice(0, 3).join("\n");
-				rendered += `\n  ${theme.fg("dim", preview)}`;
-				if (lines.length > 3) rendered += `\n  ${theme.fg("muted", `... ${lines.length - 3} more lines`)}`;
+				// Fallback for unstructured output - use shared sentence parser
+				const sentences = splitIntoSentences(output);
+
+				if (sentences.length === 0) {
+					const preview = output.length > 150 ? `${output.slice(0, 150)}...` : output;
+					rendered += `\n  ${theme.fg("dim", preview)}`;
+				} else {
+					const maxItems = Math.min(sentences.length, 4);
+					for (let i = 0; i < maxItems; i++) {
+						rendered += `\n  ${theme.fg("muted", "•")} ${theme.fg("dim", sentences[i].text)}`;
+					}
+					if (sentences.length > 4) {
+						rendered += `\n  ${theme.fg("muted", `... +${sentences.length - 4} more`)}`;
+					}
+				}
 			}
 
 			if (details?.usage) {

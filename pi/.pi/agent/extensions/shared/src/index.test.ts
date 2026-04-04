@@ -25,10 +25,18 @@ describe("index exports", () => {
 	it("exports getPiInvocation", () => {
 		expect(typeof shared.getPiInvocation).toBe("function");
 	});
+
+	it("exports splitIntoSentences", () => {
+		expect(typeof shared.splitIntoSentences).toBe("function");
+	});
+
+	it("exports formatAsBulletList", () => {
+		expect(typeof shared.formatAsBulletList).toBe("function");
+	});
 });
 
 // Type-only exports
-import type { SubagentResult, UsageStats, SpawnOptions } from "./index";
+import type { SubagentResult, UsageStats, SpawnOptions, SentenceFragment } from "./index";
 
 describe("type exports", () => {
 	it("exports SubagentResult type", () => {
@@ -69,5 +77,13 @@ describe("type exports", () => {
 			args: [],
 		};
 		expect(options.cwd).toBe("/tmp");
+	});
+
+	it("exports SentenceFragment type", () => {
+		const fragment: SentenceFragment = {
+			text: "test",
+			truncated: false,
+		};
+		expect(fragment.text).toBe("test");
 	});
 });
