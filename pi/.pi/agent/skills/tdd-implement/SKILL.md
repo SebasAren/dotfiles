@@ -15,6 +15,7 @@ When this skill is invoked:
 2. **Confirm the plan.** Show the plan summary table and ask for confirmation before starting.
 3. **Execute each step** in order, following the Red-Green-Refactor cycle below.
 4. **Update progress** by checking off completed steps in the plan file.
+5. **Archive the plan.** After all steps are complete and confirmed by the user, move the plan file from `.pi/plans/<slug>.md` to `.pi/plans/archive/<slug>.md`. Create the `.pi/plans/archive/` directory if it doesn't exist.
 
 ## Red-Green-Refactor Cycle
 
@@ -90,6 +91,7 @@ Update this line at every phase transition. Use these patterns:
 - `Step N/M — 🔵 REFACTOR (cleaning up)`
 - `Step N/M — ✅ Complete`
 - `All steps complete ✅`
+- `All steps complete ✅ — archived`
 
 ### Progress Log table format
 
@@ -127,6 +129,7 @@ After the user confirms a full step is complete, also update the step heading:
 6. REFACTOR complete: mark REFACTOR cell ✅ (or ⏭️ if skipped)
 7. User confirms step: update Status to `Step 1/3 — ✅ Complete`, strike through step title
 8. Move to next step
+9. After the final step: update Status to `All steps complete ✅`, archive the plan file to `.pi/plans/archive/`
 
 ## Rules
 
