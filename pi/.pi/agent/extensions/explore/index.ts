@@ -1,0 +1,390 @@
+/**
+ * Explore Subagent — delegate codebase exploration to a separate model
+ *
+ * Spawns a `pi` subprocess with read-only tools to investigate the codebase.
+ * The model is configurable via:
+ *   - Environment variable: EXPLORE_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
+ *   - Falls back to the default model if not set
+ *
+ * The explore agent uses read-only tools and returns structured findings
+ * without modifying any files.
+ */
+
+import { spawn } from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { type ExtensionAPI, getMarkdownTheme } from "@mariozechner/pi-coding-agent";
+import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
+import { Type } from "@sinclair/typebox";
+
+function resolveRealCwd(cwd: string): string {
+	// Bun virtualizes process.cwd() into /$bunfs/... which doesn't exist for subprocesses.
+	// Try to resolve to a real filesystem path.
+	try {
+		const real = fs.realpathSync(cwd);
+		if (fs.existsSync(real)) return real;
+	} catch {
+		// ignore
+	}
+	// Fall back to PWD or process.cwd()
+	if (process.env.PWD && fs.existsSync(process.env.PWD)) return process.env.PWD;
+	return process.cwd();
+}
+
+const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. Your job is to investigate the codebase and return structured findings.
+
+You have read-only tools (read, grep, find, ls, bash). Do NOT modify any files.
+
+Strategy:
+1. Use grep/find to locate relevant code
+2. Read key sections (not entire files)
+3. Identify types, interfaces, key functions
+4. Note dependencies between files
+
+Output format:
+
+## Files Retrieved
+List with exact line ranges:
+1. \`path/to/file\` (lines 10-50) - Description of what's here
+
+## Key Code
+Critical types, interfaces, or functions with actual code snippets.
+
+## Architecture
+Brief explanation of how the pieces connect.
+
+## Summary
+Concise answer to the exploration query.`;
+
+function formatTokens(count: number): string {
+	if (count < 1000) return count.toString();
+	if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
+	if (count < 1000000) return `${Math.round(count / 1000)}k`;
+	return `${(count / 1000000).toFixed(1)}M}`;
+}
+
+function getExploreModel(): string | undefined {
+	const env = process.env.EXPLORE_MODEL;
+	if (env) return env;
+	return undefined;
+}
+
+function getPiInvocation(args: string[]): { command: string; args: string[] } {
+	const currentScript = process.argv[1];
+	if (currentScript && fs.existsSync(currentScript)) {
+		return { command: process.execPath, args: [currentScript, ...args] };
+	}
+	const execName = path.basename(process.execPath).toLowerCase();
+	const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
+	if (!isGenericRuntime) {
+		return { command: process.execPath, args };
+	}
+	return { command: "pi", args };
+}
+
+interface ExploreResult {
+	exitCode: number;
+	output: string;
+	stderr: string;
+	usage: {
+		input: number;
+		output: number;
+		cacheRead: number;
+		cacheWrite: number;
+		cost: number;
+		contextTokens: number;
+		turns: number;
+	};
+	model?: string;
+	errorMessage?: string;
+}
+
+async function runExplore(
+	cwd: string,
+	query: string,
+	signal: AbortSignal | undefined,
+	onUpdate: ((text: string) => void) | undefined,
+): Promise<ExploreResult> {
+	const model = getExploreModel();
+	const args: string[] = ["--mode", "json", "-p", "--no-session", "--no-extensions", "--no-skills", "--no-prompt-templates", "--tools", "read,grep,find,ls,bash"];
+	if (model) args.push("--model", model);
+	args.push(query);
+
+	let tmpDir: string | null = null;
+	let tmpPromptPath: string | null = null;
+
+	const result: ExploreResult = {
+		exitCode: 0,
+		output: "",
+		stderr: "",
+		usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, contextTokens: 0, turns: 0 },
+	};
+
+	const emitUpdate = () => {
+		onUpdate?.(result.output || "(exploring...)");
+	};
+
+	try {
+		// Write system prompt to temp file
+		tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-explore-"));
+		tmpPromptPath = path.join(tmpDir, "system-prompt.md");
+		await fs.promises.writeFile(tmpPromptPath, EXPLORE_SYSTEM_PROMPT, { encoding: "utf-8", mode: 0o600 });
+		args.splice(args.indexOf("--no-session") + 1, 0, "--append-system-prompt", tmpPromptPath);
+
+		let wasAborted = false;
+		const TIMEOUT_MS = 120_000; // 2 minutes
+
+		const exitCode = await new Promise<number>((resolve) => {
+			const invocation = getPiInvocation(args);
+			console.log(`[explore] spawning: ${invocation.command} ${invocation.args.join(" ")}`);
+			console.log(`[explore] cwd: ${cwd}`);
+			const proc = spawn(invocation.command, invocation.args, {
+				cwd,
+				shell: false,
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+			proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
+
+			// Timeout: kill subprocess if it takes too long
+			const timeout = setTimeout(() => {
+				console.log(`[explore] timeout after ${TIMEOUT_MS}ms, killing subprocess`);
+				proc.kill("SIGTERM");
+				setTimeout(() => {
+					if (!proc.killed) proc.kill("SIGKILL");
+				}, 5000);
+			}, TIMEOUT_MS);
+			let buffer = "";
+
+			const processLine = (line: string) => {
+				if (!line.trim()) return;
+				let event: any;
+				try {
+					event = JSON.parse(line);
+				} catch {
+					return;
+				}
+
+				if (event.type === "message_end" && event.message) {
+					const msg = event.message;
+					if (msg.role === "assistant") {
+						result.usage.turns++;
+						const usage = msg.usage;
+						if (usage) {
+							result.usage.input += usage.input || 0;
+							result.usage.output += usage.output || 0;
+							result.usage.cacheRead += usage.cacheRead || 0;
+							result.usage.cacheWrite += usage.cacheWrite || 0;
+							result.usage.cost += usage.cost?.total || 0;
+							result.usage.contextTokens = usage.totalTokens || 0;
+						}
+						if (!result.model && msg.model) result.model = msg.model;
+						if (msg.errorMessage) result.errorMessage = msg.errorMessage;
+
+						// Extract text content
+						for (const part of msg.content) {
+							if (part.type === "text") {
+								result.output += part.text;
+							}
+						}
+						emitUpdate();
+					}
+				}
+			};
+
+			proc.stdout.on("data", (data) => {
+				buffer += data.toString();
+				const lines = buffer.split("\n");
+				buffer = lines.pop() || "";
+				for (const line of lines) processLine(line);
+			});
+
+			proc.stderr.on("data", (data) => {
+				const str = data.toString();
+				result.stderr += str;
+				console.log(`[explore] stderr: ${str.slice(0, 200)}`);
+			});
+
+			proc.on("close", (code) => {
+				clearTimeout(timeout);
+				if (buffer.trim()) processLine(buffer);
+				console.log(`[explore] subprocess exited with code ${code}, output length: ${result.output.length}`);
+				resolve(code ?? 0);
+			});
+
+			proc.on("error", () => {
+				resolve(1);
+			});
+
+			if (signal) {
+				const killProc = () => {
+					wasAborted = true;
+					proc.kill("SIGTERM");
+					setTimeout(() => {
+						if (!proc.killed) proc.kill("SIGKILL");
+					}, 5000);
+				};
+				if (signal.aborted) killProc();
+				else signal.addEventListener("abort", killProc, { once: true });
+			}
+		});
+
+		result.exitCode = exitCode;
+		if (wasAborted) throw new Error("Explore agent was aborted");
+		return result;
+	} finally {
+		if (tmpPromptPath) {
+			try { fs.unlinkSync(tmpPromptPath); } catch { /* ignore */ }
+		}
+		if (tmpDir) {
+			try { fs.rmdirSync(tmpDir); } catch { /* ignore */ }
+		}
+	}
+}
+
+const ExploreParams = Type.Object({
+	query: Type.String({ description: "What to explore in the codebase. Be specific about what you're looking for." }),
+	directory: Type.Optional(Type.String({ description: "Directory to explore (defaults to current working directory)" })),
+	thoroughness: Type.Optional(
+		Type.String({ description: "How thorough to be: quick, medium (default), or thorough" }),
+	),
+});
+
+export default function (pi: ExtensionAPI) {
+	pi.registerTool({
+		name: "explore",
+		label: "Explore",
+		description: [
+			"Delegate codebase exploration to a subagent running on a separate (cheaper/faster) model.",
+			"Useful for reconnaissance: finding files, tracing dependencies, understanding architecture.",
+			"The explore agent is read-only — it cannot modify files.",
+			"Configure the model via EXPLORE_MODEL env var (e.g. 'xiaomi-mimo/mimo-v2-flash').",
+			"You may call explore up to 4 times in parallel to investigate different aspects of the codebase simultaneously.",
+		].join(" "),
+		promptSnippet: "Explore the codebase to find files, trace dependencies, or understand architecture",
+		promptGuidelines: [
+			"Use explore for codebase reconnaissance — finding relevant files, tracing imports, understanding structure.",
+			"Prefer explore over multiple read/grep calls when you need to broadly investigate an unfamiliar area.",
+			"Call explore up to 4 times in parallel when investigating multiple independent aspects of the codebase (e.g. different modules, different concerns).",
+		],
+		parameters: ExploreParams,
+
+		async execute(_toolCallId, params, signal, onUpdate, ctx) {
+			const realCwd = resolveRealCwd(ctx.cwd);
+			const cwd = params.directory ? path.resolve(realCwd, params.directory) : realCwd;
+			const query = params.query;
+
+			const result = await runExplore(
+				cwd,
+				query,
+				signal,
+				onUpdate
+					? (text) => {
+							onUpdate({
+								content: [{ type: "text", text }],
+								details: { model: getExploreModel(), query },
+							});
+						}
+					: undefined,
+			);
+
+			const isError = result.exitCode !== 0 || !!result.errorMessage;
+			if (isError) {
+				const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
+				return {
+					content: [{ type: "text", text: `Explore failed: ${errorMsg}` }],
+					details: { model: getExploreModel(), query, usage: result.usage },
+				};
+			}
+
+			return {
+				content: [{ type: "text", text: result.output || "(no output)" }],
+				details: {
+					model: getExploreModel(),
+					usedModel: result.model,
+					query,
+					usage: result.usage,
+				},
+			};
+		},
+
+		renderCall(args, theme, _context) {
+			const model = getExploreModel();
+			const preview = args.query.length > 80 ? `${args.query.slice(0, 80)}...` : args.query;
+			let text =
+				theme.fg("toolTitle", theme.bold("explore ")) +
+				(model ? theme.fg("muted", `[${model}] `) : "") +
+				theme.fg("dim", preview);
+			if (args.directory) {
+				text += `\n  ${theme.fg("muted", `in ${args.directory}`)}`;
+			}
+			return new Text(text, 0, 0);
+		},
+
+		renderResult(result, { expanded }, theme, _context) {
+			const details = result.details as {
+				model?: string;
+				usedModel?: string;
+				query?: string;
+				usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
+			} | undefined;
+
+			const text = result.content[0];
+			const output = text?.type === "text" ? text.text : "(no output)";
+
+			if (expanded) {
+				const mdTheme = getMarkdownTheme();
+				const container = new Container();
+				container.addChild(new Text(theme.fg("toolTitle", theme.bold("explore")), 0, 0));
+				if (details?.query) {
+					container.addChild(new Text(theme.fg("muted", "Query: ") + theme.fg("dim", details.query), 0, 0));
+				}
+				container.addChild(new Spacer(1));
+				container.addChild(new Markdown(output.trim(), 0, 0, mdTheme));
+				if (details?.usage) {
+					const parts: string[] = [];
+					if (details.usage.turns) parts.push(`${details.usage.turns} turn${details.usage.turns > 1 ? "s" : ""}`);
+					if (details.usage.input) parts.push(`↑${formatTokens(details.usage.input)}`);
+					if (details.usage.output) parts.push(`↓${formatTokens(details.usage.output)}`);
+					if (details.usage.cost) parts.push(`$${details.usage.cost.toFixed(4)}`);
+					if (details.usedModel) parts.push(details.usedModel);
+					if (parts.length > 0) {
+						container.addChild(new Spacer(1));
+						container.addChild(new Text(theme.fg("dim", parts.join(" ")), 0, 0));
+					}
+				}
+				return container;
+			}
+
+			// Collapsed: show first few lines
+			const lines = output.split("\n");
+			const preview = lines.slice(0, 5).join("\n");
+			let rendered = preview;
+			if (lines.length > 5) rendered += `\n${theme.fg("muted", `... ${lines.length - 5} more lines (Ctrl+O to expand)`)}`;
+			if (details?.usage) {
+				const parts: string[] = [];
+				if (details.usage.turns) parts.push(`${details.usage.turns} turn${details.usage.turns > 1 ? "s" : ""}`);
+				if (details.usage.cost) parts.push(`$${details.usage.cost.toFixed(4)}`);
+				if (details.usedModel) parts.push(details.usedModel);
+				if (parts.length > 0) rendered += `\n${theme.fg("dim", parts.join(" "))}`;
+			}
+			return new Text(rendered, 0, 0);
+		},
+	});
+
+	// Register /explore command for interactive use
+	pi.registerCommand("explore", {
+		description: "Run explore subagent interactively",
+		handler: async (args, ctx) => {
+			if (!args.trim()) {
+				ctx.ui.notify("Usage: /explore <query>", "info");
+				return;
+			}
+			// Send as a prompt that triggers the explore tool
+			pi.sendUserMessage(
+				`Use the explore tool to investigate: ${args}`,
+				{ deliverAs: ctx.isIdle() ? undefined : "followUp" },
+			);
+		},
+	});
+}
