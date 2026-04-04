@@ -37,11 +37,17 @@ const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. Your job is to inves
 
 You have read-only tools (read, grep, find, ls, bash). Do NOT modify any files.
 
+IMPORTANT — Stay on topic:
+- The user query contains specific keywords. Use them to target your search.
+- Do NOT enumerate or read unrelated files, directories, or extensions.
+- If the query mentions "tmux" and "worktree", only look at tmux and worktree files.
+- Start with targeted grep/find, not broad directory listings.
+
 Strategy:
-1. Use grep/find to locate relevant code
-2. Read key sections (not entire files)
-3. Identify types, interfaces, key functions
-4. Note dependencies between files
+1. Extract key terms from the query. Use grep/find with those exact terms first.
+2. Read ONLY the files that match. Skip anything unrelated.
+3. Follow imports/dependencies only when directly relevant to the query.
+4. Do not read package.json, tsconfig.json, or README files unless the query asks about config.
 
 Output format:
 
@@ -246,6 +252,8 @@ export default function (pi: ExtensionAPI) {
 			"Use explore for codebase reconnaissance — finding relevant files, tracing imports, understanding structure.",
 			"Prefer explore over multiple read/grep calls when you need to broadly investigate an unfamiliar area.",
 			"Call explore up to 4 times in parallel when investigating multiple independent aspects of the codebase (e.g. different modules, different concerns).",
+			"Write specific, keyword-rich queries. Bad: 'explore the codebase'. Good: 'tmux wt worktrunk integration pane_current_path'.",
+			"Provide a directory hint when you know where to look. Use the directory parameter to scope the search (e.g. 'tmux/.config/tmux/scripts/').",
 		],
 		parameters: ExploreParams,
 
