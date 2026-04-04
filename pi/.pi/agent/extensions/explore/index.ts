@@ -3,7 +3,7 @@
  *
  * Spawns a `pi` subprocess with read-only tools to investigate the codebase.
  * The model is configurable via:
- *   - Environment variable: EXPLORE_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
+ *   - Environment variable: CHEAP_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
  *   - Falls back to the default model if not set
  *
  * The explore agent uses read-only tools and returns structured findings
@@ -65,7 +65,7 @@ function formatTokens(count: number): string {
 }
 
 function getExploreModel(): string | undefined {
-	const env = process.env.EXPLORE_MODEL;
+	const env = process.env.CHEAP_MODEL;
 	if (env) return env;
 	return undefined;
 }
@@ -258,7 +258,7 @@ export default function (pi: ExtensionAPI) {
 			"Delegate codebase exploration to a subagent running on a separate (cheaper/faster) model.",
 			"Useful for reconnaissance: finding files, tracing dependencies, understanding architecture.",
 			"The explore agent is read-only — it cannot modify files.",
-			"Configure the model via EXPLORE_MODEL env var (e.g. 'xiaomi-mimo/mimo-v2-flash').",
+			"Configure the model via CHEAP_MODEL env var (e.g. 'xiaomi-mimo/mimo-v2-flash').",
 			"You may call explore up to 4 times in parallel to investigate different aspects of the codebase simultaneously.",
 		].join(" "),
 		promptSnippet: "Explore the codebase to find files, trace dependencies, or understand architecture",

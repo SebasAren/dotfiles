@@ -3,7 +3,7 @@
  *
  * Spawns a `pi` subprocess with web_search (Exa) and context7 tools to research
  * external documentation. The model is configurable via:
- *   - Environment variable: LIBRARIAN_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
+ *   - Environment variable: CHEAP_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
  *   - Falls back to the default model if not set
  *
  * The librarian agent uses web search and library docs tools and returns
@@ -73,7 +73,7 @@ function formatTokens(count: number): string {
 }
 
 function getLibrarianModel(): string | undefined {
-	const env = process.env.LIBRARIAN_MODEL;
+	const env = process.env.CHEAP_MODEL;
 	if (env) return env;
 	return undefined;
 }

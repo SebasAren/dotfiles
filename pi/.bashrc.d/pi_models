@@ -1,3 +1,2 @@
 #!/bin/bash
-export LIBRARIAN_MODEL=xiaomi-mimo/mimo-v2-flash
-export EXPLORE_MODEL=xiaomi-mimo/mimo-v2-flash
+export CHEAP_MODEL=xiaomi-mimo/mimo-v2-flash

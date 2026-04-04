@@ -3,7 +3,7 @@
 
 # LLM commit messages via pi agent
 [commit.generation]
-command = "pi -p --model $EXPLORE_MODEL --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --system-prompt='Output only a commit message. No quotes, no code blocks, no explanation.'"
+command = "pi -p --model $CHEAP_MODEL --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --system-prompt='Output only a commit message. No quotes, no code blocks, no explanation.'"
 
 [commit]
 stage = "all"
