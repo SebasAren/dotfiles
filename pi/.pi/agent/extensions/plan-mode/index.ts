@@ -35,6 +35,9 @@ function getTextContent(message: AssistantMessage): string {
 		.join("\n");
 }
 
+// Module-level temp for passing todos to the fresh-context command
+let pendingFreshTodos: TodoItem[] = [];
+
 export default function planModeExtension(pi: ExtensionAPI): void {
 	let planModeEnabled = false;
 	let executionMode = false;
@@ -99,6 +102,49 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("plan", {
 		description: "Toggle plan mode (read-only exploration)",
 		handler: async (_args, ctx) => togglePlanMode(ctx),
+	});
+
+	pi.registerCommand("plan-exec-fresh", {
+		description: "Execute plan in a fresh session (internal)",
+		handler: async (_args, ctx) => {
+			const todos = pendingFreshTodos;
+			pendingFreshTodos = [];
+
+			if (todos.length === 0) {
+				ctx.ui.notify("No plan steps to execute.", "error");
+				return;
+			}
+
+			const planSteps = todos.map((t, i) => `${i + 1}. ${t.text}`).join("\n");
+
+			const result = await ctx.newSession({
+				parentSession: ctx.sessionManager.getSessionFile(),
+				setup: async (sm) => {
+					// Persist plan state so session_start can restore it
+					sm.appendCustomEntry("plan-mode", {
+						enabled: false,
+						todos: todos,
+						executing: true,
+					});
+
+					// Inject plan as the first user message
+					sm.appendMessage({
+						role: "user",
+						content: [
+							{
+								type: "text",
+								text: `Execute this plan step by step. After completing each step, include a [DONE:n] tag in your response.\n\nPlan:\n${planSteps}`,
+							},
+						],
+						timestamp: Date.now(),
+					});
+				},
+			});
+
+			if (result.cancelled) {
+				ctx.ui.notify("Fresh context execution cancelled.", "info");
+			}
+		},
 	});
 
 	pi.registerCommand("plan-progress", {
@@ -259,13 +305,22 @@ After completing a step, include a [DONE:n] tag in your response.`,
 			);
 		}
 
-		const choice = await ctx.ui.select("Plan mode - what next?", [
+		const choices = [
+			todoItems.length > 0 ? "Execute the plan (fresh context)" : undefined,
 			todoItems.length > 0 ? "Execute the plan (track progress)" : "Execute the plan",
 			"Stay in plan mode",
 			"Refine the plan",
-		]);
+		].filter((c): c is string => c !== undefined);
 
-		if (choice?.startsWith("Execute")) {
+		const choice = await ctx.ui.select("Plan mode - what next?", choices);
+
+		if (choice === "Execute the plan (fresh context)") {
+			planModeEnabled = false;
+			pendingFreshTodos = [...todoItems];
+			pi.setActiveTools(NORMAL_MODE_TOOLS);
+			updateStatus(ctx);
+			pi.sendUserMessage("/plan-exec-fresh");
+		} else if (choice?.startsWith("Execute")) {
 			planModeEnabled = false;
 			executionMode = todoItems.length > 0;
 			pi.setActiveTools(NORMAL_MODE_TOOLS);
