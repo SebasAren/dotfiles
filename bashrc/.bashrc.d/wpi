@@ -103,7 +103,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
 
             # Build prompt in a temp file to avoid shell interpolation
             # issues and OS argument length limits with large merge output.
-            # Pipe to pi via stdin instead of passing as CLI arg.
+            # Pass as context file so pi includes it but stays interactive.
             local current_branch
             current_branch="$(git branch --show-current 2>/dev/null || echo '???')"
             prompt_file="$(mktemp)"
@@ -123,7 +123,8 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
                 echo 'After fixing, the user will re-run the merge.'
             } > "$prompt_file"
 
-            pi < "$prompt_file"
+            # Pass as context file to include in message, but stay interactive
+            pi "@$prompt_file"
             rm -f "$prompt_file"
 
             echo ""
