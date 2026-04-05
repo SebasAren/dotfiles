@@ -15,7 +15,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             echo ""
             echo "Create a worktree, start pi, offer merge on exit."
             echo "After pi exits, you'll be prompted to merge the worktree"
-            echo "back to the default branch (with squash + rebase)."
+            echo "back to the originating branch (with squash + rebase)."
             echo ""
             echo "Examples:"
             echo "  wpi fix-login-bug"
@@ -26,6 +26,10 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
 
         local branch="$1"
         shift
+
+        # Remember the originating branch so we can merge back to it later
+        local source_branch
+        source_branch="$(git branch --show-current 2>/dev/null)"
 
         # Create worktree and switch to it.
         # If branch already has a worktree, wt switch just navigates to it.
@@ -52,10 +56,11 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         echo "  pi exited (code $pi_exit) in '${current_branch}'"
         echo "  ───────────────────────────────────────"
         echo ""
-        read -r -p "  Merge back to default branch? [y/N] " answer
+        local merge_target="${source_branch:-default branch}"
+        read -r -p "  Merge back to '${merge_target}'? [y/N] " answer
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
-            wt merge
+            wt merge ${source_branch:+"$source_branch"}
         else
             echo ""
             echo "  Worktree kept. Merge later with: wt merge"
