@@ -14,6 +14,16 @@ fi
 # Read wt's full prompt from stdin
 prompt=$(cat)
 
+# Prepend conventional commit format instructions so pi generates proper format
+conventional_prefix='IMPORTANT: Your output is used directly as the git commit message.
+You MUST use Conventional Commits format: <type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+Do NOT wrap output in code fences. Output ONLY the commit message, nothing else.
+
+'
+prompt="${conventional_prefix}${prompt}"
+
 # Build pi arguments
 pi_args=("-p" "--no-tools" "--no-extensions" "--no-skills" "--no-session" "--no-prompt-templates" "--thinking" "off")
 if [[ -n "${CHEAP_MODEL:-}" ]]; then
@@ -35,14 +45,14 @@ if timeout 30 pi "${pi_args[@]}" "$prompt" > "$tmp_out" 2>&1; then
   fi
 fi
 
-# Fallback: generate generic commit message from diff stats in the prompt
+# Fallback: generate conventional commit message from diff stats in the prompt
 echo "WARNING: pi failed to generate commit message." >&2
 files_changed=$(echo "$prompt" | grep -c '^diff --git' || echo 0)
 if [[ $files_changed -eq 0 ]]; then
-  echo "Update"
+  echo "chore: update"
 elif [[ $files_changed -eq 1 ]]; then
   filename=$(echo "$prompt" | grep -m1 '^diff --git' | sed 's|^diff --git a/||;s| b/.*||')
-  echo "Update $filename"
+  echo "chore: update $filename"
 else
-  echo "Update $files_changed files"
+  echo "chore: update $files_changed files"
 fi
