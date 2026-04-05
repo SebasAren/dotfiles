@@ -60,10 +60,53 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         read -r -p "  Merge back to '${merge_target}'? [y/N] " answer
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
-            wt merge ${source_branch:+"$source_branch"}
+            _wpi_merge_loop "${source_branch:-}"
         else
             echo ""
             echo "  Worktree kept. Merge later with: wt merge"
         fi
+    }
+fi
+
+# Helper: retry loop for wt merge with automatic pi reopen on failure
+if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
+    _wpi_merge_loop() {
+        local source_branch="$1"
+        local merge_output merge_exit
+
+        while true; do
+            merge_output="$(wt merge ${source_branch:+"$source_branch"} 2>&1)" || merge_exit=$?
+            merge_exit="${merge_exit:-0}"
+
+            if [[ $merge_exit -eq 0 ]]; then
+                echo "$merge_output"
+                return 0
+            fi
+
+            # Merge failed — show the error and reopen pi to fix it
+            echo ""
+            echo "  ───────────────────────────────────────"
+            echo "  wt merge failed (exit $merge_exit)"
+            echo "  ───────────────────────────────────────"
+            echo ""
+            echo "$merge_output"
+            echo ""
+            echo "  Reopening pi to resolve the merge error..."
+            echo ""
+
+            pi "The 'wt merge' command failed with exit code ${merge_exit}. Here is the output:" \
+                $'```\n'"${merge_output}"$'\n```\n\n' \
+                "Please diagnose the error and fix it. If there are rebase conflicts, resolve them and complete the rebase. Then try merging again."
+
+            echo ""
+            read -r -p "  Retry merge? [Y/n] " retry
+            if [[ "$retry" =~ ^[Nn]$ ]]; then
+                echo ""
+                echo "  Merge aborted. Fix manually and run: wt merge"
+                return 1
+            fi
+            # Reset merge_exit for the next iteration
+            merge_exit=
+        done
     }
 fi
