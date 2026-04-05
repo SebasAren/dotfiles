@@ -31,13 +31,15 @@ mock.module("@sinclair/typebox", () => ({
 import librarianExtension from "./index";
 
 describe("librarian extension", () => {
+	beforeEach(() => {
+		delete process.env.PI_LIBRARIAN_CHILD;
+	});
+
 	it("can be loaded without errors", () => {
-		// Mock ExtensionAPI
 		const mockApi = {
 			registerTool: mock(() => {}),
 			registerCommand: mock(() => {}),
 		};
-		// Should not throw
 		expect(() => librarianExtension(mockApi as any)).not.toThrow();
 	});
 
@@ -68,19 +70,20 @@ describe("librarian extension", () => {
 		expect(registeredCommands[0].command.description).toBeDefined();
 	});
 
-	it("declares @pi-ext/shared as a workspace dependency", async () => {
-		const pkg = await import("./package.json");
-		expect(pkg.dependencies).toBeDefined();
-		expect(pkg.dependencies["@pi-ext/shared"]).toBe("workspace:*");
-	});
-
-	it("uses shared package utilities instead of local implementations", () => {
-		// Verify the extension imports from @pi-ext/shared by checking
-		// that the module loads correctly with shared dependencies
+	it("skips registration in child processes", () => {
+		process.env.PI_LIBRARIAN_CHILD = "1";
 		const mockApi = {
 			registerTool: mock(() => {}),
 			registerCommand: mock(() => {}),
 		};
-		expect(() => librarianExtension(mockApi as any)).not.toThrow();
+		librarianExtension(mockApi as any);
+		expect(mockApi.registerTool).not.toHaveBeenCalled();
+		delete process.env.PI_LIBRARIAN_CHILD;
+	});
+
+	it("declares @pi-ext/shared as a workspace dependency", async () => {
+		const pkg = await import("./package.json");
+		expect(pkg.dependencies).toBeDefined();
+		expect(pkg.dependencies["@pi-ext/shared"]).toBe("workspace:*");
 	});
 });

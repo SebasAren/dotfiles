@@ -27,7 +27,6 @@ mock.module("@sinclair/typebox", () => ({
 	},
 }));
 
-// Now import the extension after mocks are set up
 import wtWorktreeExtension from "./index";
 
 describe("wt-worktree extension", () => {

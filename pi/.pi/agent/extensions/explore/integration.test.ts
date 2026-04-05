@@ -67,4 +67,9 @@ describe("explore extension", () => {
 		expect(registeredCommands[0].name).toBe("explore");
 		expect(registeredCommands[0].command.description).toBeDefined();
 	});
+
+	it("declares @pi-ext/shared as a workspace dependency", async () => {
+		const pkg = await import("./package.json");
+		expect(pkg.dependencies["@pi-ext/shared"]).toBe("workspace:*");
+	});
 });

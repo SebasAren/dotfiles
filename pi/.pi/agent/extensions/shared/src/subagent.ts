@@ -56,6 +56,8 @@ export interface RunSubagentOptions {
 	tmpPrefix?: string;
 	/** Debug label for console.log messages (omit to suppress logs) */
 	debugLabel?: string;
+	/** Override the default subagent model (falls back to CHEAP_MODEL env var) */
+	model?: string;
 	/** Extra environment variables to set on the child process */
 	env?: Record<string, string>;
 }
@@ -138,7 +140,7 @@ poll();
  * loop detection, tool call limits, timeout, and abort signals.
  */
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
-	const model = getModel();
+	const model = options.model || getModel();
 	const {
 		cwd,
 		query,

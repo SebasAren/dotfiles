@@ -2,66 +2,33 @@
  * Explore Subagent — delegate codebase exploration to a separate model
  *
  * Spawns a `pi` subprocess with read-only tools to investigate the codebase.
- * The model is configurable via:
- *   - Environment variable: CHEAP_MODEL (e.g. "xiaomi-mimo/mimo-v2-flash")
- *   - Falls back to the default model if not set
- *
- * The explore agent uses read-only tools and returns structured findings
- * without modifying any files.
+ * The model is configurable via CHEAP_MODEL env var.
  */
 
 import * as path from "node:path";
-import { type ExtensionAPI, getMarkdownTheme } from "@mariozechner/pi-coding-agent";
-import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
+import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
 import {
 	resolveRealCwd,
-	parseSections,
-	getSectionSummary,
-	formatUsageLine,
-	splitIntoSentences,
 	runSubagent,
 	getModel,
 } from "@pi-ext/shared";
 
-const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. You MUST stay strictly on-topic.
+import { EXPLORE_SYSTEM_PROMPT, EXPLORE_BASE_FLAGS } from "./constants";
+import { renderCall, renderResult } from "./render";
 
-## ABSOLUTE RULES
-1. NEVER read files unrelated to the query keywords.
-2. NEVER list directory contents out of curiosity — only grep/find for query terms.
-3. NEVER follow tangents. If a file contains a mention of something unrelated, ignore it.
-4. NEVER read config files (package.json, tsconfig.json, README, .env) unless the query explicitly asks about configuration.
-5. Maximum 10 tool calls total. Stop and summarize once you have enough information.
-6. If you cannot find relevant files after 3 grep/find attempts, report that and STOP. Do NOT broaden the search.
+// ── Types ──────────────────────────────────────────────────────────────────
 
-## STRATEGY (follow this order exactly)
-1. Extract the 2-4 most specific keywords from the query.
-2. Run grep -r with those exact keywords to locate relevant files.
-3. Read ONLY matching files or sections.
-4. If imports point to other directly-relevant files, follow them. Otherwise, do NOT.
-5. Summarize your findings.
+export interface ExploreDetails {
+	model?: string;
+	usedModel?: string;
+	query?: string;
+	success?: boolean;
+	usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
+}
 
-## OUTPUT FORMAT
-Produce exactly these sections:
-
-## Files Retrieved
-Numbered list with line ranges: 1. \`path/to/file\` (lines X-Y) — one-line description
-
-## Key Code
-Only the code snippets directly relevant to the query.
-
-## Summary
-2-5 sentence answer to the query. Nothing else.`;
-
-/** Base CLI flags for the explore subagent */
-const EXPLORE_BASE_FLAGS = [
-	"--no-session",
-	"--no-extensions",
-	"--no-skills",
-	"--no-prompt-templates",
-	"--tools", "read,grep,find,ls,bash",
-];
+// ── Tool parameters ────────────────────────────────────────────────────────
 
 const ExploreParams = Type.Object({
 	query: Type.String({ description: "What to explore in the codebase. Be specific about what you're looking for." }),
@@ -70,6 +37,8 @@ const ExploreParams = Type.Object({
 		Type.String({ description: "How thorough to be: quick, medium (default), or thorough" }),
 	),
 });
+
+// ── Extension ──────────────────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
 	pi.registerTool({
@@ -147,119 +116,11 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderCall(args, theme, context) {
-			const model = getModel();
-			const preview = args.query.length > 80 ? `${args.query.slice(0, 80)}...` : args.query;
-			let content =
-				theme.fg("toolTitle", theme.bold("explore ")) +
-				(model ? theme.fg("muted", `[${model}] `) : "") +
-				theme.fg("dim", preview);
-			if (args.directory) {
-				content += `\n  ${theme.fg("muted", `in ${args.directory}`)}`;
-			}
-			// Reuse existing component if available to avoid duplicate renders
-			const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
-			text.setText(content);
-			return text;
+			return renderCall(args, theme, context, getModel());
 		},
 
-		renderResult(result, { expanded, isPartial }, theme, _context) {
-			const details = result.details as {
-				model?: string;
-				usedModel?: string;
-				query?: string;
-				success?: boolean;
-				usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
-			} | undefined;
-
-			const text = result.content[0];
-			const output = text?.type === "text" ? text.text : "(no output)";
-			const isError = details?.success === false;
-			const icon = isError ? theme.fg("error", "✗") : theme.fg("success", "✓");
-			const sections = parseSections(output);
-
-			// Streaming/partial: show progress with parsed sections so far
-			if (isPartial) {
-				if (sections.length === 0) {
-					return new Text(theme.fg("warning", "⏳ exploring..."), 0, 0);
-				}
-				let content = theme.fg("warning", "⏳ ") + theme.fg("toolTitle", theme.bold("explore"));
-				for (const section of sections) {
-					const summary = getSectionSummary(section.content);
-					content += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
-				}
-				return new Text(content, 0, 0);
-			}
-
-			const mdTheme = getMarkdownTheme();
-
-			if (expanded) {
-				const container = new Container();
-				container.addChild(new Text(`${icon} ${theme.fg("toolTitle", theme.bold("explore"))}`, 0, 0));
-				if (details?.query) {
-					container.addChild(new Text(theme.fg("muted", "Query: ") + theme.fg("dim", details.query), 0, 0));
-				}
-
-				if (isError) {
-					container.addChild(new Spacer(1));
-					container.addChild(new Text(theme.fg("error", output), 0, 0));
-				} else if (sections.length > 0) {
-					for (const section of sections) {
-						container.addChild(new Spacer(1));
-						container.addChild(new Text(theme.fg("muted", `─── ${section.title} ───`), 0, 0));
-						if (section.content) {
-							container.addChild(new Markdown(section.content, 0, 0, mdTheme));
-						}
-					}
-				} else {
-					container.addChild(new Spacer(1));
-					container.addChild(new Markdown(output.trim(), 0, 0, mdTheme));
-				}
-
-				if (details?.usage) {
-					const usageLine = formatUsageLine(details.usage, details.usedModel);
-					if (usageLine) {
-						container.addChild(new Spacer(1));
-						container.addChild(new Text(theme.fg("dim", usageLine), 0, 0));
-					}
-				}
-				return container;
-			}
-
-			// Collapsed: structured section summaries
-			let rendered = `${icon} ${theme.fg("toolTitle", theme.bold("explore"))}`;
-
-			if (isError) {
-				const errorPreview = output.length > 120 ? `${output.slice(0, 120)}...` : output;
-				rendered += `\n  ${theme.fg("error", errorPreview)}`;
-			} else if (sections.length > 0) {
-				for (const section of sections) {
-					const summary = getSectionSummary(section.content);
-					rendered += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
-				}
-			} else {
-				// Fallback for unstructured output - use shared sentence parser
-				const sentences = splitIntoSentences(output);
-
-				if (sentences.length === 0) {
-					const preview = output.length > 150 ? `${output.slice(0, 150)}...` : output;
-					rendered += `\n  ${theme.fg("dim", preview)}`;
-				} else {
-					const maxItems = Math.min(sentences.length, 4);
-					for (let i = 0; i < maxItems; i++) {
-						rendered += `\n  ${theme.fg("muted", "•")} ${theme.fg("dim", sentences[i].text)}`;
-					}
-					if (sentences.length > 4) {
-						rendered += `\n  ${theme.fg("muted", `... +${sentences.length - 4} more`)}`;
-					}
-				}
-			}
-
-			if (details?.usage) {
-				const usageLine = formatUsageLine(details.usage, details.usedModel);
-				if (usageLine) rendered += `\n  ${theme.fg("dim", usageLine)}`;
-			}
-			rendered += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
-			return new Text(rendered, 0, 0);
+		renderResult(result, state, theme, context) {
+			return renderResult(result, state, theme, context);
 		},
 	});
 
