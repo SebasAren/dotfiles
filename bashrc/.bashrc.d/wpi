@@ -72,11 +72,17 @@ fi
 if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
     _wpi_merge_loop() {
         local source_branch="$1"
-        local merge_output merge_exit
+        local merge_output merge_exit tmpfile
 
         while true; do
-            merge_output="$(wt merge ${source_branch:+"$source_branch"} 2>&1)" || merge_exit=$?
-            merge_exit="${merge_exit:-0}"
+            merge_exit=0
+            tmpfile="$(mktemp)"
+            # Run wt merge in the current shell (not a subshell) so its
+            # directive-file cd takes effect. Redirect to a temp file to
+            # capture output for error reporting.
+            wt merge ${source_branch:+"$source_branch"} > "$tmpfile" 2>&1 || merge_exit=$?
+            merge_output="$(<"$tmpfile")"
+            rm -f "$tmpfile"
 
             if [[ $merge_exit -eq 0 ]]; then
                 echo "$merge_output"
@@ -105,8 +111,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
                 echo "  Merge aborted. Fix manually and run: wt merge"
                 return 1
             fi
-            # Reset merge_exit for the next iteration
-            merge_exit=
+            # Loop back — merge_exit is reset at the top
         done
     }
 fi
