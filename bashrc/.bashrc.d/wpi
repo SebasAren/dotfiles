@@ -45,8 +45,13 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         fi
 
         # Start pi in the worktree.
+        # On first start (no extra args), just launch pi. Otherwise pass args and
         # IMPORTANT: Tell the agent to NEVER call wt merge itself.
-        pi "$@" "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually when ready."
+        if [[ $# -eq 0 ]]; then
+            pi
+        else
+            pi "$@" "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually when ready."
+        fi
         local pi_exit=$?
 
         # After pi exits, offer merge
