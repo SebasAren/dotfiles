@@ -26,7 +26,7 @@ interface TodoDetails {
 
 const TodoParams = Type.Object({
 	action: StringEnum(["list", "add", "toggle", "clear"] as const),
-	text: Type.Optional(Type.String({ description: "Todo text (for add)" })),
+	texts: Type.Optional(Type.Array(Type.String({ description: "Todo texts to add" }))),
 	id: Type.Optional(Type.Number({ description: "Todo ID (for toggle)" })),
 });
 
@@ -122,7 +122,7 @@ export default function (pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "todo",
 		label: "Todo",
-		description: "Manage a todo list. Actions: list, add (text), toggle (id), clear",
+		description: "Manage a todo list. Actions: list, add (texts), toggle (id), clear.",
 		parameters: TodoParams,
 
 		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
@@ -141,21 +141,29 @@ export default function (pi: ExtensionAPI) {
 					};
 
 				case "add": {
-					if (!params.text) {
+					if (!params.texts?.length) {
 						return {
-							content: [{ type: "text", text: "Error: text required for add" }],
+							content: [{ type: "text", text: "Error: texts required for add" }],
 							details: {
 								action: "add",
 								todos: [...todos],
 								nextId,
-								error: "text required",
+								error: "texts required",
 							} as TodoDetails,
 						};
 					}
-					const newTodo: Todo = { id: nextId++, text: params.text, done: false };
-					todos.push(newTodo);
+					const added: Todo[] = [];
+					for (const t of params.texts) {
+						const newTodo: Todo = { id: nextId++, text: t, done: false };
+						todos.push(newTodo);
+						added.push(newTodo);
+					}
+					const summary =
+						added.length === 1
+							? `Added todo #${added[0].id}: ${added[0].text}`
+							: `Added ${added.length} todos:\n` + added.map((t) => `  #${t.id}: ${t.text}`).join("\n");
 					return {
-						content: [{ type: "text", text: `Added todo #${newTodo.id}: ${newTodo.text}` }],
+						content: [{ type: "text", text: summary }],
 						details: { action: "add", todos: [...todos], nextId } as TodoDetails,
 					};
 				}
@@ -218,7 +226,9 @@ export default function (pi: ExtensionAPI) {
 
 		renderCall(args, theme, _context) {
 			let text = theme.fg("toolTitle", theme.bold("todo ")) + theme.fg("muted", args.action);
-			if (args.text) text += ` ${theme.fg("dim", `"${args.text}"`)}`;
+			if (args.texts?.length) {
+				text += ` ${theme.fg("dim", `${args.texts.length} item(s)`)} ${theme.fg("muted", args.texts.map((t: string) => `"${t}"`).join(", "))}`;
+			}
 			if (args.id !== undefined) text += ` ${theme.fg("accent", `#${args.id}`)}`;
 			return new Text(text, 0, 0);
 		},
@@ -255,15 +265,9 @@ export default function (pi: ExtensionAPI) {
 				}
 
 				case "add": {
-					const added = todoList[todoList.length - 1];
-					return new Text(
-						theme.fg("success", "✓ Added ") +
-							theme.fg("accent", `#${added.id}`) +
-							" " +
-							theme.fg("muted", added.text),
-						0,
-						0,
-					);
+					const rawText = result.content[0];
+					const msg = rawText?.type === "text" ? rawText.text : "";
+					return new Text(theme.fg("success", "✓ ") + theme.fg("muted", msg), 0, 0);
 				}
 
 				case "toggle": {
