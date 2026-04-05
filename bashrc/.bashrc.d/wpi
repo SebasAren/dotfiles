@@ -72,7 +72,7 @@ fi
 if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
     _wpi_merge_loop() {
         local source_branch="$1"
-        local merge_output merge_exit tmpfile
+        local merge_output merge_exit tmpfile prompt_file
 
         while true; do
             merge_exit=0
@@ -81,7 +81,8 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             # directive-file cd takes effect. Redirect to a temp file to
             # capture output for error reporting.
             wt merge ${source_branch:+"$source_branch"} > "$tmpfile" 2>&1 || merge_exit=$?
-            merge_output="$(<"$tmpfile")"
+            # Strip ANSI escape codes so pi gets clean text
+            merge_output="$(sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$tmpfile")"
             rm -f "$tmpfile"
 
             if [[ $merge_exit -eq 0 ]]; then
@@ -100,9 +101,30 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             echo "  Reopening pi to resolve the merge error..."
             echo ""
 
-            pi "The 'wt merge' command failed with exit code ${merge_exit}. Here is the output:" \
-                $'```\n'"${merge_output}"$'\n```\n\n' \
-                "Please diagnose the error and fix it. If there are rebase conflicts, resolve them and complete the rebase. Then try merging again."
+            # Build prompt in a temp file to avoid shell interpolation
+            # issues and OS argument length limits with large merge output.
+            # Pipe to pi via stdin instead of passing as CLI arg.
+            local current_branch
+            current_branch="$(git branch --show-current 2>/dev/null || echo '???')"
+            prompt_file="$(mktemp)"
+            {
+                echo "You are in a git worktree on branch '${current_branch}'. We tried to run 'wt merge' to squash-merge this branch back, but it failed with exit code ${merge_exit}."
+                echo ''
+                echo 'Here is the full output:'
+                echo '```'
+                echo "$merge_output"
+                echo '```'
+                echo ''
+                echo 'Diagnose the failure and fix it. Common causes:'
+                echo '- Test or lint failures in pre-merge hooks — fix the code so they pass'
+                echo '- Rebase conflicts — resolve the conflicts and complete the rebase'
+                echo '- Uncommitted changes that need to be committed or reverted'
+                echo ''
+                echo 'After fixing, the user will re-run the merge.'
+            } > "$prompt_file"
+
+            pi < "$prompt_file"
+            rm -f "$prompt_file"
 
             echo ""
             read -r -p "  Retry merge? [Y/n] " retry
