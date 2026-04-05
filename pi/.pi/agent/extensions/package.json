@@ -13,8 +13,7 @@
     "plan-mode",
     "shared",
     "todo",
-    "wt-worktree",
-    "worktree-scope"
+"worktree-scope"
   ],
   "devDependencies": {
     "@mariozechner/pi-ai": "^0.65.0",

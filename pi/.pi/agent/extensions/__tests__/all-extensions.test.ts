@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
  * and verifies exit code 0.
  */
 describe("all extensions verification", () => {
-	const extensionDirs = ["shared", "explore", "librarian", "wt-worktree", "worktree-scope", "fuzzy-edit", "plan-mode"];
+	const extensionDirs = ["shared", "explore", "librarian", "worktree-scope", "fuzzy-edit", "plan-mode"];
 
 	for (const dir of extensionDirs) {
 		it(`${dir}: all tests pass`, async () => {
@@ -35,7 +35,7 @@ describe("all extensions verification", () => {
 	}
 
 	it("all extensions depend on @pi-ext/shared (except unchanged ones)", async () => {
-		const expectedDeps = ["explore", "librarian", "wt-worktree"];
+		const expectedDeps = ["explore", "librarian"];
 		for (const ext of expectedDeps) {
 			const pkg = await import(`../${ext}/package.json`);
 			expect(pkg.dependencies?.["@pi-ext/shared"]).toBe("workspace:*");
