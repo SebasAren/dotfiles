@@ -12,12 +12,7 @@ import { Context7 } from "@upstash/context7-sdk";
 
 import { SearchParams, executeSearch } from "./search";
 import { DocsParams, executeDocs } from "./docs";
-import {
-	renderSearchCall,
-	renderSearchResult,
-	renderDocsCall,
-	renderDocsResult,
-} from "./render";
+import { renderSearchCall, renderSearchResult, renderDocsCall, renderDocsResult } from "./render";
 
 // Lazy-initialized SDK client — created only when API key is available
 let _client: Context7 | null = null;
@@ -109,7 +104,9 @@ export default function (pi: ExtensionAPI) {
       }
       const library = parts[0];
       const query = parts.slice(1).join(" ");
-      pi.sendUserMessage(`Search Context7 for library "${library}" and get docs about: ${query}`, { deliverAs: "followUp" });
+      pi.sendUserMessage(`Search Context7 for library "${library}" and get docs about: ${query}`, {
+        deliverAs: "followUp",
+      });
     },
   });
 }

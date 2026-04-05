@@ -69,14 +69,15 @@ export function loadRules(projectRoot: string): ClaudeRule[] {
           if (inlineArray) {
             globs = inlineArray;
           } else if (rawGlobs.includes(",")) {
-            globs = rawGlobs.split(",").map((g) => g.trim()).filter(Boolean);
+            globs = rawGlobs
+              .split(",")
+              .map((g) => g.trim())
+              .filter(Boolean);
           } else {
             globs = [rawGlobs];
           }
         } else if (Array.isArray(rawGlobs)) {
-          globs = rawGlobs.filter(
-            (g): g is string => typeof g === "string",
-          );
+          globs = rawGlobs.filter((g): g is string => typeof g === "string");
         }
       }
 

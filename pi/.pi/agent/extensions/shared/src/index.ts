@@ -4,17 +4,13 @@ export { formatTokens, formatUsageLine } from "./format";
 export { argsSignature, detectLoop } from "./loop-detection";
 export { parseSections, getSectionSummary } from "./markdown";
 export { getModel } from "./model";
-export {
-	renderSubagentResult,
-	renderSubagentCall,
-	reuseOrCreateText,
-} from "./rendering";
+export { renderSubagentResult, renderSubagentCall, reuseOrCreateText } from "./rendering";
 export type {
-	RenderSubagentResultOptions,
-	RenderSubagentCallOptions,
-	SubagentResultDetails,
-	ToolResultLike,
-	UsageInfo,
+  RenderSubagentResultOptions,
+  RenderSubagentCallOptions,
+  SubagentResultDetails,
+  ToolResultLike,
+  UsageInfo,
 } from "./rendering";
 export { runSubagent } from "./subagent";
 export type { RunSubagentOptions } from "./subagent";

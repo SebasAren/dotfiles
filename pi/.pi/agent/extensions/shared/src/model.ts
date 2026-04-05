@@ -4,7 +4,7 @@
  * Falls back to the default model if not set.
  */
 export function getModel(): string | undefined {
-	const env = process.env.CHEAP_MODEL;
-	if (env) return env;
-	return undefined;
+  const env = process.env.CHEAP_MODEL;
+  if (env) return env;
+  return undefined;
 }

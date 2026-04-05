@@ -4,11 +4,7 @@
 
 import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
-import {
-  Context7,
-  Context7Error,
-  type Documentation,
-} from "@upstash/context7-sdk";
+import { Context7, Context7Error, type Documentation } from "@upstash/context7-sdk";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -21,9 +17,15 @@ export interface DocsDetails {
 // ── Schema ─────────────────────────────────────────────────────────────────
 
 export const DocsParams = Type.Object({
-  libraryId: Type.String({ description: "Context7-compatible library ID (e.g., '/facebook/react', '/vercel/next.js')" }),
+  libraryId: Type.String({
+    description: "Context7-compatible library ID (e.g., '/facebook/react', '/vercel/next.js')",
+  }),
   query: Type.String({ description: "Your question or task (used for relevance ranking)" }),
-  type: Type.Optional(StringEnum(["json", "txt"] as const, { description: "Response type: 'json' or 'txt' (default: 'txt')" })),
+  type: Type.Optional(
+    StringEnum(["json", "txt"] as const, {
+      description: "Response type: 'json' or 'txt' (default: 'txt')",
+    }),
+  ),
 });
 
 // ── Execute ────────────────────────────────────────────────────────────────
@@ -33,7 +35,10 @@ export async function executeDocs(
   apiKey: string | undefined,
   client: Context7,
   signal?: AbortSignal,
-  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: DocsDetails }) => void,
+  onUpdate?: (update: {
+    content: Array<{ type: "text"; text: string }>;
+    details: DocsDetails;
+  }) => void,
 ) {
   if (!apiKey) {
     throw new Error(
@@ -63,7 +68,12 @@ export async function executeDocs(
 
       if (snippetCount === 0) {
         return {
-          content: [{ type: "text" as const, text: `No documentation found for library "${libraryId}" with query "${query}".` }],
+          content: [
+            {
+              type: "text" as const,
+              text: `No documentation found for library "${libraryId}" with query "${query}".`,
+            },
+          ],
           details: { libraryId, query, snippetCount: 0 },
         };
       }

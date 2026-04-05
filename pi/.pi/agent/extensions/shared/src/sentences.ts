@@ -7,10 +7,10 @@
 
 /** A parsed sentence fragment with metadata */
 export interface SentenceFragment {
-	/** The sentence text, trimmed */
-	text: string;
-	/** Whether this was truncated to fit max length */
-	truncated: boolean;
+  /** The sentence text, trimmed */
+  text: string;
+  /** Whether this was truncated to fit max length */
+  truncated: boolean;
 }
 
 /**
@@ -27,32 +27,32 @@ export interface SentenceFragment {
  * @returns Array of sentence fragments
  */
 export function splitIntoSentences(
-	text: string,
-	options: {
-		/** Maximum length per sentence before truncation (default: 80) */
-		maxLength?: number;
-		/** Minimum length to include a fragment (default: 15) */
-		minLength?: number;
-	} = {},
+  text: string,
+  options: {
+    /** Maximum length per sentence before truncation (default: 80) */
+    maxLength?: number;
+    /** Minimum length to include a fragment (default: 15) */
+    minLength?: number;
+  } = {},
 ): SentenceFragment[] {
-	const { maxLength = 80, minLength = 15 } = options;
+  const { maxLength = 80, minLength = 15 } = options;
 
-	// Split on sentence endings followed by capital letter, or on colon + space
-	// This handles "Let me check. Now I see", "check: also see", and "there.Now" (no space after period)
-	const rawFragments = text
-		.split(/(?<=[.!?])\s*(?=[A-Z])|:\s*/)
-		.map((s) => s.trim())
-		.filter((s) => s.length >= minLength);
+  // Split on sentence endings followed by capital letter, or on colon + space
+  // This handles "Let me check. Now I see", "check: also see", and "there.Now" (no space after period)
+  const rawFragments = text
+    .split(/(?<=[.!?])\s*(?=[A-Z])|:\s*/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= minLength);
 
-	return rawFragments.map((fragment) => {
-		if (fragment.length > maxLength) {
-			return {
-				text: `${fragment.slice(0, maxLength - 3)}...`,
-				truncated: true,
-			};
-		}
-		return { text: fragment, truncated: false };
-	});
+  return rawFragments.map((fragment) => {
+    if (fragment.length > maxLength) {
+      return {
+        text: `${fragment.slice(0, maxLength - 3)}...`,
+        truncated: true,
+      };
+    }
+    return { text: fragment, truncated: false };
+  });
 }
 
 /**
@@ -63,26 +63,26 @@ export function splitIntoSentences(
  * @returns Formatted string with bullet points
  */
 export function formatAsBulletList(
-	fragments: SentenceFragment[],
-	options: {
-		/** Maximum number of items to show (default: 4) */
-		maxItems?: number;
-		/** Bullet character (default: "•") */
-		bullet?: string;
-	} = {},
+  fragments: SentenceFragment[],
+  options: {
+    /** Maximum number of items to show (default: 4) */
+    maxItems?: number;
+    /** Bullet character (default: "•") */
+    bullet?: string;
+  } = {},
 ): string {
-	const { maxItems = 4, bullet = "•" } = options;
+  const { maxItems = 4, bullet = "•" } = options;
 
-	if (fragments.length === 0) {
-		return "";
-	}
+  if (fragments.length === 0) {
+    return "";
+  }
 
-	const items = fragments.slice(0, maxItems);
-	let result = items.map((f) => `  ${bullet} ${f.text}`).join("\n");
+  const items = fragments.slice(0, maxItems);
+  let result = items.map((f) => `  ${bullet} ${f.text}`).join("\n");
 
-	if (fragments.length > maxItems) {
-		result += `\n  ... +${fragments.length - maxItems} more`;
-	}
+  if (fragments.length > maxItems) {
+    result += `\n  ... +${fragments.length - maxItems} more`;
+  }
 
-	return result;
+  return result;
 }

@@ -14,8 +14,7 @@ export function parseInlineArray(value: string): string[] | null {
   if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null;
   try {
     const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed))
-      return parsed.filter((v) => typeof v === "string");
+    if (Array.isArray(parsed)) return parsed.filter((v) => typeof v === "string");
   } catch {
     // Not valid JSON, fall through
   }

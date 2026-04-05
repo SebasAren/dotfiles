@@ -12,9 +12,10 @@ lua-language-server = "latest"
 shellcheck = "latest"
 shfmt = "latest"
 
-# TypeScript/Node (for tsc, bun)
+# TypeScript/Node (for tsc, bun, prettier)
 bun = "latest"
 node = "latest"
+prettier = "latest"
 
 [plugins]
 # Use explicit registry sources for tools (cargo is fastest for stylua)

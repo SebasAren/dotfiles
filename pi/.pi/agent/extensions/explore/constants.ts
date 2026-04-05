@@ -36,9 +36,10 @@ Only the code snippets directly relevant to the query.
 
 /** Base CLI flags for the explore subagent */
 export const EXPLORE_BASE_FLAGS = [
-	"--no-session",
-	"--no-extensions",
-	"--no-skills",
-	"--no-prompt-templates",
-	"--tools", "read,grep,find,ls,bash",
+  "--no-session",
+  "--no-extensions",
+  "--no-skills",
+  "--no-prompt-templates",
+  "--tools",
+  "read,grep,find,ls,bash",
 ];

@@ -49,8 +49,8 @@ If applicable, suggest best practices or patterns discovered from the documentat
  *  We use --no-tools to skip built-in filesystem tools since the librarian only
  *  needs external documentation tools. */
 export const LIBRARIAN_BASE_FLAGS = [
-	"--no-session",
-	"--no-tools",
-	"--no-skills",
-	"--no-prompt-templates",
+  "--no-session",
+  "--no-tools",
+  "--no-skills",
+  "--no-prompt-templates",
 ];

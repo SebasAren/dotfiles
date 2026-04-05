@@ -13,20 +13,20 @@ import * as path from "node:path";
  * 3. Otherwise, fall back to looking up "pi" in PATH.
  */
 export function getPiInvocation(args: string[]): { command: string; args: string[] } {
-	const execName = path.basename(process.execPath).toLowerCase();
-	const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
+  const execName = path.basename(process.execPath).toLowerCase();
+  const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
 
-	// Case 1: compiled binary — use directly, ignore argv[1] (may be /$bunfs/...)
-	if (!isGenericRuntime) {
-		return { command: process.execPath, args };
-	}
+  // Case 1: compiled binary — use directly, ignore argv[1] (may be /$bunfs/...)
+  if (!isGenericRuntime) {
+    return { command: process.execPath, args };
+  }
 
-	// Case 2: running as a script under node/bun with a real script path
-	const currentScript = process.argv[1];
-	if (currentScript && fs.existsSync(currentScript)) {
-		return { command: process.execPath, args: [currentScript, ...args] };
-	}
+  // Case 2: running as a script under node/bun with a real script path
+  const currentScript = process.argv[1];
+  if (currentScript && fs.existsSync(currentScript)) {
+    return { command: process.execPath, args: [currentScript, ...args] };
+  }
 
-	// Case 3: fallback to PATH lookup
-	return { command: "pi", args };
+  // Case 3: fallback to PATH lookup
+  return { command: "pi", args };
 }

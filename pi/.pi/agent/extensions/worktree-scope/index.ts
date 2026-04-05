@@ -25,12 +25,12 @@ const WRITE_TOOLS = new Set(["write", "edit"]);
 // Bash is too freeform to reliably scope without false positives.
 
 interface WorktreeInfo {
-	/** Absolute path to the worktree root */
-	worktreeRoot: string;
-	/** Absolute path to the main repo (from .git file) */
-	mainRepoRoot: string;
-	/** Branch name */
-	branch: string;
+  /** Absolute path to the worktree root */
+  worktreeRoot: string;
+  /** Absolute path to the main repo (from .git file) */
+  mainRepoRoot: string;
+  /** Branch name */
+  branch: string;
 }
 
 /**
@@ -38,113 +38,109 @@ interface WorktreeInfo {
  * Returns worktree info if detected, undefined otherwise.
  */
 function detectWorktree(cwd: string): WorktreeInfo | undefined {
-	const gitPath = path.join(cwd, ".git");
+  const gitPath = path.join(cwd, ".git");
 
-	// If .git is a directory, this is the main repo — no scoping needed
-	let gitStat: fs.Stats;
-	try {
-		gitStat = fs.statSync(gitPath);
-	} catch {
-		// No .git at all — not a git repo, skip
-		return undefined;
-	}
+  // If .git is a directory, this is the main repo — no scoping needed
+  let gitStat: fs.Stats;
+  try {
+    gitStat = fs.statSync(gitPath);
+  } catch {
+    // No .git at all — not a git repo, skip
+    return undefined;
+  }
 
-	if (gitStat.isDirectory()) {
-		// Main repo, not a worktree
-		return undefined;
-	}
+  if (gitStat.isDirectory()) {
+    // Main repo, not a worktree
+    return undefined;
+  }
 
-	// .git is a file → worktree. Read it to get the main repo path.
-	let gitContent: string;
-	try {
-		gitContent = fs.readFileSync(gitPath, "utf-8").trim();
-	} catch {
-		return undefined;
-	}
+  // .git is a file → worktree. Read it to get the main repo path.
+  let gitContent: string;
+  try {
+    gitContent = fs.readFileSync(gitPath, "utf-8").trim();
+  } catch {
+    return undefined;
+  }
 
-	// Format: "gitdir: /path/to/main/.git/worktrees/<name>"
-	const match = gitContent.match(/^gitdir:\s*(.+)$/);
-	if (!match) return undefined;
+  // Format: "gitdir: /path/to/main/.git/worktrees/<name>"
+  const match = gitContent.match(/^gitdir:\s*(.+)$/);
+  if (!match) return undefined;
 
-	const gitdir = match[1];
-	// Extract branch name from HEAD in the worktree metadata
-	let branch = "";
-	try {
-		const headPath = path.join(gitdir, "HEAD");
-		const head = fs.readFileSync(headPath, "utf-8").trim();
-		const branchMatch = head.match(/^ref:\s*refs\/heads\/(.+)$/);
-		if (branchMatch) branch = branchMatch[1];
-	} catch {
-		// Ignore — branch name is informational
-	}
+  const gitdir = match[1];
+  // Extract branch name from HEAD in the worktree metadata
+  let branch = "";
+  try {
+    const headPath = path.join(gitdir, "HEAD");
+    const head = fs.readFileSync(headPath, "utf-8").trim();
+    const branchMatch = head.match(/^ref:\s*refs\/heads\/(.+)$/);
+    if (branchMatch) branch = branchMatch[1];
+  } catch {
+    // Ignore — branch name is informational
+  }
 
-	// Main repo root is the grandparent of .git/worktrees/<name>
-	// e.g. /path/to/main/.git/worktrees/my-branch → /path/to/main
-	const worktreesIndex = gitdir.indexOf("/.git/worktrees/");
-	const mainRepoRoot =
-		worktreesIndex !== -1 ? gitdir.slice(0, worktreesIndex) : "";
+  // Main repo root is the grandparent of .git/worktrees/<name>
+  // e.g. /path/to/main/.git/worktrees/my-branch → /path/to/main
+  const worktreesIndex = gitdir.indexOf("/.git/worktrees/");
+  const mainRepoRoot = worktreesIndex !== -1 ? gitdir.slice(0, worktreesIndex) : "";
 
-	return {
-		worktreeRoot: cwd,
-		mainRepoRoot,
-		branch,
-	};
+  return {
+    worktreeRoot: cwd,
+    mainRepoRoot,
+    branch,
+  };
 }
 
 /**
  * Check if a file path is inside the worktree root.
  * Resolves relative paths and handles symlinks.
  */
-function isInsideWorktree(
-	filePath: string,
-	worktreeRoot: string,
-): boolean {
-	const resolved = path.resolve(worktreeRoot, filePath);
-	// Ensure the resolved path starts with the worktree root
-	// Use normalized paths to avoid trailing slash issues
-	const normalizedWorktree = path.normalize(worktreeRoot);
-	const normalizedResolved = path.normalize(resolved);
+function isInsideWorktree(filePath: string, worktreeRoot: string): boolean {
+  const resolved = path.resolve(worktreeRoot, filePath);
+  // Ensure the resolved path starts with the worktree root
+  // Use normalized paths to avoid trailing slash issues
+  const normalizedWorktree = path.normalize(worktreeRoot);
+  const normalizedResolved = path.normalize(resolved);
 
-	if (normalizedResolved === normalizedWorktree) return true;
-	// Check if resolved is a descendant of worktree root
-	return (
-		normalizedResolved.startsWith(normalizedWorktree + path.sep) ||
-		normalizedResolved.startsWith(normalizedWorktree + "/")
-	);
+  if (normalizedResolved === normalizedWorktree) return true;
+  // Check if resolved is a descendant of worktree root
+  return (
+    normalizedResolved.startsWith(normalizedWorktree + path.sep) ||
+    normalizedResolved.startsWith(normalizedWorktree + "/")
+  );
 }
 
 export default function worktreeScopeExtension(pi: ExtensionAPI) {
-	let worktreeInfo: WorktreeInfo | undefined;
+  let worktreeInfo: WorktreeInfo | undefined;
 
-	pi.on("session_start", async (_event, ctx) => {
-		worktreeInfo = detectWorktree(ctx.cwd);
+  pi.on("session_start", async (_event, ctx) => {
+    worktreeInfo = detectWorktree(ctx.cwd);
 
-		if (worktreeInfo) {
-			const shortRoot = worktreeInfo.worktreeRoot
-				.replace(/^\/var\/home\//, "~/")
-				.replace(/^\/home\//, "~/");
-			const shortMain = worktreeInfo.mainRepoRoot
-				.replace(/^\/var\/home\//, "~/")
-				.replace(/^\/home\//, "~/");
-			ctx.ui.notify(
-				`🔒 Worktree scope active: ${shortRoot} (branch: ${worktreeInfo.branch || "unknown"}) — edits outside this directory will be blocked`,
-				"info",
-			);
-			console.log(
-				`[worktree-scope] Active: worktree=${worktreeInfo.worktreeRoot}, main=${worktreeInfo.mainRepoRoot}, branch=${worktreeInfo.branch}`,
-			);
-		}
-	});
+    if (worktreeInfo) {
+      const shortRoot = worktreeInfo.worktreeRoot
+        .replace(/^\/var\/home\//, "~/")
+        .replace(/^\/home\//, "~/");
+      const shortMain = worktreeInfo.mainRepoRoot
+        .replace(/^\/var\/home\//, "~/")
+        .replace(/^\/home\//, "~/");
+      ctx.ui.notify(
+        `🔒 Worktree scope active: ${shortRoot} (branch: ${worktreeInfo.branch || "unknown"}) — edits outside this directory will be blocked`,
+        "info",
+      );
+      console.log(
+        `[worktree-scope] Active: worktree=${worktreeInfo.worktreeRoot}, main=${worktreeInfo.mainRepoRoot}, branch=${worktreeInfo.branch}`,
+      );
+    }
+  });
 
-	// Inject system prompt to inform the LLM about the worktree boundary
-	pi.on("before_agent_start", async (event) => {
-		if (!worktreeInfo) return undefined;
+  // Inject system prompt to inform the LLM about the worktree boundary
+  pi.on("before_agent_start", async (event) => {
+    if (!worktreeInfo) return undefined;
 
-		const shortRoot = worktreeInfo.worktreeRoot
-			.replace(/^\/var\/home\//, "~/")
-			.replace(/^\/home\//, "~/");
+    const shortRoot = worktreeInfo.worktreeRoot
+      .replace(/^\/var\/home\//, "~/")
+      .replace(/^\/home\//, "~/");
 
-		const scopePrompt = `
+    const scopePrompt = `
 
 ## 🔒 Worktree Scope Enforcement
 
@@ -161,47 +157,45 @@ The main repository is at \`${worktreeInfo.mainRepoRoot}\`.
 This is enforced by a hard block — attempts to write outside the worktree will be rejected.
 `;
 
-		return {
-			systemPrompt: event.systemPrompt + scopePrompt,
-		};
-	});
+    return {
+      systemPrompt: event.systemPrompt + scopePrompt,
+    };
+  });
 
-	// Block write/edit operations targeting paths outside the worktree
-	pi.on("tool_call", async (event, ctx) => {
-		if (!worktreeInfo) return undefined;
-		if (!WRITE_TOOLS.has(event.toolName)) return undefined;
+  // Block write/edit operations targeting paths outside the worktree
+  pi.on("tool_call", async (event, ctx) => {
+    if (!worktreeInfo) return undefined;
+    if (!WRITE_TOOLS.has(event.toolName)) return undefined;
 
-		const input = event.input;
-		if (!input || typeof input !== "object") return undefined;
-		const filePath = "path" in input ? (input as { path?: string }).path : undefined;
-		if (typeof filePath !== "string") return undefined;
+    const input = event.input;
+    if (!input || typeof input !== "object") return undefined;
+    const filePath = "path" in input ? (input as { path?: string }).path : undefined;
+    if (typeof filePath !== "string") return undefined;
 
-		if (!isInsideWorktree(filePath, worktreeInfo.worktreeRoot)) {
-			const resolved = path.resolve(worktreeInfo.worktreeRoot, filePath);
-			const shortWorktree = worktreeInfo.worktreeRoot
-				.replace(/^\/var\/home\//, "~/")
-				.replace(/^\/home\//, "~/");
-			const shortPath = resolved
-				.replace(/^\/var\/home\//, "~/")
-				.replace(/^\/home\//, "~/");
+    if (!isInsideWorktree(filePath, worktreeInfo.worktreeRoot)) {
+      const resolved = path.resolve(worktreeInfo.worktreeRoot, filePath);
+      const shortWorktree = worktreeInfo.worktreeRoot
+        .replace(/^\/var\/home\//, "~/")
+        .replace(/^\/home\//, "~/");
+      const shortPath = resolved.replace(/^\/var\/home\//, "~/").replace(/^\/home\//, "~/");
 
-			if (ctx.hasUI) {
-				ctx.ui.notify(
-					`🔒 Blocked ${event.toolName}: ${shortPath} is outside worktree ${shortWorktree}`,
-					"warning",
-				);
-			}
+      if (ctx.hasUI) {
+        ctx.ui.notify(
+          `🔒 Blocked ${event.toolName}: ${shortPath} is outside worktree ${shortWorktree}`,
+          "warning",
+        );
+      }
 
-			console.log(
-				`[worktree-scope] BLOCKED ${event.toolName} to ${resolved} (outside ${worktreeInfo.worktreeRoot})`,
-			);
+      console.log(
+        `[worktree-scope] BLOCKED ${event.toolName} to ${resolved} (outside ${worktreeInfo.worktreeRoot})`,
+      );
 
-			return {
-				block: true,
-				reason: `Path "${shortPath}" is outside the worktree scope "${shortWorktree}". You are working in a git worktree and cannot modify files outside it. All edits must target paths within the worktree root.`,
-			};
-		}
+      return {
+        block: true,
+        reason: `Path "${shortPath}" is outside the worktree scope "${shortWorktree}". You are working in a git worktree and cannot modify files outside it. All edits must target paths within the worktree root.`,
+      };
+    }
 
-		return undefined;
-	});
+    return undefined;
+  });
 }

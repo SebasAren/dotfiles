@@ -4,11 +4,7 @@
 
 import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
-import {
-  Context7,
-  Context7Error,
-  type Library,
-} from "@upstash/context7-sdk";
+import { Context7, Context7Error, type Library } from "@upstash/context7-sdk";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -21,7 +17,9 @@ export interface SearchDetails {
 // ── Schema ─────────────────────────────────────────────────────────────────
 
 export const SearchParams = Type.Object({
-  libraryName: Type.String({ description: "Library name to search for (e.g., 'react', 'next.js')" }),
+  libraryName: Type.String({
+    description: "Library name to search for (e.g., 'react', 'next.js')",
+  }),
   query: Type.String({ description: "Your question or task (used for relevance ranking)" }),
 });
 
@@ -32,7 +30,10 @@ export async function executeSearch(
   apiKey: string | undefined,
   client: Context7,
   signal?: AbortSignal,
-  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: SearchDetails }) => void,
+  onUpdate?: (update: {
+    content: Array<{ type: "text"; text: string }>;
+    details: SearchDetails;
+  }) => void,
 ) {
   if (!apiKey) {
     throw new Error(
@@ -61,7 +62,12 @@ export async function executeSearch(
 
     if (!libraries.length) {
       return {
-        content: [{ type: "text" as const, text: `No libraries found matching "${libraryName}". Try a different search term.` }],
+        content: [
+          {
+            type: "text" as const,
+            text: `No libraries found matching "${libraryName}". Try a different search term.`,
+          },
+        ],
         details: { query, libraryName, resultCount: 0 },
       };
     }

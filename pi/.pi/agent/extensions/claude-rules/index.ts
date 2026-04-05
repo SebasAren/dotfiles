@@ -96,10 +96,7 @@ export default function claudeRulesExtension(pi: ExtensionAPI) {
 
     // Build the appendix
     const appendix = matchingRules
-      .map(
-        (r) =>
-          `<rule file="${r.filePath}" description="${r.description}">\n${r.body}\n</rule>`,
-      )
+      .map((r) => `<rule file="${r.filePath}" description="${r.description}">\n${r.body}\n</rule>`)
       .join("\n\n");
 
     const ruleNotice = `\n\n---\n**📋 Path-scoped rules matched for \`${relativePath}\`:**\n\n${appendix}`;
@@ -107,10 +104,7 @@ export default function claudeRulesExtension(pi: ExtensionAPI) {
     // Append to existing content
     const existingContent = event.content ?? [];
     return {
-      content: [
-        ...existingContent,
-        { type: "text" as const, text: ruleNotice },
-      ],
+      content: [...existingContent, { type: "text" as const, text: ruleNotice }],
     };
   });
 

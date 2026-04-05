@@ -12,13 +12,13 @@
  * Use during extension initialization to warn early but allow registration.
  */
 export function checkApiKey(name: string, envVar: string): string | undefined {
-	const key = process.env[envVar];
-	if (!key) {
-		console.warn(
-			`[${name}] ${envVar} not set. Tool will not work. Set it via: export ${envVar}='your-key'`,
-		);
-	}
-	return key;
+  const key = process.env[envVar];
+  if (!key) {
+    console.warn(
+      `[${name}] ${envVar} not set. Tool will not work. Set it via: export ${envVar}='your-key'`,
+    );
+  }
+  return key;
 }
 
 /**
@@ -27,11 +27,9 @@ export function checkApiKey(name: string, envVar: string): string | undefined {
  * Use inside tool execute() when the key is actually needed.
  */
 export function requireApiKey(name: string, envVar: string): string {
-	const key = process.env[envVar];
-	if (!key) {
-		throw new Error(
-			`${envVar} not set. Set it via: export ${envVar}='your-key'`,
-		);
-	}
-	return key;
+  const key = process.env[envVar];
+  if (!key) {
+    throw new Error(`${envVar} not set. Set it via: export ${envVar}='your-key'`);
+  }
+  return key;
 }

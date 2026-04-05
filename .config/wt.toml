@@ -13,13 +13,10 @@ copy = "wt step copy-ignored"
 tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
 
 [pre-commit]
-# Fast formatting/linting checks (runs on staged files only)
-lua-format = "scripts/hooks/pre-commit.sh"
-shell-lint = "scripts/hooks/shell-lint.sh"
+format-check = "scripts/hooks/format-check.sh"
 
 [pre-merge]
-# Full validation suite
-typescript-check = "cd pi/.pi/agent/extensions && for dir in */; do [ -f \"$dir/tsconfig.json\" ] || continue; bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done"
-bun-test = "cd pi/.pi/agent/extensions && bun test"
-lua-lint = "mise exec -- luacheck nvim/.config/nvim/lua/ 2>/dev/null || true"
-python-check = "scripts/hooks/pre-merge-python.sh"
+typescript-check = "scripts/hooks/typescript-check.sh"
+bun-test = "scripts/hooks/bun-test.sh"
+lua-lint = "scripts/hooks/lua-lint.sh"
+python-lint = "scripts/hooks/python-lint.sh"
