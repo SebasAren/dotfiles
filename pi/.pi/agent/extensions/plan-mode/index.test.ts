@@ -1,11 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
+import {
+	piTuiMock,
+} from "../shared/src/test-mocks";
 
-// Mock external dependencies before importing the extension
-mock.module("@mariozechner/pi-tui", () => ({
-	Key: {
-		ctrlAlt: (key: string) => `ctrl-alt-${key}`,
-	},
-}));
+// Mock external dependencies with shared mock factories
+mock.module("@mariozechner/pi-tui", piTuiMock);
 
 // Now import the extension after mocks are set up
 import planModeExtension from "./index";

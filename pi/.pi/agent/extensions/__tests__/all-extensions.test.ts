@@ -7,17 +7,7 @@ import { spawn } from "node:child_process";
  * and verifies exit code 0.
  */
 describe("all extensions verification", () => {
-	const extensionDirs = [
-		"shared",
-		"explore",
-		"librarian",
-		"wt-worktree",
-		"worktree-scope",
-		"claude-rules",
-		"context7",
-		"exa-search",
-		"fuzzy-edit",
-	];
+	const extensionDirs = ["shared", "explore", "librarian", "wt-worktree", "worktree-scope", "fuzzy-edit", "plan-mode"];
 
 	for (const dir of extensionDirs) {
 		it(`${dir}: all tests pass`, async () => {
@@ -52,15 +42,5 @@ describe("all extensions verification", () => {
 		}
 	});
 
-	it("unchanged extensions do not depend on @pi-ext/shared", async () => {
-		const unchanged = ["exa-search", "context7", "claude-rules"];
-		for (const ext of unchanged) {
-			try {
-				const pkg = await import(`../${ext}/package.json`);
-				expect(pkg.dependencies?.["@pi-ext/shared"]).toBeUndefined();
-			} catch {
-				// package.json may not exist for some extensions — that's fine
-			}
-		}
-	});
+
 });

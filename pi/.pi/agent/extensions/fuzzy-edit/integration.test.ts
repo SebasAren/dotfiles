@@ -1,25 +1,12 @@
 import { describe, it, expect, mock } from "bun:test";
+import {
+	piCodingAgentMock,
+	typeboxMock,
+} from "../shared/src/test-mocks";
 
-// Mock external dependencies
-mock.module("@mariozechner/pi-coding-agent", () => ({
-	createEditTool: () => ({
-		description: "edit tool description",
-		execute: mock(() => {
-			throw new Error("Could not find oldText in file");
-		}),
-	}),
-	withFileMutationQueue: (_path: string, fn: () => any) => fn(),
-}));
-
-mock.module("@sinclair/typebox", () => ({
-	Type: {
-		Object: (props: any) => ({ type: "object", ...props }),
-		String: (props: any) => ({ type: "string", ...props }),
-		Boolean: (props: any) => ({ type: "boolean", ...props }),
-		Optional: (schema: any) => ({ ...schema, optional: true }),
-		Array: (items: any, options: any) => ({ type: "array", items, ...options }),
-	},
-}));
+// Mock external dependencies with shared mock factories
+mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 import fuzzyEditExtension from "./index";
 

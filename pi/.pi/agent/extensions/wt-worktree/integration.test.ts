@@ -1,31 +1,14 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import {
+	piCodingAgentMock,
+	piTuiMock,
+	typeboxMock,
+} from "@pi-ext/shared/test-mocks";
 
-// Mock external dependencies
-mock.module("@mariozechner/pi-coding-agent", () => ({
-	getMarkdownTheme: () => ({}),
-}));
-
-mock.module("@mariozechner/pi-tui", () => ({
-	Container: class Container {
-		addChild() {}
-	},
-	Markdown: class Markdown {},
-	Spacer: class Spacer {},
-	Text: class Text {
-		constructor(public text: string, x: number, y: number) {}
-		setText(t: string) { this.text = t; }
-	},
-}));
-
-mock.module("@sinclair/typebox", () => ({
-	Type: {
-		Object: (props: any) => ({ type: "object", ...props }),
-		String: (props: any) => ({ type: "string", ...props }),
-		Boolean: (props: any) => ({ type: "boolean", ...props }),
-		Optional: (schema: any) => ({ ...schema, optional: true }),
-		Array: (items: any, options: any) => ({ type: "array", items, ...options }),
-	},
-}));
+// Mock external dependencies with shared mock factories
+mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
+mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 import wtWorktreeExtension from "./index";
 

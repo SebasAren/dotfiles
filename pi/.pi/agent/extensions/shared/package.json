@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./test-mocks": "./src/test-mocks.ts"
   },
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "^0.65.0",

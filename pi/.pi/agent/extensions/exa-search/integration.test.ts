@@ -17,6 +17,7 @@ mock.module("@sinclair/typebox", () => ({
 		Boolean: (props: any) => ({ type: "boolean", ...props }),
 		Optional: (schema: any) => ({ ...schema, optional: true }),
 		Array: (items: any, options: any) => ({ type: "array", items, ...options }),
+		Unsafe: (schema: any) => schema,
 	},
 }));
 
