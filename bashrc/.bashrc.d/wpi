@@ -44,8 +44,9 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             fi
         fi
 
-        # Start pi in the worktree
-        pi "$@"
+        # Start pi in the worktree.
+        # IMPORTANT: Tell the agent to NEVER call wt merge itself.
+        pi "$@" --context "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually when ready."
         local pi_exit=$?
 
         # After pi exits, offer merge
@@ -123,7 +124,11 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
                 echo 'After fixing, the user will re-run the merge.'
             } > "$prompt_file"
 
-            # Pass as context file to include in message, but stay interactive
+            # Pass as context file to include in message, but stay interactive.
+            # IMPORTANT: Tell the agent to NEVER call wt merge itself.
+            echo "" 
+            echo "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code/commits." >> "$prompt_file"
+            echo "The user will run the merge after you fix the issue." >> "$prompt_file"
             pi "@$prompt_file"
             rm -f "$prompt_file"
 
