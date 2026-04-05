@@ -1,0 +1,64 @@
+# wpi - Worktree + Pi: create worktree, run pi, offer merge on exit
+#
+# Usage: wpi <branch> [pi-args...]
+#        wpi -h|--help
+#
+# Examples:
+#   wpi fix-login-bug              # create worktree, start pi
+#   wpi fix-login-bug --continue   # start pi and resume last session
+#   wpi refactor-api --provider anthropic --model sonnet
+
+if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
+    wpi() {
+        if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+            echo "Usage: wpi <branch> [pi-args...]"
+            echo ""
+            echo "Create a worktree, start pi, offer merge on exit."
+            echo "After pi exits, you'll be prompted to merge the worktree"
+            echo "back to the default branch (with squash + rebase)."
+            echo ""
+            echo "Examples:"
+            echo "  wpi fix-login-bug"
+            echo "  wpi fix-login-bug --continue"
+            echo "  wpi refactor-api --provider anthropic"
+            return 0
+        fi
+
+        local branch="$1"
+        shift
+
+        # Create worktree and switch to it.
+        # If branch already has a worktree, wt switch just navigates to it.
+        if ! wt switch --create "$branch"; then
+            echo ""
+            echo "  Could not create worktree for '$branch'."
+            read -r -p "  Switch to existing worktree? [y/N] " answer
+            if [[ "$answer" =~ ^[Yy]$ ]]; then
+                wt switch "$branch" || return 1
+            else
+                return 1
+            fi
+        fi
+
+        # Start pi in the worktree
+        pi "$@"
+        local pi_exit=$?
+
+        # After pi exits, offer merge
+        local current_branch
+        current_branch="$(git branch --show-current 2>/dev/null || echo "???")"
+        echo ""
+        echo "  ───────────────────────────────────────"
+        echo "  pi exited (code $pi_exit) in '${current_branch}'"
+        echo "  ───────────────────────────────────────"
+        echo ""
+        read -r -p "  Merge back to default branch? [y/N] " answer
+
+        if [[ "$answer" =~ ^[Yy]$ ]]; then
+            wt merge
+        else
+            echo ""
+            echo "  Worktree kept. Merge later with: wt merge"
+        fi
+    }
+fi
