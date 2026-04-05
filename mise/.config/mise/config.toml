@@ -1,0 +1,12 @@
+[tools]
+age = "latest"
+bun = "latest"
+claude = "latest"
+fnox = "latest"
+pi = "latest"
+stylua = "latest"
+tree-sitter = "latest"
+uv = "latest"
+
+[settings]
+experimental = true
