@@ -55,8 +55,16 @@
         "@pi-ext/shared": "workspace:*",
       },
     },
+    "plan-mode": {
+      "name": "@pi-ext/plan-mode",
+      "version": "1.0.0",
+    },
     "shared": {
       "name": "@pi-ext/shared",
+      "version": "1.0.0",
+    },
+    "todo": {
+      "name": "@pi-ext/todo",
       "version": "1.0.0",
     },
     "worktree-scope": {
@@ -192,7 +200,11 @@
 
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 
+    "@pi-ext/plan-mode": ["@pi-ext/plan-mode@workspace:plan-mode"],
+
     "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
+
+    "@pi-ext/todo": ["@pi-ext/todo@workspace:todo"],
 
     "@pi-ext/wt-worktree": ["@pi-ext/wt-worktree@workspace:wt-worktree"],
 

@@ -10,7 +10,9 @@
     "explore",
     "fuzzy-edit",
     "librarian",
+    "plan-mode",
     "shared",
+    "todo",
     "wt-worktree",
     "worktree-scope"
   ],
