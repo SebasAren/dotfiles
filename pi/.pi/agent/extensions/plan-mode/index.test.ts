@@ -146,6 +146,8 @@ describe("plan mode extension", () => {
 				"find",
 				"ls",
 				"questionnaire",
+				"explore",
+				"librarian",
 			]);
 		});
 

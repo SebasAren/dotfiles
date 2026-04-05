@@ -19,7 +19,7 @@ import { Key } from "@mariozechner/pi-tui";
 import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.js";
 
 // Tools
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "explore", "librarian"];
 const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
 
 // Type guard for assistant messages
@@ -211,12 +211,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 You are in plan mode - a read-only exploration mode for safe code analysis.
 
 Restrictions:
-- You can only use: read, bash, grep, find, ls, questionnaire
+- You can only use: read, bash, grep, find, ls, questionnaire, explore, librarian
 - You CANNOT use: edit, write (file modifications are disabled)
 - Bash is restricted to an allowlist of read-only commands
 
 Ask clarifying questions using the questionnaire tool.
-Use brave-search skill via bash for web research.
+Use explore for broad codebase reconnaissance (delegates to a cheap model).
+Use librarian to look up external documentation, APIs, and best practices.
+Use brave-search skill via bash for quick web searches when librarian isn't needed.
 
 Create a detailed numbered plan under a "Plan:" header:
 
