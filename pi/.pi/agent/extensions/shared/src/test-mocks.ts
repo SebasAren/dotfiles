@@ -44,6 +44,10 @@ export const piCodingAgentMock = () => ({
  * Covers every export used by any extension:
  *   - `Container`, `Markdown`, `Spacer`, `Text` (explore, librarian, wt-worktree)
  *   - `Key` (plan-mode)
+ *
+ * Text and Container have `.text` / `.children` access but NO `render()` method.
+ * For tests that need `render()` (e.g. rendering unit tests), use `piTuiRenderMock`
+ * instead.
  */
 export const piTuiMock = () => ({
 	Container: class Container {
@@ -55,6 +59,62 @@ export const piTuiMock = () => ({
 		constructor(public text: string, _x: number, _y: number) {}
 		setText(t: string) {
 			this.text = t;
+		}
+	},
+	Key: {
+		ctrlAlt: (key: string) => `ctrl-alt-${key}`,
+	},
+});
+
+/**
+ * Richer mock for `@mariozechner/pi-tui` with working `render()` methods.
+ *
+ * Use this instead of `piTuiMock` when tests need to call `component.render(width)`
+ * and assert on the rendered output. Each class serialises its content to string
+ * arrays, mimicking the real TUI render pipeline.
+ */
+export const piTuiRenderMock = () => ({
+	Container: class Container {
+		children: any[] = [];
+		addChild(child: any) {
+			this.children.push(child);
+		}
+		render(width: number): string[] {
+			const lines: string[] = [];
+			for (const child of this.children) {
+				lines.push(...child.render(width));
+			}
+			return lines;
+		}
+	},
+	Markdown: class Markdown {
+		text: string;
+		constructor(text: string, _x: number, _y: number) {
+			this.text = text;
+		}
+		render(_width: number): string[] {
+			return this.text.split("\n");
+		}
+	},
+	Spacer: class Spacer {
+		lines: number;
+		constructor(lines: number) {
+			this.lines = lines;
+		}
+		render(_width: number): string[] {
+			return Array(this.lines).fill("");
+		}
+	},
+	Text: class Text {
+		text: string;
+		constructor(text: string | string[], _x: number, _y: number) {
+			this.text = Array.isArray(text) ? text.join("\n") : text;
+		}
+		setText(t: string) {
+			this.text = t;
+		}
+		render(_width: number): string[] {
+			return this.text.split("\n");
 		}
 	},
 	Key: {
@@ -76,4 +136,39 @@ export const typeboxMock = () => ({
 		Array: (items: any, options: any) => ({ type: "array", items, ...options }),
 		Unsafe: (schema: any) => schema,
 	},
+});
+
+/**
+ * Mock for `@mariozechner/pi-coding-agent` that includes a pass-through `Theme` class.
+ *
+ * `Theme.fg()` / `Theme.bg()` / `Theme.bold()` simply return their text argument
+ * unchanged, which is perfect for asserting on rendered content without ANSI
+ * color noise.
+ *
+ * Also includes `getMarkdownTheme` and `truncateHead` stubs.
+ */
+export const piCodingAgentThemeMock = () => ({
+	Theme: class Theme {
+		colors: Record<string, number>;
+		bgColors: Record<string, number>;
+		terminalType: string;
+		constructor(colors: Record<string, number>, bgColors: Record<string, number>, terminalType: string) {
+			this.colors = colors;
+			this.bgColors = bgColors;
+			this.terminalType = terminalType;
+		}
+		fg(_color: string, text: string): string {
+			return text;
+		}
+		bg(_color: string, text: string): string {
+			return text;
+		}
+		bold(text: string): string {
+			return text;
+		}
+	},
+	getMarkdownTheme: () => ({}),
+	DEFAULT_MAX_BYTES: 50000,
+	DEFAULT_MAX_LINES: 500,
+	truncateHead: (c: string) => ({ content: c, truncated: false }),
 });

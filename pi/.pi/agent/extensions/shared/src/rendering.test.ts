@@ -1,4 +1,14 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
+import {
+	piTuiRenderMock,
+	piCodingAgentThemeMock,
+} from "@pi-ext/shared/test-mocks";
+
+// Mock external deps using shared factories before any imports.
+// piTuiRenderMock provides Text/Container/Markdown/Spacer with working render() methods.
+mock.module("@mariozechner/pi-tui", piTuiRenderMock);
+mock.module("@mariozechner/pi-coding-agent", piCodingAgentThemeMock);
+
 import { Text, Container } from "@mariozechner/pi-tui";
 import { Theme } from "@mariozechner/pi-coding-agent";
 
@@ -136,7 +146,7 @@ describe("reuseOrCreateText", () => {
 
 // ── renderSubagentCall ─────────────────────────────────────────────────────
 
-describe.skip("renderSubagentCall", () => {
+describe("renderSubagentCall", () => {
 	const theme = createTestTheme();
 
 	it("returns a Text component", () => {
@@ -214,7 +224,7 @@ describe.skip("renderSubagentCall", () => {
 
 // ── renderSubagentResult: partial/streaming ────────────────────────────────
 
-describe.skip("renderSubagentResult (partial/streaming)", () => {
+describe("renderSubagentResult (partial/streaming)", () => {
 	it("shows progress indicator with partial label when no output", () => {
 		const rendered = render({
 			output: "",
@@ -246,7 +256,7 @@ describe.skip("renderSubagentResult (partial/streaming)", () => {
 
 // ── renderSubagentResult: collapsed ────────────────────────────────────────
 
-describe.skip("renderSubagentResult (collapsed)", () => {
+describe("renderSubagentResult (collapsed)", () => {
 	it("shows success icon and tool name", () => {
 		const rendered = render({
 			output: "Done",
@@ -343,7 +353,7 @@ describe.skip("renderSubagentResult (collapsed)", () => {
 
 // ── renderSubagentResult: expanded ─────────────────────────────────────────
 
-describe.skip("renderSubagentResult (expanded)", () => {
+describe("renderSubagentResult (expanded)", () => {
 	it("returns a Container for expanded view", () => {
 		const theme = createTestTheme();
 		const result = makeResult({ output: "Done" });

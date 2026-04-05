@@ -24,7 +24,7 @@ mock.module("@mariozechner/pi-ai", () => ({
 
 import context7Extension from "./index";
 
-describe.skip("context7 extension", () => {
+describe("context7 extension", () => {
 	const origKey = process.env.CONTEXT7_API_KEY;
 
 	it("can be loaded without errors", () => {

@@ -27,7 +27,7 @@ mock.module("@mariozechner/pi-ai", () => ({
 
 import exaSearchExtension from "./index";
 
-describe.skip("exa-search extension", () => {
+describe("exa-search extension", () => {
 	const origKey = process.env.EXA_API_KEY;
 
 	it("can be loaded without errors", () => {
