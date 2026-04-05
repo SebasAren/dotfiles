@@ -26,6 +26,7 @@ export interface ExploreDetails {
 	query?: string;
 	success?: boolean;
 	usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
+	[key: string]: unknown;
 }
 
 // ── Tool parameters ────────────────────────────────────────────────────────
@@ -98,13 +99,13 @@ export default function (pi: ExtensionAPI) {
 			if (isError) {
 				const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
 				return {
-					content: [{ type: "text", text: `Explore failed: ${errorMsg}` }],
+					content: [{ type: "text" as const, text: `Explore failed: ${errorMsg}` }],
 					details: { model: getModel(), query, usage: result.usage, success: false },
-				};
+				} as any;
 			}
 
 			return {
-				content: [{ type: "text", text: result.output || "(no output)" }],
+				content: [{ type: "text" as const, text: result.output || "(no output)" }],
 				details: {
 					model: getModel(),
 					usedModel: result.model,
@@ -120,7 +121,7 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderResult(result, state, theme, context) {
-			return renderResult(result, state, theme, context);
+			return renderResult(result as any, state, theme, context);
 		},
 	});
 

@@ -29,6 +29,7 @@ export interface LibrarianDetails {
 	focus?: string;
 	success?: boolean;
 	usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
+	[key: string]: unknown;
 }
 
 // ── Tool parameters ────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderResult(result, state, theme, context) {
-			return renderResult(result, state, theme, context);
+			return renderResult(result as any, state, theme, context);
 		},
 	});
 

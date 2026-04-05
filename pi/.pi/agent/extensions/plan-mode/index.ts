@@ -12,7 +12,6 @@
  * - Progress tracking widget during execution
  */
 
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import type { AssistantMessage, TextContent } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
@@ -23,6 +22,9 @@ const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", 
 const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
 
 // Type guard for assistant messages
+// Generic message type (replaces AgentMessage from pi-agent-core which isn't a direct dep)
+type AgentMessage = { role: string; content?: unknown };
+
 function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
 	return m.role === "assistant" && Array.isArray(m.content);
 }

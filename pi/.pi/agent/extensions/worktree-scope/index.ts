@@ -171,7 +171,9 @@ This is enforced by a hard block — attempts to write outside the worktree will
 		if (!worktreeInfo) return undefined;
 		if (!WRITE_TOOLS.has(event.toolName)) return undefined;
 
-		const filePath = event.input?.path;
+		const input = event.input;
+		if (!input || typeof input !== "object") return undefined;
+		const filePath = "path" in input ? (input as { path?: string }).path : undefined;
 		if (typeof filePath !== "string") return undefined;
 
 		if (!isInsideWorktree(filePath, worktreeInfo.worktreeRoot)) {

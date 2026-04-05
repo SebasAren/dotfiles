@@ -61,7 +61,7 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderResult(result, state, theme, _context) {
-			return renderSearchResult(result, state, theme);
+			return renderSearchResult(result as any, state, theme);
 		},
 	});
 
@@ -98,7 +98,7 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderResult(result, state, theme, _context) {
-			return renderFetchResult(result, state, theme);
+			return renderFetchResult(result as any, state, theme);
 		},
 	});
 

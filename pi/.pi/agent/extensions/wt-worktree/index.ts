@@ -250,7 +250,7 @@ export default function (pi: ExtensionAPI) {
 		},
 
 		renderResult(result, state, theme, _context) {
-			return renderResult(result, state, theme);
+			return renderResult(result as any, state, theme);
 		},
 	});
 }

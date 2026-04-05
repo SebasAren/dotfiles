@@ -33,7 +33,7 @@ export async function executeDocs(
   apiKey: string | undefined,
   client: Context7,
   signal?: AbortSignal,
-  onUpdate?: (update: { content: Array<{ type: string; text: string }>; details: DocsDetails }) => void,
+  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: DocsDetails }) => void,
 ) {
   if (!apiKey) {
     throw new Error(
@@ -45,7 +45,7 @@ export async function executeDocs(
 
   // Show initial progress
   onUpdate?.({
-    content: [{ type: "text", text: `Fetching documentation for ${libraryId}...` }],
+    content: [{ type: "text" as const, text: `Fetching documentation for ${libraryId}...` }],
     details: { libraryId, query, snippetCount: 0 },
   });
 
@@ -63,7 +63,7 @@ export async function executeDocs(
 
       if (snippetCount === 0) {
         return {
-          content: [{ type: "text", text: `No documentation found for library "${libraryId}" with query "${query}".` }],
+          content: [{ type: "text" as const, text: `No documentation found for library "${libraryId}" with query "${query}".` }],
           details: { libraryId, query, snippetCount: 0 },
         };
       }
@@ -85,7 +85,7 @@ export async function executeDocs(
     // Check for cancellation
     if (signal?.aborted) {
       return {
-        content: [{ type: "text", text: "Documentation fetch cancelled" }],
+        content: [{ type: "text" as const, text: "Documentation fetch cancelled" }],
         details: { libraryId, query, snippetCount: 0 },
       };
     }
@@ -97,7 +97,7 @@ export async function executeDocs(
     };
 
     return {
-      content: [{ type: "text", text: output }],
+      content: [{ type: "text" as const, text: output }],
       details,
     };
   } catch (error: unknown) {

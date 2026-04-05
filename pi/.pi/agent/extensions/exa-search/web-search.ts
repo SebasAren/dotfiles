@@ -110,7 +110,7 @@ export async function executeWebSearch(
 	},
 	exa: Exa,
 	signal?: AbortSignal,
-	onUpdate?: (update: { content: Array<{ type: string; text: string }>; details: WebSearchDetails }) => void,
+  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: WebSearchDetails }) => void,
 ) {
 	const {
 		query,
@@ -126,7 +126,7 @@ export async function executeWebSearch(
 
 	// Show initial progress
 	onUpdate?.({
-		content: [{ type: "text", text: `Searching: "${query}"...` }],
+		content: [{ type: "text" as const, text: `Searching: "${query}"...` }],
 		details: { query, resultCount: 0, truncated: false },
 	});
 
@@ -169,14 +169,14 @@ export async function executeWebSearch(
 		// Check for cancellation
 		if (signal?.aborted) {
 			return {
-				content: [{ type: "text", text: "Search cancelled" }],
+				content: [{ type: "text" as const, text: "Search cancelled" }],
 				details: { query, resultCount: 0, truncated: false },
 			};
 		}
 
 		if (!results.length) {
 			return {
-				content: [{ type: "text", text: `No results found for: "${query}"` }],
+				content: [{ type: "text" as const, text: `No results found for: "${query}"` }],
 				details: { query, resultCount: 0, truncated: false, searchType: type },
 			};
 		}
@@ -235,7 +235,7 @@ export async function executeWebSearch(
 		};
 
 		return {
-			content: [{ type: "text", text: finalOutput }],
+			content: [{ type: "text" as const, text: finalOutput }],
 			details,
 		};
 	} catch (error: unknown) {

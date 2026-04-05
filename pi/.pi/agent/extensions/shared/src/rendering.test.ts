@@ -134,7 +134,7 @@ describe("reuseOrCreateText", () => {
 	it("passes through non-Text lastComponent as-is (type cast)", () => {
 		const container = new Container();
 		const text = reuseOrCreateText({ lastComponent: container });
-		expect(text).toBe(container);
+		expect(text).toBe(container as any);
 	});
 
 	it("reuses existing Text component", () => {

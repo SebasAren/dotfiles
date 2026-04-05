@@ -32,7 +32,7 @@ export async function executeSearch(
   apiKey: string | undefined,
   client: Context7,
   signal?: AbortSignal,
-  onUpdate?: (update: { content: Array<{ type: string; text: string }>; details: SearchDetails }) => void,
+  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: SearchDetails }) => void,
 ) {
   if (!apiKey) {
     throw new Error(
@@ -44,7 +44,7 @@ export async function executeSearch(
 
   // Show initial progress
   onUpdate?.({
-    content: [{ type: "text", text: `Searching Context7 for "${libraryName}"...` }],
+    content: [{ type: "text" as const, text: `Searching Context7 for "${libraryName}"...` }],
     details: { query, libraryName, resultCount: 0 },
   });
 
@@ -54,14 +54,14 @@ export async function executeSearch(
     // Check for cancellation
     if (signal?.aborted) {
       return {
-        content: [{ type: "text", text: "Search cancelled" }],
+        content: [{ type: "text" as const, text: "Search cancelled" }],
         details: { query, libraryName, resultCount: 0 },
       };
     }
 
     if (!libraries.length) {
       return {
-        content: [{ type: "text", text: `No libraries found matching "${libraryName}". Try a different search term.` }],
+        content: [{ type: "text" as const, text: `No libraries found matching "${libraryName}". Try a different search term.` }],
         details: { query, libraryName, resultCount: 0 },
       };
     }
@@ -91,7 +91,7 @@ export async function executeSearch(
     };
 
     return {
-      content: [{ type: "text", text: output }],
+      content: [{ type: "text" as const, text: output }],
       details,
     };
   } catch (error: unknown) {

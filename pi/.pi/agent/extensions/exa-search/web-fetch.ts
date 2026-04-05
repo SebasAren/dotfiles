@@ -60,7 +60,7 @@ export async function executeWebFetch(
 	},
 	exa: Exa,
 	signal?: AbortSignal,
-	onUpdate?: (update: { content: Array<{ type: string; text: string }>; details: WebFetchDetails }) => void,
+  onUpdate?: (update: { content: Array<{ type: "text"; text: string }>; details: WebFetchDetails }) => void,
 ) {
 	const {
 		urls,
@@ -71,7 +71,7 @@ export async function executeWebFetch(
 
 	const urlList = urls.slice(0, 5);
 	onUpdate?.({
-		content: [{ type: "text", text: `Fetching ${urlList.length} page(s)...` }],
+		content: [{ type: "text" as const, text: `Fetching ${urlList.length} page(s)...` }],
 		details: { urls: urlList, format, successCount: 0, errorCount: 0, truncated: false },
 	});
 
@@ -100,7 +100,7 @@ export async function executeWebFetch(
 
 		if (signal?.aborted) {
 			return {
-				content: [{ type: "text", text: "Fetch cancelled" }],
+				content: [{ type: "text" as const, text: "Fetch cancelled" }],
 				details: { urls: urlList, format, successCount: 0, errorCount: 0, truncated: false },
 			};
 		}
@@ -161,7 +161,7 @@ export async function executeWebFetch(
 		}
 
 		return {
-			content: [{ type: "text", text: finalOutput }],
+			content: [{ type: "text" as const, text: finalOutput }],
 			details: {
 				urls: urlList,
 				format,

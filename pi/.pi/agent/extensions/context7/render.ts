@@ -42,7 +42,7 @@ export function renderSearchResult(
 	if (!details) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			return new Text(theme.fg("error", content.text.slice(0, 100)), 0, 0);
+			return new Text(theme.fg("error", (content.text ?? "").slice(0, 100)), 0, 0);
 		}
 		return new Text(theme.fg("error", "Context7 search failed"), 0, 0);
 	}
@@ -61,7 +61,7 @@ export function renderSearchResult(
 	if (state.expanded) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			const lines = content.text.split("\n");
+			const lines = (content.text ?? "").split("\n");
 			const relevantLines = lines.filter(
 				(line) => line.startsWith("### ") || line.startsWith("- **ID**:"),
 			);
@@ -116,7 +116,7 @@ export function renderDocsResult(
 	if (!details) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			return new Text(theme.fg("error", content.text.slice(0, 100)), 0, 0);
+			return new Text(theme.fg("error", (content.text ?? "").slice(0, 100)), 0, 0);
 		}
 		return new Text(theme.fg("error", "Context7 docs failed"), 0, 0);
 	}
@@ -135,7 +135,7 @@ export function renderDocsResult(
 	if (state.expanded) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			const lines = content.text.split("\n");
+			const lines = (content.text ?? "").split("\n");
 			const relevantLines = lines.filter(
 				(line) => line.startsWith("### ") || line.startsWith("```"),
 			);

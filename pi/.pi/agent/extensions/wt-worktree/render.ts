@@ -49,7 +49,7 @@ export function renderResult(
 ): Text | Container {
 	const details = result.details as TaskDetails | undefined;
 	const text = result.content[0];
-	const output = text?.type === "text" ? text.text : "(no output)";
+	const output = text?.type === "text" ? (text.text ?? "(no output)") : "(no output)";
 
 	const isError = result.isError;
 	const icon = isError ? theme.fg("error", "✗") : theme.fg("success", "✓");

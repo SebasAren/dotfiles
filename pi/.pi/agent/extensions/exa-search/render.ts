@@ -49,7 +49,7 @@ export function renderSearchResult(
 	if (!details) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			return new Text(theme.fg("error", content.text.slice(0, 100)), 0, 0);
+			return new Text(theme.fg("error", (content.text ?? "").slice(0, 100)), 0, 0);
 		}
 		return new Text(theme.fg("error", "Search failed"), 0, 0);
 	}
@@ -75,7 +75,7 @@ export function renderSearchResult(
 	if (state.expanded) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			const lines = content.text.split("\n");
+			const lines = (content.text ?? "").split("\n");
 			// Extract just the titles and URLs (lines starting with ### or URL:)
 			const relevantLines = lines.filter(
 				(line) =>
@@ -147,7 +147,7 @@ export function renderFetchResult(
 	if (!details) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			return new Text(theme.fg("error", content.text.slice(0, 100)), 0, 0);
+			return new Text(theme.fg("error", (content.text ?? "").slice(0, 100)), 0, 0);
 		}
 		return new Text(theme.fg("error", "Fetch failed"), 0, 0);
 	}
@@ -172,7 +172,7 @@ export function renderFetchResult(
 	if (state.expanded) {
 		const content = result.content[0];
 		if (content?.type === "text") {
-			const lines = content.text.split("\n");
+			const lines = (content.text ?? "").split("\n");
 			const relevantLines = lines.filter(
 				(line) =>
 					line.startsWith("## ") || line.startsWith("URL: "),
