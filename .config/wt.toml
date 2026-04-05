@@ -1,6 +1,9 @@
 # Worktrunk project config for dotfiles
 
 [pre-start]
+mise-trust = "mise trust"
+mise-install = "mise install"
+luacheck-install = "mise exec -- luarocks install luacheck 2>/dev/null || true"
 pi-install = "cd pi/.pi/agent/extensions && bun install"
 
 [post-start]
@@ -10,7 +13,13 @@ copy = "wt step copy-ignored"
 tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
 
 [pre-commit]
-# shellcheck = "shellcheck bashrc/.bashrc.d/*"
+# Fast formatting/linting checks (runs on staged files only)
+lua-format = "scripts/hooks/pre-commit.sh"
+shell-lint = "scripts/hooks/shell-lint.sh"
 
 [pre-merge]
-test = "cd pi/.pi/agent/extensions && bun test"
+# Full validation suite
+typescript-check = "cd pi/.pi/agent/extensions && for dir in */; do [ -f \"$dir/tsconfig.json\" ] || continue; bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done"
+bun-test = "cd pi/.pi/agent/extensions && bun test"
+lua-lint = "mise exec -- luacheck nvim/.config/nvim/lua/ 2>/dev/null || true"
+python-check = "scripts/hooks/pre-merge-python.sh"

@@ -3,17 +3,15 @@ Personal dotfiles repository using GNU Stow for configuration management.
 
 ## Quick Setup
 
-### Install pre-commit hooks
+### Install tools with mise
 ```bash
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files  # Test hooks
+mise install
 ```
 
 ### Install dotfiles
 ```bash
 # Install specific tool configs
-stow nvim docker bashrc tmux m908 opencode wt
+stow nvim docker bashrc tmux m908 opencode wt pi
 
 # Install Neovim plugins
 nvim --headless "+Lazy! sync" +qa
@@ -22,14 +20,31 @@ nvim --headless "+Lazy! sync" +qa
 cd docker/docker-services/[service] && docker-compose up -d
 ```
 
-## Development
+## Development Tools
 
-This repository uses [pre-commit](https://pre-commit.com/) for consistent code formatting:
-- **Lua**: StyLua formatting
-- **YAML/JSON**: Validation
-- **Whitespace**: Trailing whitespace removal
+This repository uses [mise](https://mise.jdx.dev/) for managing development tools.
 
-Install hooks once: `pre-commit install`
+### Available Tools
+| Tool | Purpose |
+|------|---------|
+| `mise run stylua` | Lua formatter |
+| `mise run luacheck` | Lua linter |
+| `mise run ruff` | Python linter/formatter |
+| `mise run shellcheck` | Shell linter |
+| `mise run bun` | JavaScript runtime/testing |
+| `mise run npx tsc` | TypeScript type checking |
+
+### Worktrunk Hooks
+
+Hooks are configured in `.config/wt.toml`:
+- **Pre-commit**: Fast formatting checks (Lua, Shell, Python)
+- **Pre-merge**: Full typecheck + test suite
+
+Run hooks manually:
+```bash
+./scripts/hooks/pre-commit.sh
+./scripts/hooks/pre-merge.sh
+```
 
 These can be installed using GNU stow
 https://www.gnu.org/software/stow/

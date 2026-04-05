@@ -1,11 +1,11 @@
 ---
 name: commit
-description: Reflects on session findings, updates .claude/rules/ if needed, then stages and commits changes with a conventional commit message. Use when asked to commit, when the user says "commit", or after completing a set of changes.
+description: Reflects on session findings, updates .claude/rules/ if needed, then commits using wt step commit. Use when asked to commit, when the user says "commit", or after completing a set of changes.
 ---
 
 # Commit with Reflection
 
-Before committing, reflect on the session and persist any valuable findings. Then create a clean conventional commit.
+Before committing, reflect on the session and persist any valuable findings. Then create a clean commit using `wt step commit`.
 
 ## Step 1: Reflect on Findings
 
@@ -85,54 +85,29 @@ description: What this rule covers
 - **Use `globs`** when findings only apply to specific file patterns
 - **No globs** when findings are general project knowledge
 
-## Step 3: Stage and Commit
+## Step 3: Stage and Commit with wt
 
-### Stage Changes
-
-```bash
-git add -A
-```
-
-Or selectively stage only relevant files if unrelated changes exist.
-
-### Craft Commit Message
-
-Use [Conventional Commits](https://www.conventionalcommits.org/) format:
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-[optional footer(s)]
-```
-
-**Types:**
-- `feat` — new feature or significant addition
-- `fix` — bug fix or correction
-- `refactor` — code restructuring without behavior change
-- `docs` — documentation changes
-- `style` — formatting, whitespace (no logic change)
-- `chore` — maintenance, tooling, build changes
-- `perf` — performance improvement
-- `test` — adding or updating tests
-
-**Scope:** the tool or area affected (e.g., `nvim`, `qtile`, `docker`, `tmux`).
-
-**Guidelines:**
-- Use **imperative mood** in subject: "add plugin" not "added plugin"
-- Keep subject under **72 characters**
-- Only add a body if the subject alone isn't clear enough
-- **Atomic commits** — one logical change per commit
-
-### Execute
+Use `wt step commit` which:
+- Stages all changes automatically
+- Runs `pre-commit` hooks (lua-format, shell-lint as defined in `.config/wt.toml`)
+- Generates a conventional commit message
+- Commits with the generated message
 
 ```bash
-git commit -m "<type>(<scope>): <description>"
+wt step commit --yes
+```
+
+The `--yes` flag is required in non-interactive environments (like AI agents) to auto-approve hook commands.
+
+If there are unrelated changes you don't want to commit, stage selectively first:
+
+```bash
+git add <specific-files>
+wt step commit --yes
 ```
 
 ## Usage
 
 ```
-/commit                           # Reflect, update rules, then commit
-/commit feat(nvim): add blink.cmp # Skip message generation, just reflect + commit
+/commit                           # Reflect, update rules, then commit via wt
 ```

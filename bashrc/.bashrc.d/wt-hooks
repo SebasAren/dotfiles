@@ -1,0 +1,9 @@
+#!/bin/bash
+# Source mise for worktrunk hook scripts
+# This ensures mise tools (ruff, shellcheck, etc.) are available
+
+if [ -f "$HOME/.config/bashrc.d/mise" ]; then
+    source "$HOME/.config/bashrc.d/mise"
+elif command -v mise &> /dev/null; then
+    eval "$(mise activate bash)"
+fi

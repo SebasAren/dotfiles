@@ -76,13 +76,6 @@
       "name": "worktree-scope",
       "version": "1.0.0",
     },
-    "wt-worktree": {
-      "name": "@pi-ext/wt-worktree",
-      "version": "1.0.0",
-      "dependencies": {
-        "@pi-ext/shared": "workspace:*",
-      },
-    },
   },
   "packages": {
     "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.73.0", "", { "dependencies": { "json-schema-to-ts": "^3.1.1" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-URURVzhxXGJDGUGFunIOtBlSl7KWvZiAAKY/ttTkZAkXT9bTPqdk2eK0b8qqSxXpikh3QKPnPYpiyX98zf5ebw=="],
@@ -210,8 +203,6 @@
     "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
 
     "@pi-ext/todo": ["@pi-ext/todo@workspace:todo"],
-
-    "@pi-ext/wt-worktree": ["@pi-ext/wt-worktree@workspace:wt-worktree"],
 
     "@protobufjs/aspromise": ["@protobufjs/aspromise@1.1.2", "", {}, "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ=="],
 
