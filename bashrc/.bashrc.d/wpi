@@ -1,12 +1,62 @@
 # wpi - Worktree + Pi: create worktree, run pi, offer merge on exit
 #
 # Usage: wpi <branch> [pi-args...]
+#        wpi --attach <branch>      # resume a broken/interrupted wpi session
 #        wpi -h|--help
 #
 # Examples:
 #   wpi fix-login-bug              # create worktree, start pi
 #   wpi fix-login-bug --continue   # start pi and resume last session
+#   wpi --attach fix-login-bug     # reattach to review/merge flow
 #   wpi refactor-api --provider anthropic --model sonnet
+
+# State directory for reattachment
+_wpi_state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/wpi"
+
+# Derive a short repo identifier from the git root to avoid state collisions
+_wpi_repo_id() {
+    local root
+    root="$(git rev-parse --show-toplevel 2>/dev/null)" || root="$PWD"
+    echo -n "$root" | md5sum | head -c 8
+}
+
+# Save wpi session state so it can be resumed later
+# Usage: _wpi_save_state <branch> <source_branch> <stage>
+_wpi_save_state() {
+    local branch="$1" source_branch="$2" stage="$3"
+    local repo_id
+    repo_id="$(_wpi_repo_id)"
+    mkdir -p "$_wpi_state_dir"
+    cat > "$_wpi_state_dir/${repo_id}-${branch}.state" <<EOF
+branch=${branch}
+source_branch=${source_branch}
+stage=${stage}
+pid=$$
+repo_id=${repo_id}
+timestamp=$(date +%s)
+EOF
+}
+
+# Load wpi session state
+# Usage: _wpi_load_state <branch>  — sets branch, source_branch, stage
+_wpi_load_state() {
+    local repo_id
+    repo_id="$(_wpi_repo_id)"
+    local state_file="$_wpi_state_dir/${repo_id}-${1}.state"
+    if [[ ! -f "$state_file" ]]; then
+        echo "  No saved state for branch '$1'."
+        return 1
+    fi
+    # shellcheck source=/dev/null
+    source "$state_file"
+}
+
+# Clear wpi session state
+_wpi_clear_state() {
+    local repo_id
+    repo_id="$(_wpi_repo_id)"
+    rm -f "$_wpi_state_dir/${repo_id}-${1}.state"
+}
 
 # Helper: read a line from user, ignoring Ctrl-C (SIGINT) and Ctrl-D (EOF)
 # Re-prompts instead of aborting. Usage: _wpi_read "prompt" varname
@@ -28,16 +78,113 @@ _wpi_read() {
 
 if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
     wpi() {
+        # --attach: resume a broken/interrupted session
+        if [[ "$1" == "--attach" ]]; then
+            if [[ -z "$2" ]]; then
+                echo "Usage: wpi --attach <branch>"
+                echo ""
+                echo "Resume a broken or interrupted wpi session."
+                echo "Lists active sessions if no branch given."
+                echo ""
+
+                # List saved states for this repo
+                if [[ -d "$_wpi_state_dir" ]]; then
+                    local current_repo_id
+                    current_repo_id="$(_wpi_repo_id)"
+                    local found=0
+                    for f in "$_wpi_state_dir"/*.state; do
+                        [[ -f "$f" ]] || continue
+                        # Skip states from other repos
+                        local file_repo_id
+                        file_repo_id="$(grep -oP 'repo_id=\K\w+' "$f" 2>/dev/null || echo "")"
+                        [[ "$file_repo_id" == "$current_repo_id" ]] || continue
+                        found=1
+                        local name
+                        name="$(basename "$f" .state)"
+                        # Strip repo_id prefix (format: repo_id-branch.state)
+                        name="${name#"$current_repo_id"-}"
+                        local age
+                        age=$(( $(date +%s) - $(grep -oP 'timestamp=\K\d+' "$f" 2>/dev/null || echo 0) ))
+                        local stage
+                        stage="$(grep -oP 'stage=\K\w+' "$f" 2>/dev/null || echo "?")"
+                        echo "  ${name}  (stage: ${stage}, ${age}s ago)"
+                    done
+                    if [[ $found -eq 0 ]]; then
+                        echo "  No active wpi sessions."
+                    fi
+                else
+                    echo "  No active wpi sessions."
+                fi
+                return 0
+            fi
+
+            local branch="$2"
+            if ! _wpi_load_state "$branch"; then
+                return 1
+            fi
+
+            # Switch to the worktree
+            wt switch "$branch" || return 1
+
+            echo ""
+            echo "  Reattached to wpi session for '${branch}'"
+            echo "  (source: ${source_branch:-unknown}, stage: ${stage:-review})"
+            echo ""
+
+            # Resume from the saved stage
+            case "${stage:-review}" in
+                review)
+                    if command -v nvim >/dev/null 2>&1; then
+                        _wpi_review_loop
+                    fi
+                    # Fall through to merge prompt
+                    local current_branch
+                    current_branch="$(git branch --show-current 2>/dev/null || echo "???")"
+                    echo ""
+                    echo "  ───────────────────────────────────────"
+                    echo "  Review complete in '${current_branch}'"
+                    echo "  ───────────────────────────────────────"
+                    echo ""
+                    local merge_target="${source_branch:-default branch}"
+                    _wpi_read "  Merge back to '${merge_target}'? [y/N] " answer
+                    if [[ "$answer" =~ ^[Yy]$ ]]; then
+                        _wpi_save_state "$branch" "${source_branch:-}" "merge"
+                        _wpi_merge_loop "${source_branch:-}"
+                    else
+                        echo ""
+                        echo "  Worktree kept. Merge later with: wt merge"
+                    fi
+                    ;;
+                merge)
+                    _wpi_merge_loop "${source_branch:-}"
+                    ;;
+                *)
+                    echo "  Unknown stage '${stage}'. Starting review..."
+                    if command -v nvim >/dev/null 2>&1; then
+                        _wpi_review_loop
+                    fi
+                    ;;
+            esac
+
+            _wpi_clear_state "$branch"
+            return 0
+        fi
+
         if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
             echo "Usage: wpi <branch> [pi-args...]"
+            echo "       wpi --attach <branch>      # resume interrupted session"
             echo ""
             echo "Create a worktree, start pi, offer merge on exit."
             echo "After pi exits, you'll be prompted to merge the worktree"
             echo "back to the originating branch (with squash + rebase)."
             echo ""
+            echo "If you break out (Ctrl-C, terminal close, etc), reattach with:"
+            echo "  wpi --attach <branch>"
+            echo ""
             echo "Examples:"
             echo "  wpi fix-login-bug"
             echo "  wpi fix-login-bug --continue"
+            echo "  wpi --attach fix-login-bug"
             echo "  wpi refactor-api --provider anthropic"
             return 0
         fi
@@ -62,12 +209,16 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             fi
         fi
 
+        # Save state so we can reattach if interrupted
+        _wpi_save_state "$branch" "$source_branch" "pi"
+
         # Start pi in the worktree.
         # On first start (no extra args), just launch pi. Otherwise pass args and
         # IMPORTANT: Tell the agent to NEVER call wt merge itself.
         if [[ $# -eq 0 ]]; then
             echo ""
             echo "  Starting pi in worktree for '${branch}'..."
+            echo "  (reattach with: wpi --attach ${branch})"
             echo ""
             pi
         else
@@ -76,6 +227,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         local pi_exit=$?
 
         # Review loop: let user annotate changes, then feed back to pi
+        _wpi_save_state "$branch" "$source_branch" "review"
         if command -v nvim >/dev/null 2>&1; then
             _wpi_review_loop
         fi
@@ -92,11 +244,17 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         _wpi_read "  Merge back to '${merge_target}'? [y/N] " answer
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
+            _wpi_save_state "$branch" "$source_branch" "merge"
             _wpi_merge_loop "${source_branch:-}"
         else
             echo ""
-            echo "  Worktree kept. Merge later with: wt merge"
+            echo "  Worktree kept. Merge later with:"
+            echo "    wt merge ${source_branch:+$source_branch }"
+            echo "  Or reattach the full flow with:"
+            echo "    wpi --attach ${branch}"
         fi
+
+        _wpi_clear_state "$branch"
     }
 fi
 
@@ -224,6 +382,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             if [[ "$retry" =~ ^[Nn]$ ]]; then
                 echo ""
                 echo "  Merge aborted. Fix manually and run: wt merge"
+                echo "  Or reattach with: wpi --attach ${branch:-<branch>}"
                 return 1
             fi
             # Loop back — merge_exit is reset at the top
