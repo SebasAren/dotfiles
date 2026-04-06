@@ -1,8 +1,8 @@
 # Worktrunk (wt) configuration
 # Stow target: ~/.config/worktrunk/config.toml
 
-# Worktree path — inside repo to avoid home dir clutter
-worktree-path = "{{ repo_path }}/.worktrees/{{ branch | sanitize }}"
+# Worktree path — centralized under ~/.pi/worktrees/<repo>/<branch>
+worktree-path = "~/.pi/worktrees/{{ repo }}/{{ branch | sanitize }}"
 
 # LLM commit messages via pi agent
 [commit.generation]
