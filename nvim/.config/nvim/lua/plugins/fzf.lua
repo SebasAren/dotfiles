@@ -210,6 +210,18 @@ return {
 				end,
 				desc = "Search git diff",
 			},
+			{
+				"<leader>gB",
+				function()
+					local ref = vim.env.WPI_BASE_BRANCH
+					if ref and ref ~= "" then
+						require("fzf-lua").git_diff({ ref = ref })
+					else
+						vim.notify("WPI_BASE_BRANCH not set", vim.log.levels.WARN)
+					end
+				end,
+				desc = "Git diff vs wpi base branch",
+			},
 		},
 	},
 }

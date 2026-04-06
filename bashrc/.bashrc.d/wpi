@@ -93,12 +93,14 @@ if command -v nvim >/dev/null 2>&1; then
             fi
 
             # Open nvim with fzf-lua's git_diff picker to review changes.
+            # Pass the base branch via env so the nvim keybind can reuse it.
             echo ""
             echo "  Opening nvim with fzf-lua git_diff..."
             echo "  Use Enter to preview a file's diff. :q to quit."
             echo "  Optionally create .code-review.md for review comments."
+            echo "  Press <leader>gB to reopen the diff picker at any time."
             echo ""
-            nvim -c "lua require('fzf-lua').git_diff()"
+            WPI_BASE_BRANCH="${source_branch:-main}" nvim -c "lua require('fzf-lua').git_diff({ ref = vim.env.WPI_BASE_BRANCH })"
             local review_file=".code-review.md"
             if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
                 echo ""
