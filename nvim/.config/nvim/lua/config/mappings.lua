@@ -55,7 +55,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 -- Code review keymaps
 vim.keymap.set("n", "<leader>ra", function()
-	require("review").add()
+	require("review").add(vim.fn.line("."), vim.fn.line("."))
 end, { desc = "Review: add comment" })
 vim.keymap.set("x", "<leader>ra", function()
 	local start = vim.fn.getpos("v")[2]
