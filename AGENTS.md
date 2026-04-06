@@ -66,9 +66,10 @@ Each tool directory has its own `AGENTS.md` with path-specific details.
 ## Tools
 
 ```bash
-mise run stylua       # Format Lua
-mise run luacheck     # Lint Lua
-mise run ruff         # Lint + format Python
-mise run shellcheck   # Lint shell scripts
-mise run bun          # JS runtime/testing
+stylua .              # Format Lua
+luacheck .            # Lint Lua
+ruff check .          # Lint Python
+ruff format .         # Format Python
+shellcheck **/*.sh    # Lint shell scripts
+shfmt -w .            # Format shell scripts
 ```

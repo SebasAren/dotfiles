@@ -4,27 +4,29 @@
 
 ### Lua
 - 2-space indentation
-- Format with [StyLua](https://github.com/JohnnyMorganz/StyLua) (`mise run stylua`)
-- Lint with [luacheck](https://github.com/mpeterv/luacheck) (`mise run luacheck`)
+- Format with [StyLua](https://github.com/JohnnyMorganz/StyLua) (`stylua .`)
+- Lint with [luacheck](https://github.com/mpeterv/luacheck) (`luacheck .`)
 - Use `---@type` annotations for LuaLS
 - Use `snake_case` for functions and variables
 - Prefer `require().setup()` over `vim.cmd()` for plugin configuration
 
 ### Python
 - 4-space indentation
-- Format and lint with [ruff](https://github.com/astral-sh/ruff) (`mise run ruff`)
+- Lint with [ruff](https://github.com/astral-sh/ruff) (`ruff check .`)
+- Format with [ruff](https://github.com/astral-sh/ruff) (`ruff format .`)
 - `snake_case` for functions and variables
 - `PascalCase` for classes
 
 ### Shell
 - Use `#!/usr/bin/env bash` and `set -euo pipefail`
-- Lint with [shellcheck](https://github.com/koalaman/shellcheck) (`mise run shellcheck`)
+- Lint with [shellcheck](https://github.com/koalaman/shellcheck) (`shellcheck **/*.sh`)
+- Format with [shfmt](https://github.com/mvdan/sh) (`shfmt -w .`)
 - Lowercase filenames with hyphens for multi-word names
 - One concern per file (see `.bashrc.d/` structure)
 
 ### TypeScript/JavaScript
-- Lint and typecheck with `mise run npx tsc`
-- Format with prettier (via `mise run bun` or prettierd in Neovim)
+- Lint and typecheck with `bunx tsc --noEmit`
+- Format with prettier (via `prettier --write .` or prettierd in Neovim)
 - Avoid `as any` and `@ts-ignore`
 
 ## Git Workflow
