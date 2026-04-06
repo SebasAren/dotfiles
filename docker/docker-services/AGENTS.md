@@ -1,87 +1,59 @@
-# Docker Services AGENTS.md
+# Docker Services
 
-## OVERVIEW
+Manages 5 self-hosted services via docker-compose. Each service is standalone with its own compose file and directory.
 
-Manages 5 media services via docker-compose in `docker/docker-services/`. Each service is standalone with its own compose file.
+## Services
 
-## STRUCTURE
+| Service | Compose | Image | Port | Network |
+|---------|---------|-------|------|---------|
+| jellyfin | `.yml` | jellyfin/jellyfin | 8096 | nginx (external) |
+| audiobookshelf | `.yaml` | ghcr.io/advplyr/audiobookshelf:latest | 13378 | nginx (external) |
+| nginx-proxy-manager | `.yaml` | jc21/nginx-proxy-manager:latest | 8000, 8100 (admin) | nginx (external) |
+| transmission | `.yml` | haugene/transmission-openvpn | 9091, 8118 (proxy) | bridge |
+| wolf | `.yaml` | ghcr.io/games-on-whales/wolf:stable | 47984+ | bridge |
 
-```
-docker/docker-services/
-  jellyfin/         # Media server (TV, movies, music)
-  audiobookshelf/   # Audiobooks and podcasts
-  nginx-proxy-manager/  # Reverse proxy with GUI
-  transmission/     # BitTorrent with VPN (haugene/transmission-openvpn)
-  wolf/             # Game streaming (Moonlight/Sunshine)
-```
+## Volume Labels
 
-## SERVICES TABLE
+| Label | Meaning | When to use |
+|-------|---------|-------------|
+| `:U,z` | Auto SELinux context, writable | Config/data volumes the container writes to |
+| `:ro,z` | Read-only, SELinux context | Media mounts (preferred) |
+| `:ro` | Read-only, no SELinux label | Non-SELinux systems or audiobookshelf (legacy) |
 
-| Service | Compose | Image | Ports | Network |
-|---------|---------|-------|-------|---------|
-| jellyfin | `.yml` | jellyfin/jellyfin | 8096, 8920, 1900/udp, 7359/udp, 18800 | nginx |
-| audiobookshelf | `.yaml` | ghcr.io/advplyr/audiobookshelf:latest | 13378 | nginx |
-| nginx-proxy-manager | `.yaml` | jc21/nginx-proxy-manager:latest | 8000, 4430, 8100 | nginx |
-| transmission | `.yml` | haugene/transmission-openvpn | 9091, 8118 | bridge |
-| wolf | `.yaml` | ghcr.io/games-on-whales/wolf:stable | 47984, 47989, 47999/udp, 48010, 48100/udp, 48200/udp | bridge |
+Media source paths: `/var/stash/media` and `/var/stash2/media`.
 
-## VOLUME PATTERNS
+## Networks
 
-| Pattern | Usage | Example |
-|---------|-------|---------|
-| `:U,z` | Privileged config volumes (jellyfin, nginx-proxy-manager) | `/var/stash2/config:/config:U,z` |
-| `:ro,z` | Read-only media mounts | `/var/stash2/media:/media:ro,z` |
-| `:ro` | Read-only without selinux label (audiobookshelf) | `/var/stash2/media/Audiobooks:/audiobooks:ro` |
-| `./vpn/` | Local VPN config for transmission | `./vpn/:/etc/openvpn/custom` |
-| `:rw` | Wolf device volumes | `/dev/:/dev/:rw` |
-
-**Media mounts**: `/var/stash2/media` and `/var/stash/media` (both read-only where applicable)
-
-## NETWORK PATTERNS
-
-**nginx network** (external): jellyfin, audiobookshelf, nginx-proxy-manager
-```yaml
-networks:
-  default:
-    external: true
-    name: nginx
+**nginx** (external): Shared by jellyfin, audiobookshelf, nginx-proxy-manager so NPM can reverse-proxy to them. Create it once:
+```bash
+docker network create nginx
 ```
 
-**Default bridge** (no network section): transmission, wolf
+**bridge** (default): transmission, wolf — not proxied through NPM.
 
-## VPN SETUP (transmission only)
+## VPN Setup (transmission)
 
-Transmission uses `haugene/transmission-openvpn` for VPN-protected torrenting.
+Uses `haugene/transmission-openvpn`. Requires:
+- `.env` file with: `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD`, `OPENVPN_CONFIG`, `LOCAL_NETWORK`, `TRANSMISSION_PEER_PORT`
+- VPN config files in `transmission/vpn/` (mounted to `/etc/openvpn/custom`)
+- Privileged: `cap_add: NET_ADMIN`, device `/dev/net/tun`
 
-**Required env vars** (set in shell or `.env`):
-- `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD`, `OPENVPN_CONFIG`
-- `LOCAL_NETWORK` (e.g., `192.168.1.0/24` for LAN access)
-- `TRANSMISSION_PEER_PORT`
-
-**VPN config location**: `./vpn/` mounted to `/etc/openvpn/custom`
-
-**Privileged mode**: `cap_add: NET_ADMIN`, devices: `/dev/net/tun`
-
-## COMMANDS
+## Commands
 
 ```bash
-# Start a service
-cd docker/docker-services/<service> && docker-compose up -d
+cd docker/docker-services/<service>
 
-# Stop a service
-cd docker/docker-services/<service> && docker-compose down
-
-# View logs
-docker logs <container-name>
-
-# Update image
-docker-compose pull && docker-compose up -d
+docker compose up -d        # Start
+docker compose down          # Stop
+docker compose pull          # Update images
+docker compose up -d         # Restart with new images
+docker logs <container>      # View logs
 ```
 
-## ANTI-PATTERNS
+## Notes
 
-- **Extension inconsistency**: jellyfin and transmission use `.yml`, others use `.yaml`. Accept this.
-- **Missing `:z` suffix**: audiobookshelf volumes lack `:z` label (may fail on SELinux systems)
-- **Hardcoded UID**: transmission sets `PUID=1000 PGID=1000` explicitly
-- **No Tailscale integration**: Services not exposed via tailnet
-- **wolf host mounts**: Requires `/dev/`, `/run/udev`, and docker.sock access from host
+- Extension inconsistency: jellyfin and transmission use `.yml`, others `.yaml`. Don't normalize.
+- audiobookshelf volumes lack `:z` label — may fail on strict SELinux systems.
+- transmission hardcodes `PUID=1000 PGID=1000`.
+- wolf requires host device access (`/dev/`, `/run/udev`, docker.sock) — essentially privileged.
+- No Tailscale integration — services are not exposed via tailnet.
