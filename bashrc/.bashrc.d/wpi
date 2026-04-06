@@ -195,7 +195,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
 
             # Pass as context file to include in message, but stay interactive.
             # IMPORTANT: Tell the agent to NEVER call wt merge itself.
-            echo "" 
+            echo ""
             echo "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code/commits." >> "$prompt_file"
             echo "The user will run the merge after you fix the issue." >> "$prompt_file"
             pi "@$prompt_file"
