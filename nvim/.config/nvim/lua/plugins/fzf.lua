@@ -2,8 +2,74 @@ return {
 	{
 		"ibhagwan/fzf-lua",
 		dependencies = { "echasnovski/mini.nvim" },
-		opts = {},
+		opts = {
+			previewers = {
+				git_diff = {
+					pager = "delta",
+				},
+			},
+			git = {
+				status = {
+					actions = {
+						["enter"] = function(selected)
+							require("fzf-lua.actions").file_edit(selected)
+						end,
+						["ctrl-s"] = function(selected)
+							require("fzf-lua.actions").git_stage(selected)
+						end,
+						["ctrl-u"] = function(selected)
+							require("fzf-lua.actions").git_unstage(selected)
+						end,
+					},
+				},
+			},
+		},
 		keys = {
+			-- Git code review pickers
+			{
+				"<leader>gs",
+				function()
+					require("fzf-lua").git_status()
+				end,
+				desc = "Git status",
+			},
+			{
+				"<leader>gD",
+				function()
+					require("fzf-lua").git_diff({ ref = "main" })
+				end,
+				desc = "Git diff vs main",
+			},
+			{
+				"<leader>gj",
+				function()
+					require("fzf-lua").git_hunks()
+				end,
+				desc = "Git hunks (next/prev changes)",
+			},
+			{
+				"<leader>gc",
+				function()
+					require("fzf-lua").git_commits()
+				end,
+				desc = "Git commits",
+			},
+			{
+				"<leader>gC",
+				function()
+					require("fzf-lua").git_bcommits()
+				end,
+				desc = "Buffer git commits",
+			},
+			{
+				"<leader>gS",
+				function()
+					require("fzf-lua").git_stash()
+				end,
+				desc = "Git stash",
+			},
+
+			-- General pickers
 			{
 				"<leader>pp",
 				function()
