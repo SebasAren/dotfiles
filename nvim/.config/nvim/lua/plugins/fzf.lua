@@ -137,6 +137,13 @@ return {
 				end,
 				desc = "Search LSP references",
 			},
+			{
+				"<leader>pgd",
+				function()
+					require("fzf-lua").git_diff()
+				end,
+				desc = "Search git diff",
+			},
 		},
 	},
 }
