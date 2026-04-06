@@ -1,4 +1,7 @@
 ---
+globs:
+  - "homebrew/**"
+  - "bashrc/**"
 description: Bluefin ujust custom recipe conventions
 ---
 
