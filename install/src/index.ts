@@ -6,7 +6,7 @@ import {
   ProcessTerminal,
 } from "@mariozechner/pi-tui";
 import { CheckboxList, type CheckboxItem } from "./checkbox-list.js";
-import { PACKAGES } from "./packages.js";
+import { PACKAGES, isStowInstalled } from "./packages.js";
 
 // ANSI helpers
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
@@ -28,7 +28,7 @@ const checkboxItems: CheckboxItem[] = PACKAGES.map((p) => ({
   id: p.id,
   label: p.label,
   description: p.description,
-  checked: p.checked,
+  checked: isStowInstalled(p.id) || p.checked,
 }));
 
 const checkboxList = new CheckboxList(checkboxItems);
@@ -130,4 +130,18 @@ process.on("SIGINT", () => {
   handle.hide();
   tui.stop();
   process.exit(0);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection:", err);
+  handle.hide();
+  tui.stop();
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  handle.hide();
+  tui.stop();
+  process.exit(1);
 });

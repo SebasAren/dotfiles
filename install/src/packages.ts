@@ -61,66 +61,43 @@ export const PACKAGES: DotfilePackage[] = [
     install: () => stow("opencode"),
   },
   {
-    id: "scripts",
-    label: "Git hooks",
-    description: "Pre-commit hooks for formatting & linting",
-    checked: false,
-    install: () => stow("scripts"),
-  },
-  {
-    id: "homebrew",
-    label: "Homebrew",
-    description: "Brewfile for system packages",
-    checked: false,
-    install: () => {
-      execSync("brew bundle --file=./homebrew/Brewfile", {
-        cwd: DOTFILES_ROOT,
-        stdio: "pipe",
-      });
-      return "Installed Homebrew packages from Brewfile";
-    },
-  },
-  {
-    id: "mise",
-    label: "Mise runtimes",
-    description: "Python, Lua, Node, Bun, tooling (ruff, stylua, etc.)",
-    checked: true,
-    install: () => {
-      execSync("mise install", {
-        cwd: DOTFILES_ROOT,
-        stdio: "pipe",
-      });
-      return "Installed runtimes via mise";
-    },
-  },
-  {
     id: "m908",
     label: "Redragon M908",
     description: "Mouse macro configuration",
     checked: false,
     install: () => stow("m908"),
   },
-  {
-    id: "pass-cli",
-    label: "Proton Pass CLI",
-    description: "Secret injection for API keys",
-    checked: true,
-    install: () => {
-      if (checkPassCliInstalled()) {
-        return "Already installed";
-      }
-      execSync(
-        "curl -fsSL https://proton.me/download/pass-cli/install.sh | bash",
-        { stdio: "pipe" },
-      );
-      return "Installed pass-cli";
-    },
-  },
+
 ];
 
 function stow(pkg: string): string {
-  execSync(`stow ${pkg}`, { cwd: DOTFILES_ROOT, stdio: "pipe" });
+  try {
+    execSync(`stow --restow ${pkg}`, { cwd: DOTFILES_ROOT, stdio: "pipe" });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Stow failed for ${pkg}: ${msg.slice(0, 200)}`);
+  }
   return `Stowed ${pkg}`;
+}
+
+// Check if a stow package is already installed by checking if target symlinks exist
+export function isStowInstalled(pkg: string): boolean {
+  // Map of package IDs to their main target files/directories
+  const packageTargets: Record<string, string> = {
+    bashrc: `${process.env.HOME}/.bashenv`,
+    nvim: `${process.env.HOME}/.config/nvim`,
+    tmux: `${process.env.HOME}/.config/tmux`,
+    wt: `${process.env.HOME}/.config/worktrunk`,
+    pi: `${process.env.HOME}/.pi`,
+    docker: `${process.env.HOME}/.docker`,
+    opencode: `${process.env.HOME}/.config/opencode`,
+    m908: `${process.env.HOME}/.config/m908`,
+  };
+
+  const target = packageTargets[pkg];
+  if (!target) return false;
+
+  return isStowFileInstalled(target);
 }
 
 export function checkStowAvailable(): boolean {
@@ -132,10 +109,12 @@ export function checkStowAvailable(): boolean {
   }
 }
 
-function checkPassCliInstalled(): boolean {
+
+// Check if a specific stow-managed file/symlink exists
+function isStowFileInstalled(targetPath: string): boolean {
   try {
-    execSync("command -v pass-cli", { stdio: "pipe" });
-    return true;
+    const stats = require("fs").lstatSync(targetPath);
+    return stats.isSymbolicLink();
   } catch {
     return false;
   }
