@@ -33,11 +33,14 @@ cmd_sync() {
     echo "Generating full Brewfile without diffing." >&2
     SYSTEM_FORMULAS=""
     SYSTEM_CASKS=""
+    SYSTEM_FLATPAKS=""
   else
     SYSTEM_FORMULAS=$(cat "$SYSTEM_DIR"/*.Brewfile 2>/dev/null \
       | grep -E '^brew ' | sed "s/^brew ['\"]//;s/['\"].*$//" | sort -u)
     SYSTEM_CASKS=$(cat "$SYSTEM_DIR"/*.Brewfile 2>/dev/null \
       | grep -E '^cask ' | sed "s/^cask ['\"]//;s/['\"].*$//" | sort -u)
+    SYSTEM_FLATPAKS=$(cat "$SYSTEM_DIR"/*.Brewfile 2>/dev/null \
+      | grep -E '^flatpak ' | sed "s/^flatpak ['\"]//;s/['\"].*$//" | sort -u)
   fi
 
   # Get top-level (explicitly installed) formulas
@@ -49,6 +52,10 @@ cmd_sync() {
   # Get installed casks, filter system-managed
   INSTALLED_CASKS=$(brew list --cask -1 2>/dev/null | sort)
   PERSONAL_CASKS=$(comm -23 <(echo "$INSTALLED_CASKS") <(echo "$SYSTEM_CASKS" | sort))
+
+  # Get installed flatpaks, filter system-managed
+  INSTALLED_FLATPAKS=$(flatpak list --app --columns=application 2>/dev/null | sort)
+  PERSONAL_FLATPAKS=$(comm -23 <(echo "$INSTALLED_FLATPAKS") <(echo "$SYSTEM_FLATPAKS" | sort))
 
   # Generate Brewfile
   cat > "$BREWFILE" << 'HEADER'
@@ -73,11 +80,20 @@ HEADER
     while IFS= read -r pkg; do
       echo "cask \"$pkg\"" >> "$BREWFILE"
     done <<< "$PERSONAL_CASKS"
+    echo "" >> "$BREWFILE"
+  fi
+
+  if [[ -n "$PERSONAL_FLATPAKS" ]]; then
+    echo "# Flatpaks" >> "$BREWFILE"
+    while IFS= read -r pkg; do
+      echo "flatpak \"$pkg\"" >> "$BREWFILE"
+    done <<< "$PERSONAL_FLATPAKS"
   fi
 
   COUNT_F=$(echo "$PERSONAL_FORMULAS" | grep -c . || true)
   COUNT_C=$(echo "$PERSONAL_CASKS" | grep -c . || true)
-  echo "Brewfile updated: $BREWFILE ($COUNT_F formulas, $COUNT_C casks)"
+  COUNT_FP=$(echo "$PERSONAL_FLATPAKS" | grep -c . || true)
+  echo "Brewfile updated: $BREWFILE ($COUNT_F formulas, $COUNT_C casks, $COUNT_FP flatpaks)"
 }
 
 # --- Main ---
