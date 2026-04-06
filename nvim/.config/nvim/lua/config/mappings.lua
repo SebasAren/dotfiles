@@ -52,3 +52,28 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end, opts)
 	end,
 })
+
+-- Code review keymaps
+vim.keymap.set("n", "<leader>ra", function()
+	require("review").add()
+end, { desc = "Review: add comment" })
+vim.keymap.set("x", "<leader>ra", function()
+	local start = vim.fn.getpos("v")[2]
+	local stop = vim.fn.getpos(".")[2]
+	if start > stop then
+		start, stop = stop, start
+	end
+	vim.schedule(function()
+		require("review").add(start, stop)
+	end)
+	return " "
+end, { desc = "Review: add comment on selection", expr = true })
+vim.keymap.set("n", "<leader>rd", function()
+	require("review").delete()
+end, { desc = "Review: delete comment" })
+vim.keymap.set("n", "<leader>rl", function()
+	require("review").list()
+end, { desc = "Review: list comments" })
+vim.keymap.set("n", "<leader>rx", function()
+	require("review").clear()
+end, { desc = "Review: clear all" })

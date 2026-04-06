@@ -36,6 +36,13 @@ return {
 					},
 					opts = { skip = true },
 				},
+				{
+					filter = {
+						event = "msg_show",
+						kind = "return_prompt",
+					},
+					opts = { skip = true },
+				},
 			},
 		},
 		dependencies = {

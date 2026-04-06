@@ -21,6 +21,7 @@ local config = {
 }
 
 function M.add(line_start, line_end)
+	print("[review] add() called, line_start=" .. line_start .. ", line_end=" .. line_end)
 	local file = vim.fn.expand("%:.")
 	local bufnr = vim.api.nvim_get_current_buf()
 
@@ -116,6 +117,7 @@ end
 
 function M.save()
 	local path = config.output_path
+	print("[review] save() called, path=" .. path .. ", comments=" .. #comments)
 	if #comments == 0 then
 		vim.fn.delete(path)
 		return
@@ -163,7 +165,19 @@ function M.save()
 		table.insert(lines, "")
 	end
 
-	vim.fn.writefile(lines, path)
+	print("[review] writing to " .. path .. ", lines=" .. #lines)
+	print("[review] comments table has " .. #comments .. " items")
+	local ok, err = vim.fn.writefile(lines, path)
+	if ok == -1 then
+		print("[review] writefile failed: " .. tostring(err))
+	else
+		print("[review] writefile success, checking file...")
+		if vim.fn.filereadable(path) == 1 then
+			print("[review] file is readable after write")
+		else
+			print("[review] WARNING: file not readable after write!")
+		end
+	end
 end
 
 function M.count()
@@ -245,7 +259,10 @@ function M.setup(opts)
 				return
 			end
 			vim.schedule(function()
+				print("[review] watcher triggered for: " .. tostring(filename))
+				print("[review] filereadable=" .. vim.fn.filereadable(path) .. ", comments=" .. #comments)
 				if vim.fn.filereadable(path) == 0 and #comments > 0 then
+					print("[review] CLEARING all comments!")
 					clear_all()
 					M._sync_qflist()
 					print("Review comments cleared (file deleted)")
