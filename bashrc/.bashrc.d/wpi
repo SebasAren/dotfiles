@@ -48,6 +48,9 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         # On first start (no extra args), just launch pi. Otherwise pass args and
         # IMPORTANT: Tell the agent to NEVER call wt merge itself.
         if [[ $# -eq 0 ]]; then
+            echo ""
+            echo "  Starting pi in worktree for '${branch}'..."
+            echo ""
             pi
         else
             pi "$@" "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually when ready."
@@ -95,7 +98,7 @@ if command -v nvim >/dev/null 2>&1; then
             echo "  Opening nvim for review..."
             echo "  Keymaps: <leader>ra = annotate, <leader>rd = delete, <leader>rl = list, <leader>rs = save, :wq = done"
             echo ""
-            nvim .
+            nvim -c "Changes" .
 
             # Check if .code-review.md was created with content
             local review_file=".code-review.md"
@@ -118,6 +121,9 @@ if command -v nvim >/dev/null 2>&1; then
                 echo "  Reopening pi with review comments..."
                 echo ""
                 pi "@$review_file" "Apply these review comments. Fix each issue. IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code."
+                echo ""
+                echo "  Review comments applied. Continuing review loop..."
+                # Keep the review file for reference until the loop ends
                 rm -f "$review_file"
 
                 # Loop back — user can review again or proceed to merge
@@ -182,6 +188,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
                 echo '- Test or lint failures in pre-merge hooks — fix the code so they pass'
                 echo '- Rebase conflicts — resolve the conflicts and complete the rebase'
                 echo '- Uncommitted changes that need to be committed or reverted'
+                echo '- Staged but uncommitted files — check git status and commit them'
                 echo ''
                 echo 'After fixing, the user will re-run the merge.'
             } > "$prompt_file"
