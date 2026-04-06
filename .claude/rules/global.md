@@ -1,9 +1,26 @@
 ---
-description: Global project conventions
+description: Global project conventions — dotfiles, docs structure, and language standards
 ---
 
-This is a dotfiles repository managed with GNU Stow.
+## Dotfiles (GNU Stow)
+
 - Files in `tool-name/.config/tool/` are symlinked to `~/.config/tool/`
 - Always edit files in the repo, never in the symlink target
 - Use conventional commits, atomic changes
 - Do NOT add qutebrowser config — it does not exist despite docs references
+
+## Documentation Structure
+
+**AGENTS.md**: Path-scoped, not monolithic. Root AGENTS.md is minimal (overview, conventions, tool index). Subdirectory AGENTS.md covers path-specific config and gotchas only — no global info duplication.
+
+**README.md**: Human-facing entry point. Include architecture decisions (why, not just what), numbered setup steps, and repo structure tree.
+
+**CONVENTIONS.md**: Actionable rules with specific tool commands (e.g., `mise run stylua`), not vague guidance.
+
+## Language Conventions
+
+**Lua** (2-space indent, StyLua): `snake_case` vars/funcs, `---@type` annotations, `vim.keymap.set` over legacy API, `pcall` for optional requires.
+
+**Python** (4-space indent, ruff): `snake_case` funcs/vars, `PascalCase` classes. Use ruff for linting, black + isort for formatting.
+
+**Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames.

@@ -84,6 +84,9 @@ description: What this rule covers
 - **Be specific** — "Widget bars need `importlib` imports" not "imports can be tricky"
 - **Use `globs`** when findings only apply to specific file patterns
 - **No globs** when findings are general project knowledge
+- **Short rules are merge candidates** — Rules under ~300 bytes covering a single topic are better merged into a broader rule than kept as separate files. Avoid rule sprawl.
+- **Rules vs skills heuristic** — Passive gotchas/conventions → rules. Action-oriented procedures (CLI workflows, how-to guides) → skills. Test: "Is this a warning or a procedure?"
+- **File-specific notes go in AGENTS.md** — Detailed gotchas for specific files (e.g., performance constraints for 5 plugin files) belong in that directory's `AGENTS.md`, not as a global rule. Rules should be for cross-project patterns.
 
 ## Step 3: Stage and Commit with wt
 

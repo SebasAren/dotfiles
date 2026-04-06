@@ -93,3 +93,13 @@ Key servers: basedpyright (Python), vtsls (TypeScript), lua_ls, rust_analyzer, g
 | `:LspInfo` | Show LSP server status |
 | `:Mason` | Manage LSP/formatter/linter servers |
 | `:lua =vim.lsp.get_clients()` | List active LSP clients |
+
+## Markdown Performance Gotchas
+
+Large markdown files (>3k lines) need several optimizations. These are applied in `folds.lua`, `treesitter-autocmd.lua`, `tools.lua`, and `mini.lua`:
+
+- **nvim-ufo must exclude markdown from treesitter folding**: `provider_selector` must return `"indent"` only for markdown. Treesitter fold computation on markdown is extremely expensive and freezes Neovim.
+- **treesitter-autocmd.lua guard is not enough**: The `if ft ~= "markdown"` guard skips foldexpr/indentexpr, but nvim-ufo overrides it. Both must be kept in sync.
+- **Skip treesitter entirely for large markdown**: The `markdown_inline` parser is the biggest performance killer — it parses every bold, italic, code-span, and link across the entire document. Use `M.markdown_line_threshold` to control the cutoff.
+- **indent-blankline must exclude markdown**: Markdown has no meaningful indent structure. ibl creates thousands of virtual text extmarks for zero value. Keep `exclude = { filetypes = { "markdown" } }`.
+- **mini.cursorword must be disabled for markdown**: It scans the entire buffer for the word under cursor on every cursor move — O(n) per move. Use `vim.b.minicursorword_disable = true` via FileType autocmd.

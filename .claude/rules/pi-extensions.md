@@ -1,31 +1,65 @@
 ---
-description: Pi extension development conventions and gotchas
+description: Pi extension development conventions, TDD, and gotchas
 globs:
   - "pi/*"
+  - "pi/**"
 ---
 
-- **Bun virtual path handling**: Bun virtualizes `process.cwd()` into `/bunfs/...` which doesn't exist for subprocesses. When spawning subprocesses that need to work with the filesystem, pass the resolved real cwd via environment variable (e.g., `PI_REAL_CWD`) and check for it first in `resolveRealCwd()` functions.
-- **Subagent cwd propagation**: Explore and other subagent extensions must propagate the real working directory to spawned processes, otherwise nested pi processes receive virtual paths that don't exist on the real filesystem.
-- **`renderCall` component reuse**: Pi extension `renderCall` functions must reuse `context.lastComponent` instead of creating new components each time. Creating `new Text()` on every call causes duplicate renders in the TUI. Pattern: `const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0); text.setText(content); return text;`
-- **Subagent output formatting**: Explore/librarian subagents output their "thinking" as concatenated text with colons between thoughts, not proper markdown. The `renderResult` fallback must split on sentence boundaries (`. `, `: `, `! `, `? `) rather than newlines to display readable bullet points. Use `splitIntoSentences()` from `@pi-ext/shared` for this.
-- **Subagent thinking lacks spaces**: Subagent thinking output often has no space after periods (e.g., "there.Now" instead of "there. Now"). The `splitIntoSentences` regex must use `\s*` (zero or more whitespace) not `\s+` after `[.!?]` to handle this pattern.
-- **Bun mock.module() cross-contamination**: `mock.module()` is global across the entire test process. When multiple test files mock the same module (e.g., `@sinclair/typebox`) with different shapes, mocks bleed between files. **Solution**: use the shared mock factories from `shared/src/test-mocks.ts` (`piCodingAgentMock`, `piTuiMock`, `typeboxMock`) which include all exports needed by any extension. Extensions with `@pi-ext/shared` as a dependency import via `@pi-ext/shared/test-mocks`; extensions without it use relative paths (`../shared/src/test-mocks`).
-- **Claude-rules `globs` scoping caveat**: Rules with `globs` only inject when the LLM edits matching files. A rule with `globs: ["pi/*"]` is invisible when editing `nvim/`, `tmux/`, etc. For rules that must always apply (like worktree boundaries), omit `globs` entirely or use the `before_agent_start` hook to inject into the system prompt.
-- **Worktree scope enforcement**: The `worktree-scope` extension hard-blocks `edit`/`write` calls targeting paths outside the current git worktree. No additional manual verification needed — the extension handles rejection automatically.
-- **Worktree path awareness for file edits**: When pi runs inside a git worktree, always verify that `edit`/`write` tool calls target the worktree path (e.g. `/var/home/sebas/dotfiles.explorer-broken/`), not the main repo path (`/var/home/sebas/dotfiles/`). After editing, confirm with `diff` — remember that `<` lines come from the *first* file argument, not necessarily the "old" version.
-- **pi CLI has no --max-turns flag**: The `pi` CLI doesn't support a built-in turn or tool-call limit. To enforce limits on subagent subprocesses, monitor the JSON event stream (`tool_execution_start` events) and kill the process externally when limits are exceeded.
-- **JSON event stream for subagent monitoring**: The `pi --mode json` stream emits `tool_execution_start` events with `{type, toolName, args, toolCallId}` — these are the correct events to track for loop detection and tool-call counting. Don't use `message_end` for this purpose (it only counts completed assistant turns, not individual tool calls).
-- **Subagent loop detection must set exitCode=0**: When killing a subprocess due to loop detection, override the exit code to 0 (not the SIGTERM exit code) so the caller treats the partial output as success rather than failure. The partial output from before the loop is still valuable.
-- **Extension integration test pattern**: Use `bun:test` with `mock.module()` to stub external deps (`@mariozechner/pi-coding-agent`, `@sinclair/typebox`, etc.) before importing the extension. For file-based tests, use `tmpdir()` + `beforeAll`/`afterAll` for setup/teardown. The `__tests__/all-extensions.test.ts` runner auto-discovers and runs `bun test` in each extension directory.
-- **TMUX_PANE targeting for split-window**: When a process running inside tmux calls `tmux split-window` without `-t`, it splits the *currently focused* pane — which may be in a different window if the user navigated away. Always use `-t "$TMUX_PANE"` to target the pane where the process is actually running.
-- **exa-js typing gaps**: The `Status` type lacks the `error` field that the API actually returns — use `any` cast on the response when accessing `s.error?.tag`. The `SearchResult` content fields (`text`, `highlights`, `summary`) only resolve through the `ContentsResultComponent<T>` generic, so dynamic content options break type inference — cast to `any` when building options dynamically.
-- **exa-js highlights vs text options**: `HighlightsContentsOptions` uses `numSentences`/`highlightsPerUrl`, NOT `maxCharacters`. Only `TextContentsOptions` has `maxCharacters`. When converting a user-provided char limit to highlights, calculate `numSentences = Math.ceil(maxChars / 200)`.
-- **Librarian auto-loads extensions**: The librarian subagent uses `--no-tools` but NOT `--no-extensions`, so any tool registered by extensions (exa-search, context7, etc.) is automatically available. New tools added to existing extensions don't need extra wiring in the librarian.
-- **`parseSections` always creates ≥1 section**: For any non-empty text, `parseSections()` treats the first line as a section title and the rest as content. This means the `splitIntoSentences` fallback in `renderSubagentResult` only triggers for truly empty/whitespace output — never for "unstructured" text. When testing rendering, provide `## Header` sections to exercise the section-based code path, or empty strings to exercise the sentence fallback.
-- **Bun mock.module() last-registration-wins**: When `bun test` runs the full suite, `mock.module()` calls from different test files compete. The last registration wins globally. Tests that need a richer mock (e.g., `piTuiRenderMock` with working `render()` methods instead of bare `piTuiMock`) must register their own `mock.module()` before importing — this overrides whatever other files set. Always use shared factories from `@pi-ext/shared/test-mocks` rather than defining inline mocks.
-- **Two tiers of TUI mock**: Most extension tests only need `.text` access on Text (`piTuiMock`). Rendering tests that call `component.render(width)` must use `piTuiRenderMock` instead, which provides Text/Container/Markdown/Spacer with working `render()` methods. Similarly, `piCodingAgentThemeMock` provides a pass-through Theme class for tests that assert on rendered content without ANSI color noise.
-- **`type: "text"` literal widening in tool results**: When building tool result content arrays like `[{ type: "text", text: output }]` in execute functions, TypeScript widens the `type` field from the literal `"text"` to `string`. This causes incompatibility with `TextContent.type: "text"`. Fix: use `type: "text" as const` or declare the onUpdate callback with literal type `{ type: "text"; text: string }`.
-- **`AgentToolResult<unknown>` in renderResult callbacks**: The `renderResult` callback registered via `pi.registerTool()` receives `result: AgentToolResult<unknown>` from the framework — `details` is typed as `unknown`. Render functions that expect specific details types (e.g., `SearchDetails`, `ExploreDetails`) will get type errors. Fix: cast `result` with `as any` in the callback: `renderResult(result as any, state, theme)`.
-- **`@types/bun` required for `tsc` in extensions**: Bun's test runner handles `bun:test` imports natively, but `tsc --noEmit` needs `@types/bun` in the tsconfig `types` array to resolve the module. The base tsconfig must include `"types": ["node", "bun"]`.
-- **Test files should be excluded from tsconfig include**: Test files that mock modules with `mock.module()` can conflict with real types (e.g., mocked class with public `text` property vs real `Text` class with private `text`). Bun's test runner doesn't typecheck, so only include source files in tsconfig. Test files in the same directory should NOT be in `tsconfig.json` include array.
-- **`@mariozechner/pi-agent-core` not available to extensions**: The `pi-agent-core` package is an internal dependency of `pi-coding-agent` and not directly available to extensions. Don't import from it. If you need `AgentMessage` or similar core types, create a local type alias that matches the subset you need.
+## Development Workflow
+
+- **Always typecheck before committing**: `cd pi/.pi/agent/extensions && for dir in */; do [ -f "$dir/tsconfig.json" ] && npx tsc --noEmit -p "$dir/tsconfig.json"; done`
+- **Always run tests before committing**: `cd pi/.pi/agent/extensions && bun test`
+- **TDD discipline**: Write failing test first (RED) → minimum fix (GREEN) → refactor → typecheck → commit.
+
+## CLI Gotchas
+
+- **stdin piping = batch mode**: `pi < file` processes the file as a non-interactive batch prompt. Use `pi "@$file"` to include file content while staying interactive.
+- **`--print` for non-interactive**: Use `pi -p "prompt"` or `--mode json` for scripted use.
+- **No `--max-turns` flag**: Monitor the JSON event stream (`tool_execution_start` events) and kill externally when limits are exceeded.
+
+## Bun / TypeScript Gotchas
+
+- **Bun virtual path handling**: Bun virtualizes `process.cwd()` into `/bunfs/...` which doesn't exist for subprocesses. Pass the real cwd via env var (e.g., `PI_REAL_CWD`).
+- **`mock.module()` cross-contamination**: Mocks are global across the test process. Use shared factories from `@pi-ext/shared/test-mocks` rather than inline mocks.
+- **`mock.module()` last-registration-wins**: The last registration wins globally. Tests needing richer mocks must register their own `mock.module()` before importing.
+- **Two tiers of TUI mock**: Most tests need `piTuiMock` (`.text` access). Rendering tests need `piTuiRenderMock` (working `render()` methods). Use `piCodingAgentThemeMock` for asserting on content without ANSI noise.
+- **`type: "text"` literal widening**: TypeScript widens `"text"` to `string` in tool result arrays. Use `type: "text" as const` or declare callback with literal type.
+- **`AgentToolResult<unknown>` in renderResult**: `details` is typed as `unknown`. Cast with `as any` in the callback.
+- **`@types/bun` required for `tsc`**: Add `"types": ["node", "bun"]` to tsconfig.
+- **Exclude test files from tsconfig `include`**: Tests that mock modules can conflict with real types. Bun's test runner doesn't typecheck.
+
+## Extension Architecture
+
+- **`renderCall` component reuse**: Reuse `context.lastComponent` instead of creating new `Text()` each call — causes duplicate renders.
+- **Subagent output formatting**: Explore/librarian subagent thinking is concatenated text, not markdown. Split on sentence boundaries (`. `, `: `, `! `, `? `), not newlines. Use `splitIntoSentences()` from `@pi-ext/shared`.
+- **Subagent thinking lacks spaces**: Output often has no space after periods. Use `\s*` (not `\s+`) after `[.!?]` in the regex.
+- **Librarian auto-loads extensions**: Uses `--no-tools` but NOT `--no-extensions`. Tools from extensions are automatically available.
+- **`parseSections` always creates ≥1 section**: The `splitIntoSentences` fallback only triggers for truly empty output, not "unstructured" text. Use `## Header` sections to exercise the section code path.
+- **`@mariozechner/pi-agent-core` not available**: It's an internal dep of `pi-coding-agent`. Create local type aliases instead.
+- **Subagent loop detection must set exitCode=0**: Override to 0 so the caller treats partial output as success.
+
+## Model Configuration
+
+- **Mistral Small 4** (`mistral-small-latest`): Must use `reasoning: false` in `models.json` — `reasoning: true` causes API errors despite native `reasoning_effort` support.
+
+## exa-js Typing
+
+- **`Status` type gaps**: Lacks `error` field — use `any` cast when accessing `s.error?.tag`.
+- **Highlights vs text options**: `HighlightsContentsOptions` uses `numSentences`/`highlightsPerUrl`, NOT `maxCharacters`. Calculate `numSentences = Math.ceil(maxChars / 200)`.
+
+## Test Patterns
+
+- **Unit tests**: Co-locate with source (e.g., `render.test.ts` next to `render.ts`).
+- **Integration tests**: `integration.test.ts` per extension — tests full load/register cycle.
+- **Shared test utilities**: Import from `@pi-ext/shared/test-mocks`.
+- **Mock pattern**: `mock.module()` from `bun:test` before importing the module under test.
+- **Auto-discovery runner**: `__tests__/all-extensions.test.ts` auto-discovers and runs `bun test` in each extension directory.
+
+## New Extension Checklist
+
+1. Create directory with `index.ts`, `package.json`, `tsconfig.json`
+2. Write tests first (`index.test.ts` or `integration.test.ts`)
+3. Implement the extension
+4. Add to workspace `package.json` `workspaces` array
+5. Add to `__tests__/all-extensions.test.ts` runner
+6. Verify tests pass and types check
