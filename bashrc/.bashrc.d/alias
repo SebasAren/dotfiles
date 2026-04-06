@@ -4,3 +4,7 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
 alias .....="cd ../../../.."
+
+# Homebrew package tracking
+alias brewsync="bash ~/.dotfiles/homebrew/brew-sync.sh"
+alias brewfile="nvim ~/.dotfiles/homebrew/Brewfile"

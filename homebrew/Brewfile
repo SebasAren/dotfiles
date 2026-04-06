@@ -1,0 +1,29 @@
+# Personal Homebrew packages (not managed by Bluefin system Brewfiles)
+# Regenerate: `brewsync` (alias) or `brew-sync.sh`
+#
+# These are explicitly installed packages that aren't in:
+#   /usr/share/ublue-os/homebrew/*.Brewfile
+
+# CLI tools & development
+brew "cosign"
+brew "gcc"
+brew "gettext"
+brew "glab"
+brew "lazygit"
+brew "libfaketime"
+brew "luarocks"
+brew "ncdu"
+brew "neovim"
+brew "opencode"
+brew "shellcheck"
+brew "stow"
+brew "stress-ng"
+brew "tailscale"
+brew "television"
+brew "tree-sitter@0.25"
+brew "uwsgi"
+brew "worktrunk"
+brew "zbar"
+
+# Fonts & GUI apps
+cask "font-caskaydia-mono-nerd-font"
