@@ -67,7 +67,13 @@ export const PACKAGES: DotfilePackage[] = [
     checked: false,
     install: () => stow("m908"),
   },
-
+  {
+    id: "homebrew",
+    label: "Homebrew",
+    description: "brew-sync CLI + Brewfile for personal packages",
+    checked: true,
+    install: () => stow("homebrew"),
+  },
 ];
 
 function stow(pkg: string): string {
@@ -92,6 +98,7 @@ export function isStowInstalled(pkg: string): boolean {
     docker: `${process.env.HOME}/.docker`,
     opencode: `${process.env.HOME}/.config/opencode`,
     m908: `${process.env.HOME}/.config/m908`,
+    homebrew: `${process.env.HOME}/.local/bin/brew-sync`,
   };
 
   const target = packageTargets[pkg];

@@ -24,7 +24,7 @@ wt/.config/worktrunk/      # Worktrunk
 pi/.pi/                    # Pi agent
 opencode/.config/opencode/ # Opencode
 m908/.config/m908/         # Mouse config
-homebrew/                  # Brewfile
+homebrew/                  # brew-sync CLI + Brewfile
 mise.toml                  # Runtime versions
 scripts/hooks/             # Git hooks
 ```
@@ -60,6 +60,8 @@ Each tool directory has its own `AGENTS.md` with path-specific details.
 | Worktrunk config | `wt/.config/worktrunk/config.toml` |
 | Git hooks | `scripts/hooks/` |
 | Pi extensions | `pi/.pi/agent/extensions/` |
+| Homebrew packages | `homebrew/Brewfile` |
+| brew-sync CLI | `homebrew/.local/bin/brew-sync` |
 
 ## Tools
 

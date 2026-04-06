@@ -1,5 +1,5 @@
 # Personal Homebrew packages (not managed by Bluefin system Brewfiles)
-# Regenerate: `brewsync` (alias) or `brew-sync.sh`
+# Regenerate: `brew-sync` or `brew-sync sync`
 #
 # These are explicitly installed packages that aren't in:
 #   /usr/share/ublue-os/homebrew/*.Brewfile

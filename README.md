@@ -14,7 +14,7 @@ Personal dotfiles repository for a Linux workstation. Managed with [GNU Stow](ht
 | `pi/` | Pi agent | AI coding assistant extensions, skills, and context7 integration |
 | `opencode/` | Opencode | Alternative AI assistant config |
 | `m908/` | Redragon M908 | Mouse macro configuration |
-| `homebrew/` | Homebrew | Brewfile for system packages |
+| `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
 
 ## Prerequisites
@@ -193,6 +193,18 @@ Modular config in `bashrc/.bashrc.d/`. Each file handles one concern:
 
 **Key pattern — `wt` shell integration**: Worktrunk commands like `wt switch` need to change the shell's working directory. Since subprocesses can't modify their parent shell, `wt` writes a "directive file" that the shell wrapper sources after the command exits.
 
+### Homebrew
+
+Personal Homebrew packages tracked in a Brewfile, synced between machines via `brew-sync` (stowed to `~/.local/bin/`):
+
+```bash
+brew-sync              # export: regenerate Brewfile from installed packages
+brew-sync install     # import: install packages from Brewfile
+brew-sync full        # both: regenerate + install
+```
+
+On Bluefin, system packages from `/usr/share/ublue-os/homebrew/*.Brewfile` are excluded automatically.
+
 ### Worktrunk (wt)
 
 Git worktree management. Config at `wt/.config/worktrunk/config.toml`.
@@ -254,7 +266,7 @@ git config core.hooksPath .githooks
 │   └── generate-commit-msg.sh   # AI commit message hook
 ├── pi/.pi/                      # Pi agent
 │   └── agent/extensions/        # Extensions (context7, etc.)
-├── homebrew/                    # Brewfile
+├── homebrew/                    # brew-sync CLI + Brewfile
 ├── mise.toml                    # Runtime versions
 ├── scripts/hooks/               # Git hooks
 ├── install.sh                   # Minimal installer (stow nvim + pass-cli)

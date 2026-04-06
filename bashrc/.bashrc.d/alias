@@ -5,6 +5,5 @@ alias ...="cd ../.."
 alias ....="cd ../../.."
 alias .....="cd ../../../.."
 
-# Homebrew package tracking
-alias brewsync="bash ~/dotfiles/homebrew/brew-sync.sh"
+# Homebrew package tracking (brew-sync is stowed to ~/.local/bin/)
 alias brewfile="nvim ~/dotfiles/homebrew/Brewfile"
