@@ -39,7 +39,7 @@ return {
 
 		-- Basic configuration
 		ufo.setup({
-			provider_selector = function(bufnr, filetype, buftype)
+			provider_selector = function(_bufnr, filetype, _buftype)
 				if filetype == "markdown" then
 					return "indent"
 				end

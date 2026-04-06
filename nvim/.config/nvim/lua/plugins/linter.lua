@@ -25,8 +25,9 @@ return {
 				"ruff",
 			},
 			-- Lua uses luacheck for linting
+			-- --config tells luacheck where to find .luacheckrc
 			lua = {
-				"luacheck",
+				{ "luacheck", args = { "--config", vim.fn.stdpath("config") .. "/.luacheckrc" } },
 			},
 			-- Dockerfiles use hadolint for linting
 			dockerfile = {
@@ -38,9 +39,9 @@ return {
 		vim.api.nvim_create_autocmd({ "InsertLeave", "BufWritePost" }, {
 			callback = function()
 				-- Safely require and run linting
-				local lint_status, lint = pcall(require, "lint")
-				if lint_status then
-					lint.try_lint()
+				local ok, lint_mod = pcall(require, "lint")
+				if ok then
+					lint_mod.try_lint()
 				end
 			end,
 		})
