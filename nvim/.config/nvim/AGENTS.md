@@ -36,7 +36,7 @@ return {
 |--------|---------|
 | blink.cmp | Completion (LSP + Minuet-AI/Codestral for inline completions) |
 | conform.nvim | Formatting (StyLua, prettierd, black, isort) |
-| nvim-lint | Linting (ruff, luacheck, hadolint) |
+| nvim-lint | Linting (ruff, hadolint) — lua uses lua_ls (LSP) instead |
 | nvim-dap + nvim-dap-ui | Debugging (JS/TS, Python) |
 | neotest | Testing (`<leader>t` prefix) |
 | fzf-lua | Fuzzy finder |

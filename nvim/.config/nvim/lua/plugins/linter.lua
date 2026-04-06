@@ -24,11 +24,6 @@ return {
 			python = {
 				"ruff",
 			},
-			-- Lua uses luacheck for linting
-			-- --config tells luacheck where to find .luacheckrc
-			lua = {
-				{ "luacheck", args = { "--config", vim.fn.stdpath("config") .. "/.luacheckrc" } },
-			},
 			-- Dockerfiles use hadolint for linting
 			dockerfile = {
 				"hadolint",
