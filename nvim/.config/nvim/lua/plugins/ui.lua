@@ -52,4 +52,15 @@ return {
 			picker = { enabled = true },
 		},
 	},
+	{
+		-- Auto-reload buffers changed externally (e.g. by coding agents)
+		"djoshea/vim-autoread",
+		lazy = false,
+		config = function()
+			vim.o.autoread = true
+			vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+				command = "checktime",
+			})
+		end,
+	},
 }

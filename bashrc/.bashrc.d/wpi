@@ -54,7 +54,12 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         fi
         local pi_exit=$?
 
-        # After pi exits, offer merge
+        # Review loop: let user annotate changes, then feed back to pi
+        if command -v nvim >/dev/null 2>&1; then
+            _wpi_review_loop
+        fi
+
+        # After review (or skip), offer merge
         local current_branch
         current_branch="$(git branch --show-current 2>/dev/null || echo "???")"
         echo ""
@@ -71,6 +76,58 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             echo ""
             echo "  Worktree kept. Merge later with: wt merge"
         fi
+    }
+fi
+
+# Helper: review loop — open nvim to annotate, then feed comments to pi
+if command -v nvim >/dev/null 2>&1; then
+    _wpi_review_loop() {
+        while true; do
+            echo ""
+            read -r -p "  Review pi's changes before merging? [y/N] " answer
+            if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+                return 0
+            fi
+
+            # Open nvim in the worktree for review.
+            # code-review.nvim keymaps: <leader>ra to annotate, <leader>rs to save.
+            echo ""
+            echo "  Opening nvim for review..."
+            echo "  Keymaps: <leader>ra = annotate, <leader>rd = delete, <leader>rl = list, <leader>rs = save, :wq = done"
+            echo ""
+            nvim .
+
+            # Check if .code-review.md was created with content
+            local review_file=".code-review.md"
+            if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
+                echo ""
+                echo "  Found review comments in .code-review.md"
+                echo ""
+                cat "$review_file"
+                echo ""
+                read -r -p "  Reopen pi to apply review comments? [Y/n] " apply
+                if [[ "$apply" =~ ^[Nn]$ ]]; then
+                    echo ""
+                    echo "  Skipping. Comments saved in .code-review.md"
+                    rm -f "$review_file"
+                    return 0
+                fi
+
+                # Reopen pi with review file as context
+                echo ""
+                echo "  Reopening pi with review comments..."
+                echo ""
+                pi "@$review_file" "Apply these review comments. Fix each issue. IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code."
+                rm -f "$review_file"
+
+                # Loop back — user can review again or proceed to merge
+            else
+                echo ""
+                echo "  No review comments saved. Skipping."
+                rm -f "$review_file"
+                return 0
+            fi
+        done
     }
 fi
 
