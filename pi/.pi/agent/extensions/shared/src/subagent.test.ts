@@ -3,7 +3,7 @@ import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
 // We test the model option by mocking child_process.spawn to capture the
 // args that runSubagent builds, rather than spawning a real subprocess.
 
-const originalSpawn = require("node:child_process").spawn;
+const _originalSpawn = require("node:child_process").spawn;
 
 let capturedArgs: string[] | null = null;
 let capturedEnv: Record<string, string> | null = null;
@@ -79,7 +79,7 @@ describe("runSubagent model option", () => {
   });
 
   it("passes --model to subprocess when model option is provided", async () => {
-    const result = await runSubagent({
+    await runSubagent({
       cwd: "/tmp",
       query: "test query",
       systemPrompt: "test prompt",

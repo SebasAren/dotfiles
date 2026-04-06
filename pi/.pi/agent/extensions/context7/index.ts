@@ -48,7 +48,7 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: SearchParams,
 
-    async execute(_toolCallId, params, signal, onUpdate, ctx) {
+    async execute(_toolCallId, params, signal, onUpdate, _ctx) {
       return executeSearch(params, apiKey, getClient(), signal, onUpdate);
     },
 
@@ -76,7 +76,7 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: DocsParams,
 
-    async execute(_toolCallId, params, signal, onUpdate, ctx) {
+    async execute(_toolCallId, params, signal, onUpdate, _ctx) {
       return executeDocs(params, apiKey, getClient(), signal, onUpdate);
     },
 

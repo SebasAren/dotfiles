@@ -31,7 +31,7 @@ function createMockCtx(overrides: Record<string, any> = {}) {
   return {
     hasUI: true,
     ui: {
-      notify: (msg: string, type: string) => {},
+      notify: (_msg: string, _type: string) => {},
     },
     ...overrides,
   } as any;

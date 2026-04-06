@@ -119,7 +119,7 @@ export default function worktreeScopeExtension(pi: ExtensionAPI) {
       const shortRoot = worktreeInfo.worktreeRoot
         .replace(/^\/var\/home\//, "~/")
         .replace(/^\/home\//, "~/");
-      const shortMain = worktreeInfo.mainRepoRoot
+      const _shortMain = worktreeInfo.mainRepoRoot
         .replace(/^\/var\/home\//, "~/")
         .replace(/^\/home\//, "~/");
       ctx.ui.notify(
@@ -136,7 +136,7 @@ export default function worktreeScopeExtension(pi: ExtensionAPI) {
   pi.on("before_agent_start", async (event) => {
     if (!worktreeInfo) return undefined;
 
-    const shortRoot = worktreeInfo.worktreeRoot
+    const _shortRoot = worktreeInfo.worktreeRoot
       .replace(/^\/var\/home\//, "~/")
       .replace(/^\/home\//, "~/");
 

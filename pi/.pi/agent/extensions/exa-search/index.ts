@@ -41,7 +41,7 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: WebSearchParams,
 
-    async execute(_toolCallId, params, signal, onUpdate, ctx) {
+    async execute(_toolCallId, params, signal, onUpdate, _ctx) {
       if (!exa) {
         throw new Error("EXA_API_KEY not set. Please set it via: export EXA_API_KEY='your-key'");
       }

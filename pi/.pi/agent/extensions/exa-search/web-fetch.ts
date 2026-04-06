@@ -72,7 +72,6 @@ export async function executeWebFetch(
   try {
     // Build content options based on format — cast to avoid generic inference issues
     // since format is dynamic and TypeScript can't resolve ContentsResultComponent
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const contentOptions: any = {};
 
     if (format === "text") {
@@ -89,7 +88,6 @@ export async function executeWebFetch(
       };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await exa.getContents(urlList, contentOptions);
 
     if (signal?.aborted) {

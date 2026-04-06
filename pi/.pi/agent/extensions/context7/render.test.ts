@@ -4,7 +4,7 @@ import { describe, it, expect, mock } from "bun:test";
 mock.module("@mariozechner/pi-tui", () => ({
   Text: class Text {
     text: string;
-    constructor(text: string, x: number, y: number) {
+    constructor(text: string, _x: number, _y: number) {
       this.text = text;
     }
     setText(t: string) {

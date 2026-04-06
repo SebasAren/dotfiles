@@ -213,7 +213,7 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
           `tmux split-window -h -l 35% -t "${process.env.TMUX_PANE}" "node '${ppScriptPath}' '${tmpDir}' '${tmux.label}'; rm -rf '${tmpDir}'"`,
           { stdio: "ignore" },
         );
-      } catch (err) {
+      } catch (_err) {
         // tmux pane setup failed, continuing without pane
         tmuxOutputPath = null;
       }

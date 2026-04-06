@@ -3,7 +3,6 @@
  */
 
 import { Type } from "@sinclair/typebox";
-import { StringEnum } from "@mariozechner/pi-ai";
 import { Context7, Context7Error, type Library } from "@upstash/context7-sdk";
 
 // ── Types ──────────────────────────────────────────────────────────────────

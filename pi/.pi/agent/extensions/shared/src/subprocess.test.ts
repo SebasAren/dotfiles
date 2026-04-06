@@ -1,5 +1,4 @@
 import { describe, it, expect, afterEach } from "bun:test";
-import * as path from "node:path";
 
 // We test against the module interface — the implementation will use
 // process.argv and process.execPath internally.

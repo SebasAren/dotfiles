@@ -41,7 +41,7 @@ export function renderResult(
   theme: any,
   _context: unknown,
 ): Component {
-  const details = result.details;
+  const _details = result.details;
 
   return renderSubagentResult({
     result,
