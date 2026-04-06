@@ -94,4 +94,4 @@ Before committing, the pre-commit hook runs:
 2. YAML/JSON validation
 3. Whitespace trimming (trailing whitespace, missing final newline)
 
-Install hooks: `git config core.hooksPath .githooks`
+Hooks live in `scripts/hooks/` (not managed via `core.hooksPath`).

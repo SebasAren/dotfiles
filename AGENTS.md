@@ -23,7 +23,7 @@ tmux/.config/tmux/         # Tmux
 wt/.config/worktrunk/      # Worktrunk
 pi/.pi/                    # Pi agent
 opencode/.config/opencode/ # Opencode
-m908/.config/m908/         # Mouse config
+m908/.config/mouse_m908/   # Mouse config
 homebrew/                  # brew-sync CLI + Brewfile
 mise.toml                  # Runtime versions
 scripts/hooks/             # Git hooks

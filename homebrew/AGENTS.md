@@ -17,8 +17,6 @@ homebrew/
 stow homebrew    # symlinks ~/.local/bin/brew-sync + Brewfile
 ```
 
-Or use the interactive installer: `./install.sh`
-
 ## Sync Workflow
 
 ### Export (machine A → repo)

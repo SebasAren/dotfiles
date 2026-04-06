@@ -55,7 +55,11 @@ return {
 }
 ```
 
-Key servers: basedpyright (Python), typescript-tools (TypeScript/Vue), lua_ls, jsonls, graphql, yamlls, eslint, html, tailwindcss, astro, svelte, volar.
+Key servers with `lsp/*.lua` configs: basedpyright (Python), lua_ls, jsonls, graphql, yamlls, eslint, html, svelte, vue_ls, cucumber_language_server, emmet_language_server, prismals, terraformls.
+
+Servers configured inline in `lua/config/lsp.lua`: tailwindcss, astro.
+
+Plugins providing LSP: typescript-tools.nvim (`pmizio/typescript-tools.nvim` in `lua/plugins/lsp.lua`) handles TypeScript/Vue.
 
 ## Keybindings
 
@@ -93,7 +97,7 @@ Key servers: basedpyright (Python), typescript-tools (TypeScript/Vue), lua_ls, j
 
 ## Markdown Performance Gotchas
 
-Large markdown files (>3k lines) need several optimizations. These are applied in `folds.lua`, `treesitter-autocmd.lua`, `tools.lua`, and `mini.lua`:
+Large markdown files (>3k lines) need several optimizations. These are applied in `folds.lua`, `treesitter-autocmd.lua` (in `lua/config/`), `tools.lua`, and `mini.lua`:
 
 - **nvim-ufo must exclude markdown from treesitter folding**: `provider_selector` must return `"indent"` only for markdown. Treesitter fold computation on markdown is extremely expensive and freezes Neovim.
 - **treesitter-autocmd.lua guard is not enough**: The `if ft ~= "markdown"` guard skips foldexpr/indentexpr, but nvim-ufo overrides it. Both must be kept in sync.
