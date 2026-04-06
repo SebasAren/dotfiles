@@ -2,7 +2,7 @@
 # Stow target: ~/.config/worktrunk/config.toml
 
 # Worktree path — centralized under ~/.pi/worktrees/<repo>/<branch>
-worktree-path = "~/.pi/worktrees/{{ repo }}/{{ branch | sanitize }}"
+worktree-path = "~/.local/share/worktrees/{{ repo }}/{{ branch | sanitize }}"
 
 # LLM commit messages via pi agent
 [commit.generation]
