@@ -1,25 +1,18 @@
 [tools]
 # Python tooling
 python = "3.12"
-ruff = "latest"
+"aqua:astral-sh/ruff" = "latest"
 
 # Lua tooling
 lua = "5.4"
-stylua = "latest"
+"cargo:stylua" = "latest"
 lua-language-server = "latest"
 
 # Shell linting
-shellcheck = "latest"
-shfmt = "latest"
+"aqua:koalaman/shellcheck" = "latest"
+"go:mvdan.cc/sh/v3/cmd/shfmt" = "latest"
 
 # TypeScript/Node (for tsc, bun, prettier)
 bun = "latest"
 node = "latest"
 prettier = "latest"
-
-[plugins]
-# Use explicit registry sources for tools (cargo is fastest for stylua)
-stylua = "cargo:stylua"
-shellcheck = "aqua:koalaman/shellcheck"
-shfmt = "go:mvdan.cc/sh/v3/cmd/shfmt"
-ruff = "aqua:astral-sh/ruff"
