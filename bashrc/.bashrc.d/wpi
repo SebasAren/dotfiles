@@ -93,12 +93,20 @@ if command -v nvim >/dev/null 2>&1; then
             fi
 
             # Open nvim in the worktree for review.
-            # code-review.nvim keymaps: <leader>ra to annotate, <leader>rs to save.
+            # Open the first changed file directly (code-review.nvim keymaps work on any file).
+            local first_file
+            first_file="$(git diff --name-only 2>/dev/null | head -1)"
             echo ""
-            echo "  Opening nvim for review..."
-            echo "  Keymaps: <leader>ra = annotate, <leader>rd = delete, <leader>rl = list, <leader>rs = save, :wq = done"
-            echo ""
-            nvim -c "Changes" .
+            if [[ -n "$first_file" ]]; then
+                echo "  Opening nvim with first changed file: ${first_file}"
+                echo "  Keymaps: <leader>ra = annotate, <leader>rd = delete, <leader>rl = list, <leader>rs = save, :wq = done"
+                echo ""
+                nvim "$first_file"
+            else
+                echo "  No changed files found. Opening nvim in current directory."
+                echo ""
+                nvim .
+            fi
 
             # Check if .code-review.md was created with content
             local review_file=".code-review.md"
