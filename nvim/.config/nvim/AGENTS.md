@@ -1,6 +1,6 @@
 # Neovim Configuration
 
-Lazy.nvim-based config with 17 LSP servers, AI-powered completion, and modular plugin specs.
+Lazy.nvim-based config with LSP servers, AI-powered completion (minuet+codestral), and modular plugin specs.
 
 ## Structure
 
@@ -14,8 +14,6 @@ lua/
     lsp.lua          # LSP server registration
     diagnostic.lua   # Diagnostic display config
   plugins/           # Plugin specs (one file per plugin/group)
-  prompts/           # AI prompt helpers (branch_diff, commit, review)
-  utils/             # LLM tools
 lsp/                 # Per-server configs (basedpyright.lua, yamlls.lua, etc.)
 ```
 
@@ -36,13 +34,12 @@ return {
 
 | Plugin | Purpose |
 |--------|---------|
-| blink.cmp | Completion (Codestral + Minuet-AI providers) |
+| blink.cmp | Completion (LSP + Minuet-AI/Codestral for inline completions) |
 | conform.nvim | Formatting (StyLua, prettierd, black, isort) |
 | nvim-lint | Linting (ruff, luacheck, hadolint) |
 | nvim-dap + nvim-dap-ui | Debugging (JS/TS, Python) |
 | neotest | Testing (`<leader>t` prefix) |
 | fzf-lua | Fuzzy finder |
-| CodeCompanion.nvim | AI chat (Venice AI adapter) |
 
 ## LSP
 
@@ -58,7 +55,7 @@ return {
 }
 ```
 
-Key servers: basedpyright (Python), vtsls (TypeScript), lua_ls, rust_analyzer, gopls, jsonls, graphql, yamlls, eslint, html, cssls, taplo.
+Key servers: basedpyright (Python), typescript-tools (TypeScript/Vue), lua_ls, jsonls, graphql, yamlls, eslint, html, tailwindcss, astro, svelte, volar.
 
 ## Keybindings
 

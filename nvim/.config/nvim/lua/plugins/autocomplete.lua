@@ -4,7 +4,6 @@ return {
 		version = "1.*",
 		dependencies = {
 			"echasnovski/mini.nvim",
-			"Kaiser-Yang/blink-cmp-avante",
 			{
 				"milanglacier/minuet-ai.nvim",
 				config = function()
@@ -63,16 +62,8 @@ return {
 			},
 			snippets = { preset = "mini_snippets" },
 			sources = {
-				default = { "avante", "lsp", "path", "snippets", "buffer", "minuet" },
-				per_filetype = {
-					codecompanion = { "codecompanion" },
-					AvanteInput = { "avante", "lsp", "path", "snippets", "buffer" },
-				},
+				default = { "lsp", "path", "snippets", "buffer", "minuet" },
 				providers = {
-					avante = {
-						module = "blink-cmp-avante",
-						name = "Avante",
-					},
 					minuet = {
 						name = "minuet",
 						module = "minuet.blink",

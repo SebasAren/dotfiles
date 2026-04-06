@@ -45,6 +45,8 @@ return {
 			})
 			-- Display icons for file types and other UI elements
 			require("mini.icons").setup({})
+			-- Diff signs (disabled, using gitsigns instead)
+			require("mini.diff").setup({ source = require("mini.diff").gen_source.none() })
 			-- Snippet engine for code snippets
 			local gen_loader = require("mini.snippets").gen_loader
 			require("mini.snippets").setup({
@@ -53,8 +55,6 @@ return {
 				},
 			})
 			require("mini.surround").setup()
-			require("mini.pick").setup()
-			require("mini.diff").setup({ source = require("mini.diff").gen_source.none() })
 		end,
 	},
 }
