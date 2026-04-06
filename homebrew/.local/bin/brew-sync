@@ -21,8 +21,12 @@ usage() {
 
 # --- Subcommand: install ---
 cmd_install() {
+  if [[ ! -f "$BREWFILE" ]]; then
+    echo "No Brewfile found at $BREWFILE. Run 'brew-sync' first to generate one." >&2
+    exit 1
+  fi
   echo "Installing from Brewfile..."
-  brew bundle
+  brew bundle --file="$BREWFILE"
   echo "Done."
 }
 
