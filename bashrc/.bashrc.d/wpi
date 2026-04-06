@@ -8,6 +8,24 @@
 #   wpi fix-login-bug --continue   # start pi and resume last session
 #   wpi refactor-api --provider anthropic --model sonnet
 
+# Helper: read a line from user, ignoring Ctrl-C (SIGINT) and Ctrl-D (EOF)
+# Re-prompts instead of aborting. Usage: _wpi_read "prompt" varname
+_wpi_read() {
+    local prompt="$1" __varname="$2"
+    local __answer
+    while true; do
+        trap '' INT
+        if IFS= read -r -p "$prompt" __answer; then
+            trap - INT
+            eval "$__varname=\"$__answer\""
+            return 0
+        fi
+        # Ctrl-D pressed — re-prompt
+        trap - INT
+        echo
+    done
+}
+
 if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
     wpi() {
         if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
@@ -36,7 +54,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         if ! wt switch --create "$branch"; then
             echo ""
             echo "  Could not create worktree for '$branch'."
-            read -r -p "  Switch to existing worktree? [y/N] " answer
+            _wpi_read "  Switch to existing worktree? [y/N] " answer
             if [[ "$answer" =~ ^[Yy]$ ]]; then
                 wt switch "$branch" || return 1
             else
@@ -71,7 +89,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
         echo "  ───────────────────────────────────────"
         echo ""
         local merge_target="${source_branch:-default branch}"
-        read -r -p "  Merge back to '${merge_target}'? [y/N] " answer
+        _wpi_read "  Merge back to '${merge_target}'? [y/N] " answer
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
             _wpi_merge_loop "${source_branch:-}"
@@ -87,7 +105,7 @@ if command -v nvim >/dev/null 2>&1; then
     _wpi_review_loop() {
         while true; do
             echo ""
-            read -r -p "  Review pi's changes before merging? [y/N] " answer
+            _wpi_read "  Review pi's changes before merging? [y/N] " answer
             if [[ ! "$answer" =~ ^[Yy]$ ]]; then
                 return 0
             fi
@@ -108,7 +126,7 @@ if command -v nvim >/dev/null 2>&1; then
                 echo ""
                 cat "$review_file"
                 echo ""
-                read -r -p "  Reopen pi to apply review comments? [Y/n] " apply
+                _wpi_read "  Reopen pi to apply review comments? [Y/n] " apply
                 if [[ "$apply" =~ ^[Nn]$ ]]; then
                     echo ""
                     echo "  Skipping. Comments saved in .code-review.md"
@@ -202,7 +220,7 @@ if command -v wt >/dev/null 2>&1 && command -v pi >/dev/null 2>&1; then
             rm -f "$prompt_file"
 
             echo ""
-            read -r -p "  Retry merge? [Y/n] " retry
+            _wpi_read "  Retry merge? [Y/n] " retry
             if [[ "$retry" =~ ^[Nn]$ ]]; then
                 echo ""
                 echo "  Merge aborted. Fix manually and run: wt merge"
