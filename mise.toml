@@ -5,12 +5,12 @@ python = "3.12"
 
 # Lua tooling
 lua = "5.4"
-"cargo:stylua" = "latest"
+"aqua:JohnnyMorganz/StyLua" = "latest"
 lua-language-server = "latest"
 
 # Shell linting
 "aqua:koalaman/shellcheck" = "latest"
-"go:mvdan.cc/sh/v3/cmd/shfmt" = "latest"
+"aqua:mvdan/sh" = "latest"
 
 # TypeScript/Node (for tsc, bun, prettier)
 bun = "latest"
