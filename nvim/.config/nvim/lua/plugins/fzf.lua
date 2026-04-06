@@ -36,9 +36,10 @@ return {
 			{
 				"<leader>gD",
 				function()
-					require("fzf-lua").git_diff({ ref = "main" })
+					local ref = vim.env.WPI_BASE_BRANCH or "main"
+					require("fzf-lua").git_diff({ ref = ref })
 				end,
-				desc = "Git diff vs main",
+				desc = "Git diff vs base",
 			},
 			{
 				"<leader>gj",
