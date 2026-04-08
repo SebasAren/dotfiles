@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  komga:
+    image: gotson/komga:latest
+    container_name: komga
+    user: "1000:1000"
+    volumes:
+      - /var/stash2/config/komga:/config:U,z
+      - /var/stash2/Calibre:/calibre:ro,z
+    ports:
+      - 25600:25600
+    environment:
+      - TZ=Europe/Amsterdam
+    restart: unless-stopped
+
+networks:
+  default:
+    external: true
+    name: nginx

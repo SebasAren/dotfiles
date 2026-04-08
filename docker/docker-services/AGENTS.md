@@ -1,6 +1,6 @@
 # Docker Services
 
-Manages 5 self-hosted services via docker-compose. Each service is standalone with its own compose file and directory.
+Manages 6 self-hosted services via docker-compose. Each service is standalone with its own compose file and directory.
 
 ## Services
 
@@ -11,6 +11,7 @@ Manages 5 self-hosted services via docker-compose. Each service is standalone wi
 | nginx-proxy-manager | `.yaml` | jc21/nginx-proxy-manager:latest | 8000, 8100 (admin) | nginx (external) |
 | transmission | `.yml` | haugene/transmission-openvpn | 9091, 8118 (proxy) | bridge |
 | wolf | `.yaml` | ghcr.io/games-on-whales/wolf:stable | 47984+ | bridge |
+| komga | `.yml` | gotson/komga:latest | 25600 | nginx (external) |
 
 ## Volume Labels
 
