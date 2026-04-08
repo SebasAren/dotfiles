@@ -83,7 +83,8 @@ describe("detectLoop", () => {
     expect(detectLoop(history)).toBeNull();
   });
 
-  it("flags a genuine 3-tool loop with 3+ distinct tools", () => {
+  it("does NOT flag 3-tool loops (requires 4+ distinct tools)", () => {
+    // 3-tool loops are too common during normal exploration
     const history = [
       call("grep", "a"),
       call("read", "b"),
@@ -93,14 +94,31 @@ describe("detectLoop", () => {
       call("read", "b"),
       call("find", "c"),
     ];
-    const result = detectLoop(history);
-    expect(result).not.toBeNull();
-    expect(result).toContain("3-tool sequence repeated");
-    expect(result).toContain("grep, read, find");
+    expect(detectLoop(history)).toBeNull();
   });
 
-  it("flags 4+ identical consecutive calls", () => {
+  it("flags a genuine 4-tool loop with 4+ distinct tools", () => {
     const history = [
+      call("grep", "a"),
+      call("read", "b"),
+      call("find", "c"),
+      call("bash", "d"),
+      // repeated:
+      call("grep", "a"),
+      call("read", "b"),
+      call("find", "c"),
+      call("bash", "d"),
+    ];
+    const result = detectLoop(history);
+    expect(result).not.toBeNull();
+    expect(result).toContain("4-tool sequence repeated");
+    expect(result).toContain("grep, read, find, bash");
+  });
+
+  it("flags 6+ identical consecutive calls", () => {
+    const history = [
+      call("grep", "same-pattern"),
+      call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
@@ -108,7 +126,18 @@ describe("detectLoop", () => {
     ];
     const result = detectLoop(history);
     expect(result).not.toBeNull();
-    expect(result).toContain("called 4 times with same args");
+    expect(result).toContain("called 6 times with same args");
+  });
+
+  it("does NOT flag 5 identical consecutive calls", () => {
+    const history = [
+      call("grep", "same-pattern"),
+      call("grep", "same-pattern"),
+      call("grep", "same-pattern"),
+      call("grep", "same-pattern"),
+      call("grep", "same-pattern"),
+    ];
+    expect(detectLoop(history)).toBeNull();
   });
 
   it("does NOT flag 3 identical consecutive calls", () => {
@@ -140,15 +169,40 @@ describe("detectLoop", () => {
   });
 
   it("uses configurable window size", () => {
-    // With window=6, a 3-tool loop with 3 distinct tools should be detected
+    // With window=8, a 4-tool loop with 4 distinct tools should be detected
     const history = [
       call("grep", "a"),
       call("read", "b"),
       call("bash", "c"),
+      call("find", "d"),
       call("grep", "a"),
       call("read", "b"),
       call("bash", "c"),
+      call("find", "d"),
     ];
-    expect(detectLoop(history, 6)).not.toBeNull();
+    expect(detectLoop(history, 8)).not.toBeNull();
+  });
+
+  it("ignores calls outside window size", () => {
+    // Old calls outside window should not affect detection
+    const history = [
+      call("grep", "old"),
+      call("grep", "old"),
+      call("grep", "old"),
+      call("grep", "old"),
+      call("grep", "old"),
+      call("grep", "old"),
+      // New pattern starts here
+      call("grep", "new"),
+      call("read", "x"),
+      call("bash", "y"),
+      call("find", "z"),
+      call("grep", "new"),
+      call("read", "x"),
+      call("bash", "y"),
+      call("find", "z"),
+    ];
+    // With window=8, only sees the last 8 calls (new pattern repeated)
+    expect(detectLoop(history, 8)).not.toBeNull();
   });
 });

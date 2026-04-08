@@ -69,9 +69,9 @@ export default function (pi: ExtensionAPI) {
 
       // Build query with thoroughness hint
       const thoroughness = params.thoroughness || "medium";
-      const toolBudget = thoroughness === "quick" ? 8 : thoroughness === "thorough" ? 30 : 15;
+      const toolBudget = thoroughness === "quick" ? 12 : thoroughness === "thorough" ? 40 : 25;
       let query = params.query;
-      query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${toolBudget} tool calls, stay strictly on-topic]`;
+      query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${toolBudget} tool calls]`;
       if (params.directory) {
         query += `\n[Scope: only look in ${params.directory}]`;
       }
@@ -91,7 +91,7 @@ export default function (pi: ExtensionAPI) {
             }
           : undefined,
         loopDetection: true,
-        maxToolCalls: 45,
+        maxToolCalls: 60,
         tmux: { label: "explore" },
         tmpPrefix: "pi-explore-",
       });

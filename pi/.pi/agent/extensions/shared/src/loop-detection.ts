@@ -27,9 +27,9 @@ export function argsSignature(args: Record<string, unknown>): string {
  * Returns a description of the loop if detected, or null otherwise.
  *
  * We only flag repeated subsequences when the sequence contains at least
- * 3 *different* tools. A run of identical tools (e.g. grep, grep, grep)
+ * 4 *different* tools. A run of identical tools (e.g. grep, grep, grep)
  * with the same args is handled by the consecutive-call check below,
- * and that requires 4+ identical calls before flagging.
+ * and that requires 6+ identical calls before flagging.
  *
  * Thresholds are intentionally conservative — exploration agents legitimately
  * repeat tool patterns (grep, grep, find, grep, grep, find) when broadening
@@ -41,9 +41,10 @@ export function detectLoop(
 ): string | null {
   const recent = toolHistory.slice(-windowSize);
 
-  // Check for 4+ identical consecutive calls — always a loop regardless of
-  // total history size.
-  if (recent.length >= 4) {
+  // Check for 6+ identical consecutive calls — always a loop regardless of
+  // total history size. Increased from 4 to allow exploration agents to
+  // retry searches with slight variations.
+  if (recent.length >= 6) {
     const lastSig = recent[recent.length - 1];
     let identicalCount = 0;
     for (let i = recent.length - 1; i >= 0; i--) {
@@ -53,19 +54,17 @@ export function detectLoop(
         break;
       }
     }
-    if (identicalCount >= 4) {
+    if (identicalCount >= 6) {
       return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
     }
   }
 
-  if (recent.length < 6) return null;
+  if (recent.length < 8) return null;
 
-  // Check for repeated subsequences of length 3+ (A,B,C,A,B,C pattern).
-  // Length-2 subsequences (grep,read,grep,read) are too common during
-  // normal exploration and cause false positives.
-  // Only flag when the subsequence contains at least 3 distinct tools —
-  // patterns like (grep, grep, grep, find) are natural search broadening.
-  for (let seqLen = 3; seqLen <= Math.floor(recent.length / 2); seqLen++) {
+  // Check for repeated subsequences of length 4+ (A,B,C,D,A,B,C,D pattern).
+  // Length-2 and 3 subsequences are too common during normal exploration
+  // and cause false positives during search broadening.
+  for (let seqLen = 4; seqLen <= Math.floor(recent.length / 2); seqLen++) {
     const first = recent.slice(-seqLen * 2, -seqLen);
     const second = recent.slice(-seqLen);
     if (first.length === seqLen && second.length === seqLen) {
@@ -80,11 +79,11 @@ export function detectLoop(
         }
       }
       if (match) {
-        // Require at least 3 distinct tools in the subsequence.
-        // 2-tool mixes like (grep, grep, grep, find) are too common
+        // Require at least 4 distinct tools in the subsequence.
+        // 2-3 tool mixes like (grep, grep, grep, find) are too common
         // during legitimate search broadening.
         const uniqueTools = new Set(second.map((t) => t.name));
-        if (uniqueTools.size < 3) continue;
+        if (uniqueTools.size < 4) continue;
 
         const toolNames = second.map((t) => t.name).join(", ");
         return `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`;
