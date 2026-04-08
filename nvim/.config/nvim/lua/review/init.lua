@@ -40,7 +40,7 @@ local function open_input(opts)
 		height = height,
 		style = "minimal",
 		border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
-		title = " " .. opts.prompt .. " ",
+		title = " " .. opts.prompt .. " [Ctrl-s to submit] ",
 		title_pos = "center",
 	})
 	vim.wo[win].wrap = true
@@ -55,17 +55,21 @@ local function open_input(opts)
 
 	vim.keymap.set("n", "q", close, { buffer = buf, nowait = true })
 	vim.keymap.set("i", "<CR>", function()
-		-- insert a literal newline in insert mode
-		vim.api.nvim_put({ "" }, "l", false, true)
+		-- insert a newline at cursor position in insert mode
+		vim.api.nvim_feedkeys(
+			vim.api.nvim_replace_termcodes("<CR>", true, false, true),
+			"n",
+			false
+		)
 	end, { buffer = buf })
-	vim.keymap.set({ "n", "i" }, "<C-CR>", function()
+	vim.keymap.set({ "n", "i" }, "<C-s>", function()
 		local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 		local text = table.concat(lines, "\n"):match("^%s*(.-)%s*$")
 		close()
 		if text ~= "" then
 			opts.callback(text)
 		end
-	end, { buffer = buf })
+	end, { buffer = buf, desc = "Review: submit comment" })
 
 	vim.cmd("startinsert")
 end
