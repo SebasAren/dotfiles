@@ -211,7 +211,9 @@ function M.save()
 
 		table.insert(lines, "```")
 		table.insert(lines, "")
-		table.insert(lines, c.text)
+		for _, l in ipairs(vim.split(c.text, "\n")) do
+			table.insert(lines, l)
+		end
 		table.insert(lines, "")
 		table.insert(lines, "---")
 		table.insert(lines, "")
