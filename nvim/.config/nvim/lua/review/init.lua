@@ -54,18 +54,17 @@ local function open_input(opts)
 	end
 
 	vim.keymap.set("n", "q", close, { buffer = buf, nowait = true })
-	vim.keymap.set("n", "<Esc>", close, { buffer = buf, nowait = true })
-	vim.keymap.set({ "n", "i" }, "<CR>", function()
+	vim.keymap.set("i", "<CR>", function()
+		-- insert a literal newline in insert mode
+		vim.api.nvim_put({ "" }, "l", false, true)
+	end, { buffer = buf })
+	vim.keymap.set({ "n", "i" }, "<C-CR>", function()
 		local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 		local text = table.concat(lines, "\n"):match("^%s*(.-)%s*$")
 		close()
 		if text ~= "" then
 			opts.callback(text)
 		end
-	end, { buffer = buf })
-	vim.keymap.set("i", "<C-CR>", function()
-		-- insert a literal newline in insert mode
-		vim.api.nvim_put({ "" }, "l", false, true)
 	end, { buffer = buf })
 
 	vim.cmd("startinsert")
