@@ -98,7 +98,7 @@ export default function (pi: ExtensionAPI) {
             }
           : undefined,
         loopDetection: true,
-        maxToolCalls: 20,
+        maxToolCalls: 40,
         tmux: { label: "librarian" },
         tmpPrefix: "pi-librarian-",
         debugLabel: "librarian",

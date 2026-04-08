@@ -27,21 +27,45 @@ export function argsSignature(args: Record<string, unknown>): string {
  * Returns a description of the loop if detected, or null otherwise.
  *
  * We only flag repeated subsequences when the sequence contains at least
- * 2 *different* tools. A run of identical tools (e.g. grep, grep, grep)
+ * 3 *different* tools. A run of identical tools (e.g. grep, grep, grep)
  * with the same args is handled by the consecutive-call check below,
  * and that requires 4+ identical calls before flagging.
+ *
+ * Thresholds are intentionally conservative — exploration agents legitimately
+ * repeat tool patterns (grep, grep, find, grep, grep, find) when broadening
+ * searches. Only flag clear, sustained loops.
  */
 export function detectLoop(
   toolHistory: Array<{ name: string; argsSignature: string }>,
-  windowSize: number = 8,
+  windowSize: number = 12,
 ): string | null {
   const recent = toolHistory.slice(-windowSize);
-  if (recent.length < 4) return null;
 
-  // Check for repeated subsequences of length 2+ (A,B,A,B pattern)
-  // Only flag when the subsequence contains at least 2 distinct tools —
-  // homogeneous sequences like (grep, grep, grep) are not real loops.
-  for (let seqLen = 2; seqLen <= Math.floor(recent.length / 2); seqLen++) {
+  // Check for 4+ identical consecutive calls — always a loop regardless of
+  // total history size.
+  if (recent.length >= 4) {
+    const lastSig = recent[recent.length - 1];
+    let identicalCount = 0;
+    for (let i = recent.length - 1; i >= 0; i--) {
+      if (recent[i].name === lastSig.name && recent[i].argsSignature === lastSig.argsSignature) {
+        identicalCount++;
+      } else {
+        break;
+      }
+    }
+    if (identicalCount >= 4) {
+      return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
+    }
+  }
+
+  if (recent.length < 6) return null;
+
+  // Check for repeated subsequences of length 3+ (A,B,C,A,B,C pattern).
+  // Length-2 subsequences (grep,read,grep,read) are too common during
+  // normal exploration and cause false positives.
+  // Only flag when the subsequence contains at least 3 distinct tools —
+  // patterns like (grep, grep, grep, find) are natural search broadening.
+  for (let seqLen = 3; seqLen <= Math.floor(recent.length / 2); seqLen++) {
     const first = recent.slice(-seqLen * 2, -seqLen);
     const second = recent.slice(-seqLen);
     if (first.length === seqLen && second.length === seqLen) {
@@ -56,29 +80,16 @@ export function detectLoop(
         }
       }
       if (match) {
-        // Require at least 2 distinct tools in the subsequence
+        // Require at least 3 distinct tools in the subsequence.
+        // 2-tool mixes like (grep, grep, grep, find) are too common
+        // during legitimate search broadening.
         const uniqueTools = new Set(second.map((t) => t.name));
-        if (uniqueTools.size < 2) continue;
+        if (uniqueTools.size < 3) continue;
 
         const toolNames = second.map((t) => t.name).join(", ");
         return `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`;
       }
     }
-  }
-
-  // Check for 4+ identical consecutive calls (raised from 3 to avoid
-  // false positives when the agent legitimately runs several greps)
-  const lastSig = recent[recent.length - 1];
-  let identicalCount = 0;
-  for (let i = recent.length - 1; i >= 0; i--) {
-    if (recent[i].name === lastSig.name && recent[i].argsSignature === lastSig.argsSignature) {
-      identicalCount++;
-    } else {
-      break;
-    }
-  }
-  if (identicalCount >= 4) {
-    return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
   }
 
   return null;

@@ -23,7 +23,7 @@ Research strategy:
 5. Use web_fetch directly when you have a known documentation URL to read
 6. If initial results are insufficient, refine your search and try again
 7. Cross-reference multiple sources when possible
-8. Maximum 20 tool calls total. Stop and summarize once you have enough information.
+8. Maximum 30 tool calls total. Stop and summarize once you have enough information.
 
 Output format:
 
