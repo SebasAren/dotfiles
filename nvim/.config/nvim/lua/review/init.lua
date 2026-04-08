@@ -20,27 +20,77 @@ local config = {
 	virt_text = { hl = "DiagnosticInfo" },
 }
 
+local function open_input(opts)
+	local width = math.min(80, math.floor(vim.o.columns * 0.8))
+	local height = math.min(16, math.floor(vim.o.lines * 0.3))
+	local row = math.floor((vim.o.lines - height) / 2)
+	local col = math.floor((vim.o.columns - width) / 2)
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_name(buf, "review://input")
+	vim.bo[buf].bufhidden = "wipe"
+	vim.bo[buf].buftype = "nofile"
+	vim.bo[buf].filetype = "markdown"
+
+	local win = vim.api.nvim_open_win(buf, true, {
+		relative = "editor",
+		row = row,
+		col = col,
+		width = width,
+		height = height,
+		style = "minimal",
+		border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+		title = " " .. opts.prompt .. " ",
+		title_pos = "center",
+	})
+	vim.wo[win].wrap = true
+	vim.wo[win].linebreak = true
+	vim.wo[win].signcolumn = "no"
+
+	local function close()
+		if vim.api.nvim_win_is_valid(win) then
+			vim.api.nvim_win_close(win, true)
+		end
+	end
+
+	vim.keymap.set("n", "q", close, { buffer = buf, nowait = true })
+	vim.keymap.set("n", "<Esc>", close, { buffer = buf, nowait = true })
+	vim.keymap.set({ "n", "i" }, "<CR>", function()
+		local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+		local text = table.concat(lines, "\n"):match("^%s*(.-)%s*$")
+		close()
+		if text ~= "" then
+			opts.callback(text)
+		end
+	end, { buffer = buf })
+	vim.keymap.set("i", "<C-CR>", function()
+		-- insert a literal newline in insert mode
+		vim.api.nvim_put({ "" }, "l", false, true)
+	end, { buffer = buf })
+
+	vim.cmd("startinsert")
+end
+
 function M.add(line_start, line_end)
 	local file = vim.fn.expand("%:.")
 	local bufnr = vim.api.nvim_get_current_buf()
 
-	vim.ui.input({ prompt = "Review: " }, function(input)
-		if not input or input == "" then
-			return
-		end
+	open_input({
+		prompt = "Review Comment",
+		callback = function(text)
+			table.insert(comments, {
+				file = file,
+				line_start = line_start,
+				line_end = line_end,
+				text = text,
+				bufnr = bufnr,
+			})
 
-		table.insert(comments, {
-			file = file,
-			line_start = line_start,
-			line_end = line_end,
-			text = input,
-			bufnr = bufnr,
-		})
-
-		M._render(bufnr)
-		M._sync_qflist()
-		M.save()
-	end)
+			M._render(bufnr)
+			M._sync_qflist()
+			M.save()
+		end,
+	})
 end
 
 function M.delete()
