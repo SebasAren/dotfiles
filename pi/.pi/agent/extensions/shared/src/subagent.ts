@@ -17,7 +17,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { getPiInvocation } from "./subprocess.js";
 import { argsSignature, detectLoop } from "./loop-detection.js";
-import { getModel } from "./model.js";
+import { getModel, getFallbackModel, shouldUseFallback } from "./model.js";
 import type { SubagentResult } from "./types.js";
 
 /** Options for {@link runSubagent}. */
@@ -58,6 +58,8 @@ export interface RunSubagentOptions {
   debugLabel?: string;
   /** Override the default subagent model (falls back to CHEAP_MODEL env var) */
   model?: string;
+  /** Override the fallback model (falls back to FALLBACK_MODEL env var) */
+  fallbackModel?: string;
   /** Extra environment variables to set on the child process */
   env?: Record<string, string>;
 }
@@ -141,6 +143,45 @@ poll();
  */
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
   const model = options.model || getModel();
+  const fallbackModel = options.fallbackModel || getFallbackModel();
+
+  // Run with primary model first
+  const result = await runSubagentOnce(options, model);
+
+  // If primary model failed with a transient error and fallback is available, retry
+  if (
+    fallbackModel &&
+    fallbackModel !== model &&
+    (result.exitCode !== 0 || result.errorMessage) &&
+    shouldUseFallback(result.errorMessage || result.stderr)
+  ) {
+    const log = (msg: string) => {
+      if (options.debugLabel) console.log(`[${options.debugLabel}] ${msg}`);
+    };
+    log(`primary model failed, retrying with fallback: ${fallbackModel}`);
+    if (options.onUpdate)
+      options.onUpdate(`[Primary model unavailable, retrying with ${fallbackModel}...]`);
+
+    const fallbackResult = await runSubagentOnce(options, fallbackModel);
+
+    // Mark that fallback was used
+    if (!fallbackResult.errorMessage) {
+      fallbackResult.model = fallbackResult.model || fallbackModel;
+    }
+    return fallbackResult;
+  }
+
+  return result;
+}
+
+/**
+ * Single attempt at running a subagent with a specific model.
+ * Used internally by runSubagent for both primary and fallback attempts.
+ */
+async function runSubagentOnce(
+  options: RunSubagentOptions,
+  model: string | undefined,
+): Promise<SubagentResult> {
   const {
     cwd,
     query,

@@ -3,7 +3,7 @@ export { resolveRealCwd } from "./cwd";
 export { formatTokens, formatUsageLine } from "./format";
 export { argsSignature, detectLoop } from "./loop-detection";
 export { parseSections, getSectionSummary } from "./markdown";
-export { getModel } from "./model";
+export { getModel, getFallbackModel, shouldUseFallback } from "./model";
 export { renderSubagentResult, renderSubagentCall, reuseOrCreateText } from "./rendering";
 export type {
   RenderSubagentResultOptions,

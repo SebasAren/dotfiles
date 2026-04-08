@@ -234,3 +234,206 @@ describe("runSubagent debugLabel", () => {
     expect(debugLogs.length).toBe(0);
   });
 });
+
+// ── Fallback model tests ─────────────────────────────────────────────────
+
+let spawnCallCount = 0;
+let lastModelUsed: string | null = null;
+let simulateError = false;
+
+function mockSpawnWithFallback(command: string, args: string[], options: any) {
+  spawnCallCount++;
+  const modelIdx = args.indexOf("--model");
+  lastModelUsed = modelIdx >= 0 ? args[modelIdx + 1] : null;
+  capturedArgs = args;
+  capturedEnv = options?.env || null;
+
+  const listeners: Record<string, Function[]> = {};
+  const fakeProc = {
+    stdin: { end: () => {} },
+    stdout: {
+      on: (event: string, cb: Function) => {
+        if (event === "data") {
+          if (simulateError && spawnCallCount === 1) {
+            // First call fails with a rate limit error
+            cb(
+              Buffer.from(
+                JSON.stringify({
+                  type: "message_end",
+                  message: {
+                    role: "assistant",
+                    content: [],
+                    errorMessage: "Error: 429 Rate limit exceeded. Too many requests.",
+                    model: lastModelUsed,
+                  },
+                }) + "\n",
+              ),
+            );
+          } else {
+            cb(
+              Buffer.from(
+                JSON.stringify({
+                  type: "message_end",
+                  message: {
+                    role: "assistant",
+                    content: [{ type: "text", text: "success" }],
+                    usage: { input: 100, output: 50, totalTokens: 150, cost: { total: 0.01 } },
+                    model: lastModelUsed,
+                  },
+                }) + "\n",
+              ),
+            );
+          }
+        }
+      },
+    },
+    stderr: {
+      on: (event: string, cb: Function) => {
+        if (event === "data" && simulateError && spawnCallCount === 1) {
+          cb(Buffer.from("Rate limit exceeded\n"));
+        }
+      },
+    },
+    on: (event: string, cb: Function) => {
+      if (!listeners[event]) listeners[event] = [];
+      listeners[event].push(cb);
+      if (event === "close") {
+        const exitCode = simulateError && spawnCallCount === 1 ? 1 : 0;
+        setTimeout(() => cb(exitCode), 10);
+      }
+    },
+    kill: () => {},
+    killed: false,
+  };
+  return fakeProc;
+}
+
+mock.module("node:child_process", () => ({
+  spawn: mockSpawnWithFallback,
+  execSync: () => {},
+}));
+
+// Re-import after mock
+const { runSubagent: runSubagentFallback } = require("./subagent");
+
+describe("runSubagent fallback model", () => {
+  beforeEach(() => {
+    spawnCallCount = 0;
+    lastModelUsed = null;
+    capturedArgs = null;
+    simulateError = false;
+    delete process.env.CHEAP_MODEL;
+    delete process.env.FALLBACK_MODEL;
+    delete process.env.TMUX;
+  });
+
+  it("retries with fallback model when primary fails with rate limit", async () => {
+    simulateError = true;
+    process.env.CHEAP_MODEL = "primary-model";
+    process.env.FALLBACK_MODEL = "fallback-model";
+
+    const result = await runSubagentFallback({
+      cwd: "/tmp",
+      query: "test",
+      systemPrompt: "test",
+      baseFlags: [],
+    });
+
+    expect(spawnCallCount).toBe(2);
+    expect(result.output).toBe("success");
+  });
+
+  it("does not retry when no fallback model is configured", async () => {
+    simulateError = true;
+    process.env.CHEAP_MODEL = "primary-model";
+
+    const result = await runSubagentFallback({
+      cwd: "/tmp",
+      query: "test",
+      systemPrompt: "test",
+      baseFlags: [],
+    });
+
+    expect(spawnCallCount).toBe(1);
+    expect(result.errorMessage).toContain("Rate limit");
+  });
+
+  it("does not retry when primary succeeds", async () => {
+    simulateError = false;
+    process.env.CHEAP_MODEL = "primary-model";
+    process.env.FALLBACK_MODEL = "fallback-model";
+
+    const result = await runSubagentFallback({
+      cwd: "/tmp",
+      query: "test",
+      systemPrompt: "test",
+      baseFlags: [],
+    });
+
+    expect(spawnCallCount).toBe(1);
+    expect(result.output).toBe("success");
+  });
+
+  it("does not retry when fallback equals primary model", async () => {
+    simulateError = true;
+    process.env.CHEAP_MODEL = "same-model";
+    process.env.FALLBACK_MODEL = "same-model";
+
+    await runSubagentFallback({
+      cwd: "/tmp",
+      query: "test",
+      systemPrompt: "test",
+      baseFlags: [],
+    });
+
+    expect(spawnCallCount).toBe(1);
+  });
+
+  it("uses fallbackModel option over FALLBACK_MODEL env var", async () => {
+    simulateError = true;
+    process.env.CHEAP_MODEL = "primary-model";
+    process.env.FALLBACK_MODEL = "env-fallback";
+
+    const result = await runSubagentFallback({
+      cwd: "/tmp",
+      query: "test",
+      systemPrompt: "test",
+      baseFlags: [],
+      fallbackModel: "option-fallback",
+    });
+
+    expect(spawnCallCount).toBe(2);
+    expect(result.output).toBe("success");
+  });
+});
+
+describe("shouldUseFallback", () => {
+  it("returns true for rate limit errors", () => {
+    const { shouldUseFallback } = require("./model");
+    expect(shouldUseFallback("429 Rate limit exceeded")).toBe(true);
+    expect(shouldUseFallback("rate_limit_error")).toBe(true);
+    expect(shouldUseFallback("Too many requests")).toBe(true);
+  });
+
+  it("returns true for server errors", () => {
+    const { shouldUseFallback } = require("./model");
+    expect(shouldUseFallback("503 Service Unavailable")).toBe(true);
+    expect(shouldUseFallback("502 Bad Gateway")).toBe(true);
+    expect(shouldUseFallback("Internal server error")).toBe(true);
+  });
+
+  it("returns true for connection errors", () => {
+    const { shouldUseFallback } = require("./model");
+    expect(shouldUseFallback("ECONNREFUSED")).toBe(true);
+    expect(shouldUseFallback("connection reset")).toBe(true);
+    expect(shouldUseFallback("ETIMEDOUT")).toBe(true);
+  });
+
+  it("returns false for non-transient errors", () => {
+    const { shouldUseFallback } = require("./model");
+    expect(shouldUseFallback("Invalid API key")).toBe(false);
+    expect(shouldUseFallback("Permission denied")).toBe(false);
+    expect(shouldUseFallback(undefined)).toBe(false);
+    expect(shouldUseFallback("")).toBe(false);
+  });
+});
