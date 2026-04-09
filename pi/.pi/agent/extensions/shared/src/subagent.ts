@@ -3,9 +3,10 @@
  *
  * Manages the full lifecycle of spawning a pi subprocess for subagent tasks:
  * - Temp dir creation with system prompt file
- * - Process spawning with JSON line parsing
+ * - Process spawning via RPC mode (JSON protocol over stdin/stdout)
  * - Usage tracking
  * - Loop detection and tool call limits (configurable)
+ * - Budget steering: sends mid-conversation reminders to the LLM
  * - Timeout and abort signal handling
  * - Cleanup
  */
@@ -29,7 +30,7 @@ const RECENT_CALLS_WINDOW = 5;
  * This prevents the common failure mode where the subagent is killed
  * mid-investigation right before it was about to write its summary.
  */
-const TOOL_CALL_GRACE_BUFFER = 20;
+const TOOL_CALL_GRACE_BUFFER = 5;
 
 /** Build a short "toolName: detail" line from a tool_execution_start event. */
 function formatRecentCall(toolName: string, args: Record<string, unknown> | undefined): string {
@@ -52,8 +53,8 @@ export interface RunSubagentOptions {
   systemPrompt: string;
   /**
    * Base CLI flags for the pi invocation.
-   * The runner automatically adds: `--mode json -p`, `--append-system-prompt`,
-   * optional `--model`, and the query as positional arg.
+   * The runner automatically adds: `--mode rpc`, `--append-system-prompt`,
+   * optional `--model`, and sends the query via stdin prompt command.
    *
    * Example: `["--no-session", "--no-extensions", "--no-skills",
    * "--no-prompt-templates", "--tools", "read,grep,find,ls,bash"]`
@@ -192,16 +193,24 @@ async function runSubagentOnce(
     tmpPromptPath = path.join(tmpDir, "system-prompt.md");
     await fs.promises.writeFile(tmpPromptPath, systemPrompt, { encoding: "utf-8", mode: 0o600 });
 
-    // Build CLI args: base flags + system prompt + optional model + query
-    const args = ["--mode", "json", "-p", ...baseFlags, "--append-system-prompt", tmpPromptPath];
+    // Build CLI args: base flags + system prompt + optional model
+    // Query is sent via RPC stdin prompt command, not as a positional arg
+    const args = ["--mode", "rpc", ...baseFlags, "--append-system-prompt", tmpPromptPath];
     if (model) args.push("--model", model);
-    args.push(query);
 
     let wasAborted = false;
     let stoppedEarly = false;
     const toolHistory: Array<{ name: string; argsSignature: string }> = [];
 
     const exitCode = await new Promise<number>((resolve) => {
+      let resolved = false;
+      const resolveOnce = (code: number) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(code);
+        }
+      };
+
       const invocation = getPiInvocation(args);
       log(`spawning: ${invocation.command} ${invocation.args.join(" ")}`);
       log(`cwd: ${cwd}`);
@@ -212,7 +221,28 @@ async function runSubagentOnce(
         stdio: ["pipe", "pipe", "pipe"],
         env: { ...process.env, PI_REAL_CWD: cwd, ...options.env },
       });
-      proc.stdin.end(); // Signal EOF so subprocess doesn't wait for input
+
+      // Send initial prompt via RPC stdin (keep stdin open for steering/abort)
+      proc.stdin.write(JSON.stringify({ type: "prompt", message: query }) + "\n");
+
+      // Helper to send a steering message injected between LLM turns
+      const sendSteer = (message: string) => {
+        try {
+          proc.stdin.write(JSON.stringify({ type: "steer", message }) + "\n");
+          log(`steered: ${message.slice(0, 100)}`);
+        } catch {
+          /* stdin may already be closed */
+        }
+      };
+
+      // Helper to send RPC abort command before killing
+      const sendAbort = () => {
+        try {
+          proc.stdin.write(JSON.stringify({ type: "abort" }) + "\n");
+        } catch {
+          /* ignore */
+        }
+      };
 
       // Helper to kill the subprocess with escalation
       const killProc = (reason: string) => {
@@ -263,13 +293,19 @@ async function runSubagentOnce(
             stoppedEarly = true;
             result.output += `\n\n[Stopped: exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls (budget was ${maxToolCalls})]`;
             emitUpdate();
+            sendAbort();
             killProc(`exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls`);
             return;
           } else if (toolHistory.length > maxToolCalls && !stoppedEarly) {
-            // First time hitting the budget: warn but don't kill yet
+            // First time hitting the budget: steer the LLM to wind down
             stoppedEarly = true;
             result.output += `\n\n[Budget exhausted (${maxToolCalls} calls). Writing summary with remaining turns...]`;
             emitUpdate();
+            sendSteer(
+              `[BUDGET EXHAUSTED] You have used ${maxToolCalls} tool calls. ` +
+                `Stop calling tools NOW and write your summary with ## Files Retrieved, ## Key Code, ## Summary sections. ` +
+                `You have a few remaining turns to produce output before being terminated.`,
+            );
           }
 
           // Pattern-based loop detection
@@ -279,10 +315,19 @@ async function runSubagentOnce(
               stoppedEarly = true;
               result.output += `\n\n[Stopped: ${loopMsg}]`;
               emitUpdate();
+              sendAbort();
               killProc(loopMsg);
               return;
             }
           }
+        }
+
+        // Handle agent_end: RPC mode signals completion
+        if (event.type === "agent_end") {
+          clearTimeout(timeout);
+          resolveOnce(0);
+          killProc("agent completed");
+          return;
         }
 
         if (event.type === "message_end" && event.message) {
@@ -330,11 +375,11 @@ async function runSubagentOnce(
         clearTimeout(timeout);
         if (buffer.trim()) processLine(buffer);
         log(`subprocess exited with code ${code}, output length: ${result.output.length}`);
-        resolve(code ?? 0);
+        resolveOnce(code ?? 0);
       });
 
       proc.on("error", () => {
-        resolve(1);
+        resolveOnce(1);
       });
 
       if (signal) {

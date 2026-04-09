@@ -5,6 +5,7 @@
  * The model is configurable via CHEAP_MODEL env var.
  */
 
+import { spawn } from "node:child_process";
 import * as path from "node:path";
 import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
@@ -13,6 +14,186 @@ import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
 import { EXPLORE_SYSTEM_PROMPT, EXPLORE_BASE_FLAGS } from "./constants";
 import { renderCall, renderResult } from "./render";
+
+// ── Pre-search ─────────────────────────────────────────────────────────────
+
+/** Common English stop words to exclude from search terms. */
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "find",
+  "look",
+  "explore",
+  "related",
+  "about",
+  "into",
+  "what",
+  "where",
+  "which",
+  "how",
+  "all",
+  "any",
+  "some",
+  "will",
+  "also",
+  "just",
+  "than",
+  "then",
+  "there",
+  "their",
+  "them",
+  "they",
+  "these",
+  "those",
+  "other",
+  "more",
+  "most",
+  "very",
+  "much",
+  "many",
+  "such",
+  "does",
+  "dont",
+  "should",
+  "could",
+  "would",
+  "only",
+  "even",
+  "still",
+  "already",
+  "not",
+  "but",
+  "can",
+  "are",
+  "was",
+  "were",
+  "been",
+  "being",
+  "did",
+  "has",
+  "had",
+  "its",
+  "you",
+  "your",
+  "our",
+  "use",
+  "used",
+  "using",
+  "need",
+  "like",
+  "want",
+  "get",
+  "got",
+  "over",
+  "under",
+]);
+
+/** Extract 2-5 search terms from a natural language query. */
+function extractSearchTerms(query: string): string[] {
+  // Use text before any injected markers
+  const text = query.split("\n[")[0];
+
+  // Extract quoted strings first (highest priority)
+  const quoted: string[] = [];
+  for (const m of text.matchAll(/["']([^"']{2,40})["']/g)) {
+    quoted.push(m[1]);
+  }
+
+  // Extract distinctive words >= 3 chars
+  const words = text
+    .replace(/[^a-zA-Z0-9\s_-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w.toLowerCase()));
+
+  // Combine: quoted phrases first, then unique words
+  const seen = new Set(quoted.map((q) => q.toLowerCase()));
+  const result = [...quoted];
+  for (const w of words) {
+    if (!seen.has(w.toLowerCase())) {
+      seen.add(w.toLowerCase());
+      result.push(w);
+    }
+  }
+  return result.slice(0, 5);
+}
+
+/** File extensions to include in pre-search grep. */
+const GREP_INCLUDES = [
+  "*.ts",
+  "*.tsx",
+  "*.js",
+  "*.jsx",
+  "*.vue",
+  "*.svelte",
+  "*.py",
+  "*.go",
+  "*.rs",
+  "*.rb",
+  "*.java",
+  "*.kt",
+  "*.swift",
+  "*.c",
+  "*.cpp",
+  "*.h",
+  "*.hpp",
+]
+  .map((e) => `--include=${e}`)
+  .join(" ");
+
+/** Run grep before spawning subagent to give it a head start on file discovery. */
+async function preSearch(cwd: string, rawQuery: string): Promise<string> {
+  const terms = extractSearchTerms(rawQuery);
+  if (terms.length === 0) return "";
+
+  const seen = new Set<string>();
+
+  const runCmd = (cmd: string, args: string[]): Promise<string> =>
+    new Promise((resolve) => {
+      const proc = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      proc.stdin.end();
+      let out = "";
+      proc.stdout.on("data", (d: Buffer) => (out += d));
+      proc.stderr.on("data", () => {});
+      const timer = setTimeout(() => proc.kill(), 5000);
+      proc.on("close", () => {
+        clearTimeout(timer);
+        resolve(out);
+      });
+      proc.on("error", () => {
+        clearTimeout(timer);
+        resolve("");
+      });
+    });
+
+  // Run greps for top 3 terms in parallel
+  const searches = terms.slice(0, 3).map(async (term) => {
+    const escaped = term.replace(/'/g, "'\\''");
+    const out = await runCmd("sh", [
+      "-c",
+      `grep -rl ${GREP_INCLUDES} '${escaped}' . 2>/dev/null | head -20`,
+    ]);
+    if (!out.trim()) return null;
+    const files = out
+      .trim()
+      .split("\n")
+      .filter((f) => !seen.has(f));
+    files.forEach((f) => seen.add(f));
+    return files.length > 0 ? `"${term}": ${files.join(", ")}` : null;
+  });
+
+  const results = (await Promise.all(searches)).filter(Boolean) as string[];
+  if (results.length === 0) return "";
+
+  return (
+    `\n\n[PRE-SEARCH RESULTS — grep already found these files. ` +
+    `Read them directly, do NOT re-search.]\n${results.join("\n")}`
+  );
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -93,8 +274,11 @@ export default function (pi: ExtensionAPI) {
       const defaultTimeout = thoroughness === "thorough" ? 600_000 : 300_000;
       const timeoutMs = params.timeoutMs ?? defaultTimeout;
 
+      // Pre-search: run grep before spawning the subagent to give it a head start
+      const preSearchResults = await preSearch(cwd, params.query);
+
       // Build query with constraints and optional focus files
-      let query = params.query;
+      let query = params.query + preSearchResults;
       const summaryThreshold = Math.floor(maxToolCalls * 0.75);
       query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${maxToolCalls} tool calls]`;
       query +=

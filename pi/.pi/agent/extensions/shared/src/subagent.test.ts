@@ -3,34 +3,42 @@ import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
 // We test the model option by mocking child_process.spawn to capture the
 // args that runSubagent builds, rather than spawning a real subprocess.
 
-const _originalSpawn = require("node:child_process").spawn;
-
 let capturedArgs: string[] | null = null;
 let capturedEnv: Record<string, string> | null = null;
+let capturedStdinWrites: string[] = [];
 
 function mockSpawn(command: string, args: string[], options: any) {
   capturedArgs = args;
   capturedEnv = options?.env || null;
+  capturedStdinWrites = [];
 
   // Return a fake child process that immediately closes with success
   const listeners: Record<string, Function[]> = {};
   const fakeProc = {
-    stdin: { end: () => {} },
+    stdin: {
+      write: (data: string) => {
+        capturedStdinWrites.push(data);
+      },
+      end: () => {},
+    },
     stdout: {
       on: (event: string, cb: Function) => {
         if (event === "data") {
-          // Emit a minimal message_end event so the runner can parse usage
+          // Emit agent_end then message_end so the runner can parse usage
           cb(
             Buffer.from(
-              JSON.stringify({
-                type: "message_end",
-                message: {
-                  role: "assistant",
-                  content: [{ type: "text", text: "test output" }],
-                  usage: { input: 100, output: 50, totalTokens: 150, cost: { total: 0.01 } },
-                  model: "test-model",
-                },
-              }) + "\n",
+              JSON.stringify({ type: "agent_end", messages: [] }) +
+                "\n" +
+                JSON.stringify({
+                  type: "message_end",
+                  message: {
+                    role: "assistant",
+                    content: [{ type: "text", text: "test output" }],
+                    usage: { input: 100, output: 50, totalTokens: 150, cost: { total: 0.01 } },
+                    model: "test-model",
+                  },
+                }) +
+                "\n",
             ),
           );
         }
@@ -66,6 +74,7 @@ describe("runSubagent model option", () => {
   beforeEach(() => {
     capturedArgs = null;
     capturedEnv = null;
+    capturedStdinWrites = [];
     delete process.env.CHEAP_MODEL;
     delete process.env.TMUX;
   });
@@ -180,7 +189,7 @@ describe("runSubagent baseFlags", () => {
     expect(capturedArgs!).toContain("--no-extensions");
   });
 
-  it("always includes --mode json and -p", async () => {
+  it("uses RPC mode and does not pass -p flag", async () => {
     await runSubagent({
       cwd: "/tmp",
       query: "test",
@@ -189,8 +198,27 @@ describe("runSubagent baseFlags", () => {
     });
 
     expect(capturedArgs!).toContain("--mode");
-    expect(capturedArgs!).toContain("json");
-    expect(capturedArgs!).toContain("-p");
+    const modeIdx = capturedArgs!.indexOf("--mode");
+    expect(capturedArgs![modeIdx + 1]).toBe("rpc");
+    expect(capturedArgs!).not.toContain("-p");
+  });
+
+  it("sends query via stdin prompt command instead of positional arg", async () => {
+    await runSubagent({
+      cwd: "/tmp",
+      query: "find all the things",
+      systemPrompt: "test",
+      baseFlags: [],
+    });
+
+    // Query should NOT be in CLI args
+    expect(capturedArgs!).not.toContain("find all the things");
+
+    // Query should be sent via stdin as RPC prompt command
+    const promptWrites = capturedStdinWrites.filter(
+      (w) => w.includes('"type":"prompt"') && w.includes("find all the things"),
+    );
+    expect(promptWrites.length).toBeGreaterThan(0);
   });
 });
 
@@ -247,10 +275,16 @@ function mockSpawnWithFallback(command: string, args: string[], options: any) {
   lastModelUsed = modelIdx >= 0 ? args[modelIdx + 1] : null;
   capturedArgs = args;
   capturedEnv = options?.env || null;
+  capturedStdinWrites = [];
 
   const listeners: Record<string, Function[]> = {};
   const fakeProc = {
-    stdin: { end: () => {} },
+    stdin: {
+      write: (data: string) => {
+        capturedStdinWrites.push(data);
+      },
+      end: () => {},
+    },
     stdout: {
       on: (event: string, cb: Function) => {
         if (event === "data") {
@@ -272,15 +306,18 @@ function mockSpawnWithFallback(command: string, args: string[], options: any) {
           } else {
             cb(
               Buffer.from(
-                JSON.stringify({
-                  type: "message_end",
-                  message: {
-                    role: "assistant",
-                    content: [{ type: "text", text: "success" }],
-                    usage: { input: 100, output: 50, totalTokens: 150, cost: { total: 0.01 } },
-                    model: lastModelUsed,
-                  },
-                }) + "\n",
+                JSON.stringify({ type: "agent_end", messages: [] }) +
+                  "\n" +
+                  JSON.stringify({
+                    type: "message_end",
+                    message: {
+                      role: "assistant",
+                      content: [{ type: "text", text: "success" }],
+                      usage: { input: 100, output: 50, totalTokens: 150, cost: { total: 0.01 } },
+                      model: lastModelUsed,
+                    },
+                  }) +
+                  "\n",
               ),
             );
           }
