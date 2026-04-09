@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { argsSignature, detectLoop } from "./loop-detection";
+import type { LoopResult } from "./loop-detection";
 
 // ── argsSignature ──────────────────────────────────────────────────────────
 
@@ -111,42 +112,45 @@ describe("detectLoop", () => {
     ];
     const result = detectLoop(history);
     expect(result).not.toBeNull();
-    expect(result).toContain("4-tool sequence repeated");
-    expect(result).toContain("grep, read, find, bash");
+    expect(result!.severity).toBe("kill");
+    expect(result!.message).toContain("4-tool sequence repeated");
+    expect(result!.message).toContain("grep, read, find, bash");
   });
 
-  it("flags 6+ identical consecutive calls", () => {
+  it("kills at 3+ identical consecutive calls", () => {
     const history = [
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
     ];
     const result = detectLoop(history);
     expect(result).not.toBeNull();
-    expect(result).toContain("called 6 times with same args");
+    expect(result!.severity).toBe("kill");
+    expect(result!.message).toContain("called 3 times with same args");
   });
 
-  it("does NOT flag 5 identical consecutive calls", () => {
+  it("warns at 2 identical consecutive calls", () => {
     const history = [
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
+      call("read", "same-file"),
+      call("read", "same-file"),
     ];
+    const result = detectLoop(history);
+    expect(result).not.toBeNull();
+    expect(result!.severity).toBe("warn");
+    expect(result!.message).toContain("called 2 times with same args");
+  });
+
+  it("does NOT flag a single call", () => {
+    const history = [call("grep", "same-pattern")];
     expect(detectLoop(history)).toBeNull();
   });
 
-  it("does NOT flag 3 identical consecutive calls", () => {
-    const history = [
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-      call("grep", "same-pattern"),
-    ];
-    expect(detectLoop(history)).toBeNull();
+  it("escalates from warn to kill as duplicates accumulate", () => {
+    const callEntry = call("read", "file.ts");
+    // 2 calls → warn
+    expect(detectLoop([callEntry, callEntry])!.severity).toBe("warn");
+    // 3 calls → kill
+    expect(detectLoop([callEntry, callEntry, callEntry])!.severity).toBe("kill");
   });
 
   it("does NOT flag natural exploration pattern with varied greps and reads", () => {
@@ -180,7 +184,9 @@ describe("detectLoop", () => {
       call("bash", "c"),
       call("find", "d"),
     ];
-    expect(detectLoop(history, 8)).not.toBeNull();
+    const result = detectLoop(history, 8);
+    expect(result).not.toBeNull();
+    expect(result!.severity).toBe("kill");
   });
 
   it("ignores calls outside window size", () => {

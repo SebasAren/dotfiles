@@ -5,6 +5,15 @@
  * by tracking recent call signatures and detecting repeated subsequences.
  */
 
+/** Severity of a detected loop. */
+export type LoopSeverity = "warn" | "kill";
+
+/** Result from loop detection. */
+export interface LoopResult {
+  severity: LoopSeverity;
+  message: string;
+}
+
 /**
  * Creates a normalized signature from tool args to detect near-duplicates.
  * Normalizes paths and trims long values.
@@ -24,12 +33,17 @@ export function argsSignature(args: Record<string, unknown>): string {
 
 /**
  * Detects loops by tracking recent tool call signatures.
- * Returns a description of the loop if detected, or null otherwise.
+ * Returns a LoopResult if a loop is detected, or null otherwise.
+ *
+ * Two severity levels:
+ * - "warn": early sign of a loop (2 consecutive identical calls).
+ *   Caller should send a steering message to break the pattern.
+ * - "kill": clear loop (3 consecutive identical calls). Caller should
+ *   terminate the subagent.
  *
  * We only flag repeated subsequences when the sequence contains at least
  * 4 *different* tools. A run of identical tools (e.g. grep, grep, grep)
- * with the same args is handled by the consecutive-call check below,
- * and that requires 6+ identical calls before flagging.
+ * with the same args is handled by the consecutive-call check.
  *
  * Thresholds are intentionally conservative — exploration agents legitimately
  * repeat tool patterns (grep, grep, find, grep, grep, find) when broadening
@@ -38,13 +52,13 @@ export function argsSignature(args: Record<string, unknown>): string {
 export function detectLoop(
   toolHistory: Array<{ name: string; argsSignature: string }>,
   windowSize: number = 12,
-): string | null {
+): LoopResult | null {
   const recent = toolHistory.slice(-windowSize);
 
-  // Check for 6+ identical consecutive calls — always a loop regardless of
-  // total history size. Increased from 4 to allow exploration agents to
-  // retry searches with slight variations.
-  if (recent.length >= 6) {
+  // Check for consecutive identical calls.
+  // Kill at 3+, warn at 2. Reading the same file 2+ times in a row with
+  // identical args is always a loop — legitimate exploration never does this.
+  if (recent.length >= 2) {
     const lastSig = recent[recent.length - 1];
     let identicalCount = 0;
     for (let i = recent.length - 1; i >= 0; i--) {
@@ -54,8 +68,17 @@ export function detectLoop(
         break;
       }
     }
-    if (identicalCount >= 6) {
-      return `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`;
+    if (identicalCount >= 3) {
+      return {
+        severity: "kill",
+        message: `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`,
+      };
+    }
+    if (identicalCount >= 2) {
+      return {
+        severity: "warn",
+        message: `${lastSig.name} called ${identicalCount} times with same args — change your approach`,
+      };
     }
   }
 
@@ -86,7 +109,10 @@ export function detectLoop(
         if (uniqueTools.size < 4) continue;
 
         const toolNames = second.map((t) => t.name).join(", ");
-        return `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`;
+        return {
+          severity: "kill",
+          message: `Loop detected: ${seqLen}-tool sequence repeated (${toolNames})`,
+        };
       }
     }
   }

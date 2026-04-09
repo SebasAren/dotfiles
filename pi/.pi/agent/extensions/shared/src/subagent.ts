@@ -160,6 +160,8 @@ async function runSubagentOnce(
   // any assistant text (e.g. some models keep tool-calling then hit end_turn
   // without writing a summary).
   const allCalls: string[] = [];
+  /** Tracks the last loop-warning signature to avoid duplicate steers. */
+  let lastWarnSignature: string | null = null;
 
   const result: SubagentResult = {
     exitCode: 0,
@@ -310,14 +312,29 @@ async function runSubagentOnce(
 
           // Pattern-based loop detection
           if (loopDetection) {
-            const loopMsg = detectLoop(toolHistory);
-            if (loopMsg) {
-              stoppedEarly = true;
-              result.output += `\n\n[Stopped: ${loopMsg}]`;
-              emitUpdate();
-              sendAbort();
-              killProc(loopMsg);
-              return;
+            const loopResult = detectLoop(toolHistory);
+            if (loopResult) {
+              if (loopResult.severity === "warn") {
+                // Steer the model to change its approach — but only once per
+                // signature to avoid flooding the conversation with warnings.
+                const currentSig = toolHistory[toolHistory.length - 1].argsSignature;
+                if (currentSig !== lastWarnSignature) {
+                  lastWarnSignature = currentSig;
+                  sendSteer(
+                    `[LOOP WARNING] ${loopResult.message}. ` +
+                    `Do NOT repeat this exact call again. ` +
+                    `Try a different file, different search terms, or write your summary.`,
+                  );
+                }
+              } else {
+                // Kill-level: terminate immediately
+                stoppedEarly = true;
+                result.output += `\n\n[Stopped: ${loopResult.message}]`;
+                emitUpdate();
+                sendAbort();
+                killProc(loopResult.message);
+                return;
+              }
             }
           }
         }
