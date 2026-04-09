@@ -53,6 +53,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	end,
 })
 
+-- Git diff review command
+vim.api.nvim_create_user_command("GitDiffReview", function(opts)
+	require("git_diff_review").open(opts.args ~= "" and opts.args or nil)
+end, { nargs = "?", desc = "Open diff review session" })
+
 -- Code review keymaps
 vim.keymap.set("n", "<leader>ra", function()
 	require("review").add(vim.fn.line("."), vim.fn.line("."))

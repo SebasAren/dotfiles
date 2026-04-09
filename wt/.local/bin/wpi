@@ -120,14 +120,15 @@ _wpi_review_loop() {
         fi
 
         echo ""
-        echo "  Opening nvim with fzf-lua git_diff..."
-        echo "  Use Enter to preview a file's diff. :q to quit."
-        echo "  Optionally create .code-review.md for review comments."
+        echo "  Opening nvim in diff review mode..."
+        echo "  ]q/[q: next/prev change  ]h/[h: next/prev hunk"
+        echo "  <leader>gd: side-by-side diff  q: close review"
+        echo "  Use <leader>ra to annotate review comments."
         echo "  Press <leader>gB to reopen the diff picker at any time."
         echo ""
         local merge_base
         merge_base="$(git merge-base "${source_branch:-main}" HEAD)"
-        WPI_BASE_REF="${merge_base}" nvim -c "lua require('fzf-lua').git_diff({ ref = vim.env.WPI_BASE_REF })"
+        WPI_BASE_REF="${merge_base}" nvim -c "lua require('git_diff_review').open(vim.env.WPI_BASE_REF)"
         local review_file=".code-review.md"
         if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
             echo ""

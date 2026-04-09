@@ -33,14 +33,7 @@ return {
 				end,
 				desc = "Git status",
 			},
-			{
-				"<leader>gD",
-				function()
-					local ref = vim.env.WPI_BASE_BRANCH or "main"
-					require("fzf-lua").git_diff({ ref = ref })
-				end,
-				desc = "Git diff vs base",
-			},
+			-- <leader>gD is now handled by git-diff-review.lua plugin spec
 			{
 				"<leader>gj",
 				function()
