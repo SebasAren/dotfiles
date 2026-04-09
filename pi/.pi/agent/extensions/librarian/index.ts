@@ -87,6 +87,11 @@ export default function (pi: ExtensionAPI) {
       if (params.focus) {
         query += ` Focus on ${params.focus}.`;
       }
+      query +=
+        `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
+        `## Sources, ## Documentation, ## Key Findings, and ## Recommendations sections. ` +
+        `Stop calling tools once you have enough information and write the summary. ` +
+        `A final turn with only tool calls is a failed response.]`;
 
       const maxToolCalls = params.maxToolCalls ?? 60;
       const timeoutMs = params.timeoutMs ?? 240_000;
@@ -99,16 +104,19 @@ export default function (pi: ExtensionAPI) {
         timeoutMs,
         signal,
         onUpdate: onUpdate
-          ? (text) => {
+          ? (update) => {
               onUpdate({
-                content: [{ type: "text", text }],
-                details: { model: getModel(), query: params.query },
+                content: [{ type: "text", text: update.text }],
+                details: {
+                  model: getModel(),
+                  query: params.query,
+                  recentCalls: update.recentCalls,
+                },
               });
             }
           : undefined,
         loopDetection: true,
         maxToolCalls,
-        tmux: { label: "librarian" },
         tmpPrefix: "pi-librarian-",
         debugLabel: "librarian",
         env: { [CHILD_ENV_VAR]: "1" },

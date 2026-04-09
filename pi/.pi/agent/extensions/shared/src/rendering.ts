@@ -32,6 +32,12 @@ export interface SubagentResultDetails {
   query?: string;
   success?: boolean;
   usage?: UsageInfo;
+  /**
+   * Rolling window of recent tool calls executed by the subagent.
+   * Populated on partial updates so the main agent can render a live
+   * activity ticker while the subagent is still running.
+   */
+  recentCalls?: string[];
   [key: string]: unknown;
 }
 
@@ -152,13 +158,22 @@ export function renderSubagentResult(options: RenderSubagentResultOptions): Comp
 
   // ── Streaming/partial ───────────────────────────────────────────────
   if (isPartial) {
-    if (sections.length === 0) {
+    const recentCalls = details?.recentCalls;
+    const hasRecentCalls = !!recentCalls && recentCalls.length > 0;
+
+    if (sections.length === 0 && !hasRecentCalls) {
       return new Text(theme.fg("warning", `⏳ ${partialLabel}...`), 0, 0);
     }
     let content = theme.fg("warning", "⏳ ") + theme.fg("toolTitle", theme.bold(toolName));
     for (const section of sections) {
       const summary = getSectionSummary(section.content);
       content += `\n  ${theme.fg("muted", `${section.title}:`)} ${theme.fg("dim", summary)}`;
+    }
+    // Scrolling activity ticker: show the rolling window of recent tool calls.
+    if (hasRecentCalls) {
+      for (const call of recentCalls) {
+        content += `\n  ${theme.fg("muted", "›")} ${theme.fg("dim", call)}`;
+      }
     }
     return new Text(content, 0, 0);
   }

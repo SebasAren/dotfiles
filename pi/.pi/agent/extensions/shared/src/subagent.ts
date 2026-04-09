@@ -3,7 +3,6 @@
  *
  * Manages the full lifecycle of spawning a pi subprocess for subagent tasks:
  * - Temp dir creation with system prompt file
- * - Optional tmux split pane with real-time pretty-printing
  * - Process spawning with JSON line parsing
  * - Usage tracking
  * - Loop detection and tool call limits (configurable)
@@ -11,7 +10,7 @@
  * - Cleanup
  */
 
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -19,6 +18,20 @@ import { getPiInvocation } from "./subprocess.js";
 import { argsSignature, detectLoop } from "./loop-detection.js";
 import { getModel, getFallbackModel, shouldUseFallback } from "./model.js";
 import type { SubagentResult } from "./types.js";
+
+/** Maximum number of recent tool calls kept in the rolling activity window. */
+const RECENT_CALLS_WINDOW = 5;
+
+/** Build a short "toolName: detail" line from a tool_execution_start event. */
+function formatRecentCall(toolName: string, args: Record<string, unknown> | undefined): string {
+  if (!args) return toolName;
+  let detail = "";
+  if (typeof args.query === "string") detail = args.query.slice(0, 60);
+  else if (typeof args.path === "string") detail = args.path;
+  else if (typeof args.command === "string") detail = args.command.slice(0, 50);
+  else if (typeof args.pattern === "string") detail = args.pattern.slice(0, 50);
+  return detail ? `${toolName}: ${detail}` : toolName;
+}
 
 /** Options for {@link runSubagent}. */
 export interface RunSubagentOptions {
@@ -41,17 +54,16 @@ export interface RunSubagentOptions {
   timeoutMs?: number;
   /** Abort signal */
   signal?: AbortSignal;
-  /** Callback for streaming updates */
-  onUpdate?: (text: string) => void;
+  /**
+   * Callback for streaming updates. Fires whenever the subagent emits new
+   * assistant text or starts a new tool call, so the caller can surface live
+   * activity (e.g. a scrolling tool-call ticker) in the main agent UI.
+   */
+  onUpdate?: (update: { text: string; recentCalls?: string[] }) => void;
   /** Enable loop detection for tool calls (default: false) */
   loopDetection?: boolean;
   /** Maximum number of tool calls before stopping (default: Infinity) */
   maxToolCalls?: number;
-  /** Enable tmux split pane for real-time output */
-  tmux?: {
-    /** Label shown in the tmux pane header (e.g. "explore", "librarian") */
-    label: string;
-  };
   /** Prefix for temp directory name (default: "pi-subagent-") */
   tmpPrefix?: string;
   /** Debug label for console.log messages (omit to suppress logs) */
@@ -68,78 +80,12 @@ export interface RunSubagentOptions {
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 /**
- * Generic pretty-printer script for tmux pane.
- * Reads a growing JSONL file and renders tool calls + assistant text in real-time.
- * Usage: `node <script> <tmpDir> <label>`
- */
-const PP_SCRIPT = String.raw`#!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
-const tmpDir = process.argv[2] || "";
-const label = process.argv[3] || "subagent";
-const R = "\x1b[0m", B = "\x1b[1m", D = "\x1b[2m", C = "\x1b[36m", G = "\x1b[32m";
-
-let query = "";
-try { query = fs.readFileSync(path.join(tmpDir, "query.txt"), "utf8").trim(); } catch {}
-if (query) {
-  const firstLine = query.split("\n")[0];
-  const preview = firstLine.length > 80 ? firstLine.slice(0, 80) + "..." : firstLine;
-  process.stdout.write(B + C + "\u25b6 " + label + R + " " + D + preview + R + "\n");
-  process.stdout.write(D + "\u2500".repeat(50) + R + "\n\n");
-}
-
-const outputPath = path.join(tmpDir, "subagent-output.jsonl");
-let fd = -1;
-let offset = 0;
-let toolCount = 0;
-
-function poll() {
-  try {
-    if (fd === -1) fd = fs.openSync(outputPath, "r");
-    const stat = fs.fstatSync(fd);
-    if (stat.size > offset) {
-      const buf = Buffer.alloc(stat.size - offset);
-      fs.readSync(fd, buf, 0, buf.length, offset);
-      offset += buf.length;
-      const newContent = buf.toString("utf8");
-      for (const line of newContent.split("\n")) {
-        if (!line.trim()) continue;
-        let e;
-        try { e = JSON.parse(line); } catch { continue; }
-        if (e.type === "tool_execution_start") {
-          toolCount++;
-          const name = e.toolName || "?";
-          let detail = "";
-          if (e.args && e.args.query) detail = String(e.args.query).slice(0, 60);
-          else if (e.args && e.args.path) detail = e.args.path;
-          else if (e.args && e.args.command) detail = String(e.args.command).slice(0, 50);
-          else if (e.args && e.args.pattern) detail = String(e.args.pattern).slice(0, 50);
-          process.stdout.write(D + "[" + toolCount + "]" + R + " " + C + name + R + (detail ? ": " + D + detail + R : "") + "\n");
-        } else if (e.type === "message_end" && e.message && e.message.role === "assistant") {
-          for (const p of (e.message.content || [])) {
-            if (p.type === "text" && p.text) process.stdout.write("\n" + p.text + "\n");
-          }
-        } else if (e.type === "subagent_done") {
-          process.stdout.write("\n" + D + "\u2500".repeat(50) + R + "\n");
-          process.stdout.write(G + B + "\u2713 " + label + " complete" + R + " (" + toolCount + " tool calls)\n");
-          if (fd !== -1) fs.closeSync(fd);
-          process.exit(0);
-        }
-      }
-    }
-  } catch (e) {
-    if (e.code === "ENOENT") { process.exit(0); }
-  }
-  setTimeout(poll, 150);
-}
-poll();
-`;
-
-/**
  * Spawn a pi subprocess as a subagent and collect its output.
  *
- * Handles system prompt injection, optional tmux pretty-printing,
- * loop detection, tool call limits, timeout, and abort signals.
+ * Handles system prompt injection, loop detection, tool call limits,
+ * timeout, and abort signals. Streams a rolling window of recent tool
+ * calls through `onUpdate` so the caller can render a live activity
+ * ticker in the main agent UI.
  */
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
   const model = options.model || getModel();
@@ -160,7 +106,7 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
     };
     log(`primary model failed, retrying with fallback: ${fallbackModel}`);
     if (options.onUpdate)
-      options.onUpdate(`[Primary model unavailable, retrying with ${fallbackModel}...]`);
+      options.onUpdate({ text: `[Primary model unavailable, retrying with ${fallbackModel}...]` });
 
     const fallbackResult = await runSubagentOnce(options, fallbackModel);
 
@@ -192,14 +138,18 @@ async function runSubagentOnce(
     onUpdate,
     loopDetection = false,
     maxToolCalls = Infinity,
-    tmux,
     tmpPrefix = "pi-subagent-",
     debugLabel,
   } = options;
 
   let tmpDir: string | null = null;
   let tmpPromptPath: string | null = null;
-  let tmuxOutputPath: string | null = null;
+  const recentCalls: string[] = [];
+  // Full, unbounded log of every tool call the subagent made. Used to
+  // synthesize a fallback summary when the subagent exits without producing
+  // any assistant text (e.g. some models keep tool-calling then hit end_turn
+  // without writing a summary).
+  const allCalls: string[] = [];
 
   const result: SubagentResult = {
     exitCode: 0,
@@ -217,7 +167,10 @@ async function runSubagentOnce(
   };
 
   const emitUpdate = () => {
-    onUpdate?.(result.output || "(running...)");
+    onUpdate?.({
+      text: result.output || "(running...)",
+      recentCalls: recentCalls.length > 0 ? [...recentCalls] : undefined,
+    });
   };
 
   const log = (msg: string) => {
@@ -234,31 +187,6 @@ async function runSubagentOnce(
     const args = ["--mode", "json", "-p", ...baseFlags, "--append-system-prompt", tmpPromptPath];
     if (model) args.push("--model", model);
     args.push(query);
-
-    // --- Tmux pane: tee JSONL to a file, pretty-print in a split pane ---
-    if (process.env.TMUX && tmux) {
-      try {
-        // Write query for pane header
-        await fs.promises.writeFile(path.join(tmpDir, "query.txt"), query, "utf8");
-
-        // Write pretty-printer script
-        const ppScriptPath = path.join(tmpDir, "subagent-pp.js");
-        await fs.promises.writeFile(ppScriptPath, PP_SCRIPT, { mode: 0o755 });
-
-        // Create empty output file
-        tmuxOutputPath = path.join(tmpDir, "subagent-output.jsonl");
-        await fs.promises.writeFile(tmuxOutputPath, "", "utf8");
-
-        // Split tmux pane running the pretty-printer
-        execSync(
-          `tmux split-window -h -l 35% -t "${process.env.TMUX_PANE}" "node '${ppScriptPath}' '${tmpDir}' '${tmux.label}'; rm -rf '${tmpDir}'"`,
-          { stdio: "ignore" },
-        );
-      } catch (_err) {
-        // tmux pane setup failed, continuing without pane
-        tmuxOutputPath = null;
-      }
-    }
 
     let wasAborted = false;
     let stoppedEarly = false;
@@ -302,7 +230,7 @@ async function runSubagentOnce(
           return;
         }
 
-        // Track tool calls for loop detection and limits
+        // Track tool calls for loop detection, limits, and live activity display
         if (event.type === "tool_execution_start" && event.toolName) {
           if (loopDetection || maxToolCalls < Infinity) {
             toolHistory.push({
@@ -310,6 +238,14 @@ async function runSubagentOnce(
               argsSignature: argsSignature(event.args || {}),
             });
           }
+
+          // Push into the rolling activity window shown in the main agent UI
+          // and the full log used for the "no text output" fallback.
+          const callLine = formatRecentCall(event.toolName, event.args);
+          allCalls.push(callLine);
+          recentCalls.push(callLine);
+          if (recentCalls.length > RECENT_CALLS_WINDOW) recentCalls.shift();
+          emitUpdate();
 
           // Hard limit on total tool calls
           if (toolHistory.length > maxToolCalls) {
@@ -362,13 +298,6 @@ async function runSubagentOnce(
 
       proc.stdout.on("data", (data) => {
         const chunk = data.toString();
-        if (tmuxOutputPath) {
-          try {
-            fs.appendFileSync(tmuxOutputPath, chunk);
-          } catch {
-            /* ignore */
-          }
-        }
         buffer += chunk;
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
@@ -404,6 +333,28 @@ async function runSubagentOnce(
 
     result.exitCode = stoppedEarly ? 0 : exitCode;
     if (wasAborted) throw new Error("Subagent was aborted");
+
+    // Fallback: some models (notably Mistral Small) keep tool-calling until
+    // end_turn without ever emitting an assistant text message, leaving
+    // result.output empty. Synthesize a tool-call log so the main agent can
+    // see what was explored instead of an opaque "(no output)". We keep the
+    // result marked as success so the synthesized sections render normally.
+    if (!result.output.trim() && exitCode === 0 && !result.errorMessage) {
+      if (allCalls.length > 0) {
+        const numbered = allCalls.map((c, i) => `${i + 1}. ${c}`).join("\n");
+        result.output =
+          `## Activity\n` +
+          `The subagent ran ${allCalls.length} tool call${allCalls.length === 1 ? "" : "s"} ` +
+          `but exited without producing a text summary.\n\n` +
+          `${numbered}\n\n` +
+          `## Summary\n` +
+          `(No summary was produced. Consider re-running with a more specific query or a different model.)`;
+      } else {
+        result.output =
+          `## Summary\n(Subagent exited without producing any output or tool calls.)`;
+      }
+    }
+
     return result;
   } finally {
     if (tmpPromptPath) {
@@ -413,14 +364,7 @@ async function runSubagentOnce(
         /* ignore */
       }
     }
-    if (tmuxOutputPath) {
-      // Signal the tmux pretty-printer to stop; its shell command cleans up tmpDir
-      try {
-        fs.appendFileSync(tmuxOutputPath, JSON.stringify({ type: "subagent_done" }) + "\n");
-      } catch {
-        /* ignore */
-      }
-    } else if (tmpDir) {
+    if (tmpDir) {
       try {
         fs.rmdirSync(tmpDir);
       } catch {

@@ -102,6 +102,11 @@ export default function (pi: ExtensionAPI) {
         query += `\n[Focus files: start by reading these known-relevant files, then explore outward if needed]`;
         query += `\n${params.files.map((f) => `- ${f}`).join("\n")}`;
       }
+      query +=
+        `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
+        `## Files Retrieved, ## Key Code, and ## Summary sections. ` +
+        `Stop calling tools once you have enough information and write the summary. ` +
+        `A final turn with only tool calls is a failed response.]`;
 
       const result = await runSubagent({
         cwd,
@@ -111,16 +116,15 @@ export default function (pi: ExtensionAPI) {
         timeoutMs,
         signal,
         onUpdate: onUpdate
-          ? (text) => {
+          ? (update) => {
               onUpdate({
-                content: [{ type: "text", text }],
-                details: { model: getModel(), query },
+                content: [{ type: "text", text: update.text }],
+                details: { model: getModel(), query, recentCalls: update.recentCalls },
               });
             }
           : undefined,
         loopDetection: true,
         maxToolCalls,
-        tmux: { label: "explore" },
         tmpPrefix: "pi-explore-",
       });
 
