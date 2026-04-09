@@ -55,8 +55,10 @@ export interface RunSubagentOptions {
    *
    * @param systemPrompt - The system prompt to inject
    * @param cwd - Working directory
+   * @param modelName - Model name to use (e.g. from CHEAP_MODEL or FALLBACK_MODEL).
+   *   When undefined, the factory should use its default resolution logic.
    */
-  createSession: (systemPrompt: string, cwd: string) => Promise<AgentSession>;
+  createSession: (systemPrompt: string, cwd: string, modelName?: string) => Promise<AgentSession>;
   /** Timeout in milliseconds (default: 120_000) */
   timeoutMs?: number;
   /** Abort signal */
@@ -110,7 +112,8 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
     if (options.onUpdate)
       options.onUpdate({ text: `[Primary model unavailable, retrying with ${fallbackModel}...]` });
 
-    const fallbackResult = await runSubagentOnce(options);
+    // Retry with the fallback model passed through to the session factory
+    const fallbackResult = await runSubagentOnce({ ...options, model: fallbackModel });
 
     if (!fallbackResult.errorMessage) {
       fallbackResult.model = fallbackResult.model || fallbackModel;
@@ -175,7 +178,10 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
     if (debugLabel) console.log(`[${debugLabel}] ${msg}`);
   };
 
-  const session = await createSession(systemPrompt, cwd);
+  // Pass the resolved model name to the session factory so it can use
+  // the fallback model on retries instead of always reading CHEAP_MODEL
+  const modelName = options.model || getModel();
+  const session = await createSession(systemPrompt, cwd, modelName);
 
   try {
     const toolHistory: Array<{ name: string; argsSignature: string }> = [];
@@ -337,6 +343,10 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
 
     if (aborted) {
       throw new Error("Subagent was aborted");
+    }
+
+    if (timedOut) {
+      result.errorMessage = `Subagent timed out after ${timeoutMs}ms`;
     }
 
     // Fallback: synthesize output if the model never produced text

@@ -37,28 +37,28 @@ function getSharedInfrastructure() {
   return { authStorage, modelRegistry, settingsManager };
 }
 
-/** Resolve CHEAP_MODEL env var to a Model object, or undefined. */
-function resolveModel(): any | undefined {
-  const modelName = getModel();
-  if (!modelName) return undefined;
+/** Resolve a model name (e.g. "provider/model-id") to a Model object, or undefined. */
+function resolveModel(modelName?: string): any | undefined {
+  const name = modelName || getModel();
+  if (!name) return undefined;
 
   const { modelRegistry } = getSharedInfrastructure();
 
   // Try "provider/model-id" format
-  if (modelName.includes("/")) {
-    const slashIdx = modelName.indexOf("/");
-    const provider = modelName.slice(0, slashIdx);
-    const modelId = modelName.slice(slashIdx + 1);
+  if (name.includes("/")) {
+    const slashIdx = name.indexOf("/");
+    const provider = name.slice(0, slashIdx);
+    const modelId = name.slice(slashIdx + 1);
     return modelRegistry.find(provider, modelId);
   }
 
   // Try matching against all available models by id
   const all = modelRegistry.getAll();
-  return all.find((m) => m.id === modelName);
+  return all.find((m) => m.id === name);
 }
 
 /** Create an AgentSession for the librarian subagent with web research tools. */
-async function createLibrarianSession(systemPrompt: string, cwd: string): Promise<AgentSession> {
+async function createLibrarianSession(systemPrompt: string, cwd: string, modelName?: string): Promise<AgentSession> {
   const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
 
   // Use DefaultResourceLoader to discover extensions (exa-search, context7)
@@ -72,7 +72,7 @@ async function createLibrarianSession(systemPrompt: string, cwd: string): Promis
   });
   await loader.reload();
 
-  const model = resolveModel();
+  const model = resolveModel(modelName);
 
   const opts: any = {
     cwd,
