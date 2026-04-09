@@ -161,10 +161,14 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
   };
 
   const emitUpdate = () => {
-    onUpdate?.({
-      text: result.output || "(running...)",
-      recentCalls: recentCalls.length > 0 ? [...recentCalls] : undefined,
-    });
+    try {
+      onUpdate?.({
+        text: result.output || "(running...)",
+        recentCalls: recentCalls.length > 0 ? [...recentCalls] : undefined,
+      });
+    } catch {
+      // onUpdate may throw if the tool has been cancelled — ignore
+    }
   };
 
   const log = (msg: string) => {
@@ -269,9 +273,9 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
       }
     });
 
-    // Timeout handling
+    // Timeout handling — raced against session.prompt() to guarantee we never hang
     let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
-    const _timeoutPromise = new Promise<void>((resolve) => {
+    const timeoutPromise = new Promise<void>((resolve) => {
       timeoutTimer = setTimeout(() => {
         timedOut = true;
         log(`timeout after ${timeoutMs}ms`);
@@ -298,8 +302,11 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
     log(`prompting subagent (cwd: ${cwd})`);
 
     try {
-      // Send prompt and wait for agent to complete
-      await session.prompt(query);
+      // Race prompt against timeout so we never hang indefinitely.
+      // session.abort() inside the timeout handler SHOULD cause prompt() to
+      // reject, but some SDK states may not propagate the rejection — the race
+      // guarantees we always continue after the timeout.
+      await Promise.race([session.prompt(query), timeoutPromise]);
     } catch (e: any) {
       // session.prompt() may throw if aborted — that's expected
       if (!aborted && !timedOut && !stoppedEarly) {
@@ -311,9 +318,13 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
     // Clear timeout
     if (timeoutTimer) clearTimeout(timeoutTimer);
 
-    // Wait for the agent to finish processing (in case abort triggered async cleanup)
+    // Wait for the agent to finish processing, but with a short timeout
+    // to avoid hanging if abort didn't fully clean up the agent's internal state.
     try {
-      await session.agent.waitForIdle();
+      await Promise.race([
+        session.agent.waitForIdle(),
+        new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+      ]);
     } catch {
       /* ignore */
     }

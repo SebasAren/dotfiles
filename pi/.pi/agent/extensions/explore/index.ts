@@ -171,16 +171,31 @@ async function preSearch(cwd: string, rawQuery: string): Promise<string> {
       const proc = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
       proc.stdin.end();
       let out = "";
+      let resolved = false;
+      const resolveOnce = (value: string) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(value);
+        }
+      };
       proc.stdout.on("data", (d: Buffer) => (out += d));
       proc.stderr.on("data", () => {});
-      const timer = setTimeout(() => proc.kill(), 5000);
+      const timer = setTimeout(() => {
+        // Try graceful termination first
+        proc.kill("SIGTERM");
+        // Force kill after grace period, then resolve regardless
+        setTimeout(() => {
+          if (!proc.killed) proc.kill("SIGKILL");
+          resolveOnce(out);
+        }, 1000);
+      }, 5000);
       proc.on("close", () => {
         clearTimeout(timer);
-        resolve(out);
+        resolveOnce(out);
       });
       proc.on("error", () => {
         clearTimeout(timer);
-        resolve("");
+        resolveOnce("");
       });
     });
 

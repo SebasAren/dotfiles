@@ -25,7 +25,8 @@ export function argsSignature(args: Record<string, unknown>): string {
       const s = typeof v === "string" ? v : JSON.stringify(v);
       // Normalize paths: strip trailing slashes, resolve ./ prefixes
       const normalized = s.replace(/\/+$/, "").replace(/^\.\//, "");
-      return `${k}:${normalized}`;
+      const truncated = normalized.length > 100 ? normalized.slice(0, 100) + "..." : normalized;
+      return `${k}:${truncated}`;
     });
   return entries.join("|");
 }
