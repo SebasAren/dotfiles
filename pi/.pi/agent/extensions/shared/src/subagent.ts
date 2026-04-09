@@ -22,6 +22,15 @@ import type { SubagentResult } from "./types.js";
 /** Maximum number of recent tool calls kept in the rolling activity window. */
 const RECENT_CALLS_WINDOW = 5;
 
+/**
+ * Grace buffer added to maxToolCalls before hard-killing.
+ * When the subagent hits maxToolCalls, we DON'T kill immediately — we give it
+ * this many extra calls to either produce a text summary or get killed.
+ * This prevents the common failure mode where the subagent is killed
+ * mid-investigation right before it was about to write its summary.
+ */
+const TOOL_CALL_GRACE_BUFFER = 20;
+
 /** Build a short "toolName: detail" line from a tool_execution_start event. */
 function formatRecentCall(toolName: string, args: Record<string, unknown> | undefined): string {
   if (!args) return toolName;
@@ -247,13 +256,20 @@ async function runSubagentOnce(
           if (recentCalls.length > RECENT_CALLS_WINDOW) recentCalls.shift();
           emitUpdate();
 
-          // Hard limit on total tool calls
-          if (toolHistory.length > maxToolCalls) {
+          // Budget limit with grace period: warn at limit, kill at limit+grace
+          // This gives the subagent a window to write its summary instead of
+          // being killed mid-investigation.
+          if (toolHistory.length > maxToolCalls + TOOL_CALL_GRACE_BUFFER) {
             stoppedEarly = true;
-            result.output += `\n\n[Stopped: exceeded ${maxToolCalls} tool calls]`;
+            result.output += `\n\n[Stopped: exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls (budget was ${maxToolCalls})]`;
             emitUpdate();
-            killProc(`exceeded ${maxToolCalls} tool calls`);
+            killProc(`exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls`);
             return;
+          } else if (toolHistory.length > maxToolCalls && !stoppedEarly) {
+            // First time hitting the budget: warn but don't kill yet
+            stoppedEarly = true;
+            result.output += `\n\n[Budget exhausted (${maxToolCalls} calls). Writing summary with remaining turns...]`;
+            emitUpdate();
           }
 
           // Pattern-based loop detection
@@ -350,8 +366,7 @@ async function runSubagentOnce(
           `## Summary\n` +
           `(No summary was produced. Consider re-running with a more specific query or a different model.)`;
       } else {
-        result.output =
-          `## Summary\n(Subagent exited without producing any output or tool calls.)`;
+        result.output = `## Summary\n(Subagent exited without producing any output or tool calls.)`;
       }
     }
 

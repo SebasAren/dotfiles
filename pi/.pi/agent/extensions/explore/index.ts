@@ -36,7 +36,7 @@ const ExploreParams = Type.Object({
   ),
   thoroughness: Type.Optional(
     Type.String({
-      description: "How thorough to be: quick (20 calls), medium (40, default), thorough (80)",
+      description: "How thorough to be: quick (40 calls), medium (80, default), thorough (160)",
     }),
   ),
   maxToolCalls: Type.Optional(
@@ -44,7 +44,7 @@ const ExploreParams = Type.Object({
   ),
   timeoutMs: Type.Optional(
     Type.Number({
-      description: "Override timeout in ms (default: 180000 for medium, 300000 for thorough)",
+      description: "Override timeout in ms (default: 300000 for medium, 600000 for thorough)",
     }),
   ),
   files: Type.Optional(
@@ -77,7 +77,7 @@ export default function (pi: ExtensionAPI) {
       "Write specific, keyword-rich queries. Bad: 'explore the codebase'. Good: 'tmux wt worktrunk integration pane_current_path'.",
       "Provide a directory hint when you know where to look. Use the directory parameter to scope the search (e.g. 'tmux/.config/tmux/scripts/').",
       "For large codebases, use a scout-then-deepen pattern: first explore with quick thoroughness to find relevant files, then call explore again with 'files' set to the discovered paths and thoroughness=thorough.",
-      "Use maxToolCalls to give the subagent more budget when thoroughness=thorough isn't enough (e.g. maxToolCalls=120).",
+      "Defaults: quick=40 calls/5min, medium=80 calls/5min, thorough=160 calls/10min. Failures are rare — if you see one, use maxToolCalls to increase the budget.",
     ],
     parameters: ExploreParams,
 
@@ -87,14 +87,20 @@ export default function (pi: ExtensionAPI) {
 
       // Resolve thoroughness → budget
       const thoroughness = params.thoroughness || "medium";
-      const defaultMaxCalls = thoroughness === "quick" ? 20 : thoroughness === "thorough" ? 80 : 40;
+      const defaultMaxCalls =
+        thoroughness === "quick" ? 40 : thoroughness === "thorough" ? 160 : 80;
       const maxToolCalls = params.maxToolCalls ?? defaultMaxCalls;
-      const defaultTimeout = thoroughness === "thorough" ? 300_000 : 180_000;
+      const defaultTimeout = thoroughness === "thorough" ? 600_000 : 300_000;
       const timeoutMs = params.timeoutMs ?? defaultTimeout;
 
       // Build query with constraints and optional focus files
       let query = params.query;
+      const summaryThreshold = Math.floor(maxToolCalls * 0.75);
       query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${maxToolCalls} tool calls]`;
+      query +=
+        `\n[BUDGET RULE: You MUST start writing your summary by call #${summaryThreshold}. ` +
+        `After ${summaryThreshold} calls, STOP calling tools and write the summary. ` +
+        `You may use up to ${maxToolCalls} calls total, but the LAST ${maxToolCalls - summaryThreshold} must be your summary text.]`;
       if (params.directory) {
         query += `\n[Scope: only look in ${params.directory}]`;
       }
@@ -105,8 +111,8 @@ export default function (pi: ExtensionAPI) {
       query +=
         `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
         `## Files Retrieved, ## Key Code, and ## Summary sections. ` +
-        `Stop calling tools once you have enough information and write the summary. ` +
-        `A final turn with only tool calls is a failed response.]`;
+        `A final turn with only tool calls is a FAILED response. ` +
+        `Write the summary NOW if you have ANY relevant information, even if incomplete.]`;
 
       const result = await runSubagent({
         cwd,
