@@ -58,7 +58,11 @@ function resolveModel(modelName?: string): any | undefined {
 }
 
 /** Create an AgentSession for the librarian subagent with web research tools. */
-async function createLibrarianSession(systemPrompt: string, cwd: string, modelName?: string): Promise<AgentSession> {
+async function createLibrarianSession(
+  systemPrompt: string,
+  cwd: string,
+  modelName?: string,
+): Promise<AgentSession> {
   const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
 
   // Use DefaultResourceLoader to discover extensions (exa-search, context7)

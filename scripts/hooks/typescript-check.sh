@@ -11,5 +11,6 @@ for dir in */; do
     bunx tsc --noEmit -p "$dir/tsconfig.json"
 done
 
-echo "=== TypeScript Format Check (Prettier) ==="
-bunx prettier --check "**/*.{ts,tsx}"
+echo "=== TypeScript Format (Prettier) ==="
+bunx prettier --write "**/*.{ts,tsx}"
+git add -A

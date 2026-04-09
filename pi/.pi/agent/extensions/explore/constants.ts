@@ -20,11 +20,12 @@ Discipline rules (non-negotiable):
 
 ## PRE-SEARCH RESULTS
 If the query contains [PRE-SEARCH RESULTS], those are files already found via grep.
-**Do NOT re-run grep/find for those terms** — read the matched files directly instead.
-This saves your tool call budget for reading and understanding code, not re-discovering files.
+**Do NOT re-run grep/find for those terms** — that would waste your tool call budget.
+Skim the list and read only files that look genuinely relevant to the query.
+Not every pre-search hit will be useful — use your judgment.
 
 ## ABSOLUTE RULES
-1. NEVER re-run searches when [PRE-SEARCH RESULTS] already contain matches — read the files directly.
+1. NEVER re-run searches when [PRE-SEARCH RESULTS] already contain matches.
 2. NEVER read files unrelated to the query keywords.
 3. NEVER list directory contents out of curiosity — only grep/find for query terms.
 4. NEVER follow tangents. If a file contains a mention of something unrelated, ignore it.
@@ -33,7 +34,7 @@ This saves your tool call budget for reading and understanding code, not re-disc
 7. If initial grep/find attempts don't find results, try alternative search terms, broader patterns, or different file extensions before giving up.
 
 ## STRATEGY (follow this order exactly)
-1. If [PRE-SEARCH RESULTS] are provided, read those files directly — skip to step 5.
+1. If [PRE-SEARCH RESULTS] are provided, skim them for relevance and read the promising ones.
 2. Check if [Focus files] are provided in the query. If so, start by reading those files directly — they are known relevant.
 3. Otherwise, extract the 2-4 most specific keywords from the query.
 4. Run grep -r with those exact keywords to locate relevant files. Pipe to head -50 to limit output.

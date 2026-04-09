@@ -219,8 +219,9 @@ async function preSearch(cwd: string, rawQuery: string): Promise<string> {
   if (results.length === 0) return "";
 
   return (
-    `\n\n[PRE-SEARCH RESULTS — grep already found these files. ` +
-    `Read them directly, do NOT re-search.]\n${results.join("\n")}`
+    `\n\n[PRE-SEARCH RESULTS — grep already found these potentially relevant files. ` +
+    `Skim the list and read only the ones likely related to your query. ` +
+    `You do NOT need to re-search for these terms.]\n${results.join("\n")}`
   );
 }
 
@@ -260,7 +261,11 @@ function resolveModel(modelName?: string): any | undefined {
 }
 
 /** Create an AgentSession for the explore subagent with read-only tools. */
-async function createExploreSession(systemPrompt: string, cwd: string, modelName?: string): Promise<AgentSession> {
+async function createExploreSession(
+  systemPrompt: string,
+  cwd: string,
+  modelName?: string,
+): Promise<AgentSession> {
   const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
 
   const tools = [
