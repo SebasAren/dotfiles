@@ -1,3 +1,3 @@
 #!/bin/bash
-export CHEAP_MODEL=mistral/mistral-small-latest
-export FALLBACK_MODEL=xiaomi-mimo/mimo-v2-flash
+export FALLBACK_MODEL="minimax/MiniMax-M2.7"
+export CHEAP_MODEL=xiaomi-mimo/mimo-v2-flash
