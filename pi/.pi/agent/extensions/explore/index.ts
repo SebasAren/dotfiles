@@ -136,8 +136,8 @@ function extractSearchTerms(query: string): string[] {
   return result.slice(0, 5);
 }
 
-/** File extensions to include in pre-search grep. */
-const GREP_INCLUDES = [
+/** Glob patterns for pre-search (ripgrep -g flags). */
+const RG_GLOBS = [
   "*.ts",
   "*.tsx",
   "*.js",
@@ -156,7 +156,7 @@ const GREP_INCLUDES = [
   "*.h",
   "*.hpp",
 ]
-  .map((e) => `--include=${e}`)
+  .map((e) => `-g '${e}'`)
   .join(" ");
 
 /** Run grep before spawning subagent to give it a head start on file discovery. */
@@ -204,7 +204,7 @@ async function preSearch(cwd: string, rawQuery: string): Promise<string> {
     const escaped = term.replace(/'/g, "'\\''");
     const out = await runCmd("sh", [
       "-c",
-      `grep -rl ${GREP_INCLUDES} '${escaped}' . 2>/dev/null | head -20`,
+      `rg -l ${RG_GLOBS} '${escaped}' . 2>/dev/null | head -20`,
     ]);
     if (!out.trim()) return null;
     const files = out
