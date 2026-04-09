@@ -43,6 +43,12 @@ const LibrarianParams = Type.Object({
       description: "What to focus on: docs, examples, api, best-practices, or changelog",
     }),
   ),
+  maxToolCalls: Type.Optional(
+    Type.Number({ description: "Override the tool call limit (default: 60)" }),
+  ),
+  timeoutMs: Type.Optional(
+    Type.Number({ description: "Override timeout in ms (default: 240000)" }),
+  ),
 });
 
 // ── Extension ──────────────────────────────────────────────────────────────
@@ -82,12 +88,15 @@ export default function (pi: ExtensionAPI) {
         query += ` Focus on ${params.focus}.`;
       }
 
+      const maxToolCalls = params.maxToolCalls ?? 60;
+      const timeoutMs = params.timeoutMs ?? 240_000;
+
       const result = await runSubagent({
         cwd: realCwd,
         query,
         systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
         baseFlags: LIBRARIAN_BASE_FLAGS,
-        timeoutMs: 180_000, // 3 minutes — documentation research can take longer
+        timeoutMs,
         signal,
         onUpdate: onUpdate
           ? (text) => {
@@ -98,7 +107,7 @@ export default function (pi: ExtensionAPI) {
             }
           : undefined,
         loopDetection: true,
-        maxToolCalls: 40,
+        maxToolCalls,
         tmux: { label: "librarian" },
         tmpPrefix: "pi-librarian-",
         debugLabel: "librarian",

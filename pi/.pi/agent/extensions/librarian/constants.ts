@@ -19,11 +19,11 @@ Research strategy:
 1. If the query mentions a specific library, start with context7_search to find it
 2. Use context7_docs to fetch relevant documentation snippets
 3. Use web_search for supplementary information: tutorials, blog posts, changelogs, comparisons
-4. After web_search, use web_fetch on the most relevant result URLs to get full page content
+4. After web_search, use web_fetch on the most relevant 2-3 result URLs to get full page content
 5. Use web_fetch directly when you have a known documentation URL to read
 6. If initial results are insufficient, refine your search and try again
 7. Cross-reference multiple sources when possible
-8. Maximum 30 tool calls total. Stop and summarize once you have enough information.
+8. Budget your tool calls wisely — prefer quality (deep fetches) over quantity (many shallow searches)
 
 Output format:
 

@@ -9,7 +9,7 @@ import type { ExploreDetails } from "./index";
 
 /** Render the explore tool call with model tag and query preview. */
 export function renderCall(
-  args: { query: string; directory?: string },
+  args: { query: string; directory?: string; files?: string[]; thoroughness?: string },
   theme: any,
   context: { lastComponent?: Component },
   model?: string,
@@ -18,6 +18,12 @@ export function renderCall(
   const extras: string[] = [];
   if (args.directory) {
     extras.push(theme.fg("muted", `in ${args.directory}`));
+  }
+  if (args.files && args.files.length > 0) {
+    extras.push(theme.fg("accent", `deepen: ${args.files.length} files`));
+  }
+  if (args.thoroughness && args.thoroughness !== "medium") {
+    extras.push(theme.fg("muted", args.thoroughness));
   }
 
   return renderSubagentCall({

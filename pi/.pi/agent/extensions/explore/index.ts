@@ -35,7 +35,23 @@ const ExploreParams = Type.Object({
     Type.String({ description: "Directory to explore (defaults to current working directory)" }),
   ),
   thoroughness: Type.Optional(
-    Type.String({ description: "How thorough to be: quick, medium (default), or thorough" }),
+    Type.String({
+      description: "How thorough to be: quick (20 calls), medium (40, default), thorough (80)",
+    }),
+  ),
+  maxToolCalls: Type.Optional(
+    Type.Number({ description: "Override the tool call limit (default: based on thoroughness)" }),
+  ),
+  timeoutMs: Type.Optional(
+    Type.Number({
+      description: "Override timeout in ms (default: 180000 for medium, 300000 for thorough)",
+    }),
+  ),
+  files: Type.Optional(
+    Type.Array(Type.String(), {
+      description:
+        "Known file paths to focus on (for deepening after a scout pass). The subagent will prioritize these files.",
+    }),
   ),
 });
 
@@ -60,6 +76,8 @@ export default function (pi: ExtensionAPI) {
       "Call explore up to 4 times in parallel when investigating multiple independent aspects of the codebase (e.g. different modules, different concerns).",
       "Write specific, keyword-rich queries. Bad: 'explore the codebase'. Good: 'tmux wt worktrunk integration pane_current_path'.",
       "Provide a directory hint when you know where to look. Use the directory parameter to scope the search (e.g. 'tmux/.config/tmux/scripts/').",
+      "For large codebases, use a scout-then-deepen pattern: first explore with quick thoroughness to find relevant files, then call explore again with 'files' set to the discovered paths and thoroughness=thorough.",
+      "Use maxToolCalls to give the subagent more budget when thoroughness=thorough isn't enough (e.g. maxToolCalls=120).",
     ],
     parameters: ExploreParams,
 
@@ -67,13 +85,22 @@ export default function (pi: ExtensionAPI) {
       const realCwd = resolveRealCwd(ctx.cwd);
       const cwd = params.directory ? path.resolve(realCwd, params.directory) : realCwd;
 
-      // Build query with thoroughness hint
+      // Resolve thoroughness → budget
       const thoroughness = params.thoroughness || "medium";
-      const toolBudget = thoroughness === "quick" ? 12 : thoroughness === "thorough" ? 40 : 25;
+      const defaultMaxCalls = thoroughness === "quick" ? 20 : thoroughness === "thorough" ? 80 : 40;
+      const maxToolCalls = params.maxToolCalls ?? defaultMaxCalls;
+      const defaultTimeout = thoroughness === "thorough" ? 300_000 : 180_000;
+      const timeoutMs = params.timeoutMs ?? defaultTimeout;
+
+      // Build query with constraints and optional focus files
       let query = params.query;
-      query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${toolBudget} tool calls]`;
+      query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${maxToolCalls} tool calls]`;
       if (params.directory) {
         query += `\n[Scope: only look in ${params.directory}]`;
+      }
+      if (params.files && params.files.length > 0) {
+        query += `\n[Focus files: start by reading these known-relevant files, then explore outward if needed]`;
+        query += `\n${params.files.map((f) => `- ${f}`).join("\n")}`;
       }
 
       const result = await runSubagent({
@@ -81,6 +108,7 @@ export default function (pi: ExtensionAPI) {
         query,
         systemPrompt: EXPLORE_SYSTEM_PROMPT,
         baseFlags: EXPLORE_BASE_FLAGS,
+        timeoutMs,
         signal,
         onUpdate: onUpdate
           ? (text) => {
@@ -91,7 +119,7 @@ export default function (pi: ExtensionAPI) {
             }
           : undefined,
         loopDetection: true,
-        maxToolCalls: 60,
+        maxToolCalls,
         tmux: { label: "explore" },
         tmpPrefix: "pi-explore-",
       });
