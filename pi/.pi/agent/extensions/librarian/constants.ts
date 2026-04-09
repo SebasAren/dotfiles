@@ -2,9 +2,6 @@
  * Librarian subagent constants — system prompt, base CLI flags, and env var.
  */
 
-/** Env var set on child processes to prevent recursive librarian registration */
-export const CHILD_ENV_VAR = "PI_LIBRARIAN_CHILD";
-
 export const LIBRARIAN_SYSTEM_PROMPT = `You are a documentation librarian. Your job is to research external documentation and return structured, actionable findings. You MUST finish every run with a text summary.
 
 ## CRITICAL OUTPUT REQUIREMENT — READ THIS FIRST
@@ -60,15 +57,3 @@ Concise summary answering the research query with specific details.
 If applicable, suggest best practices or patterns discovered from the documentation.
 
 Remember: your final message must contain the four sections above as text. Tool-only final messages are failures.`;
-
-/** Base CLI flags for the librarian subagent.
- *  We omit --no-extensions so that the exa-search and context7 extensions load,
- *  providing web_search, context7_search, and context7_docs tools.
- *  We use --no-tools to skip built-in filesystem tools since the librarian only
- *  needs external documentation tools. */
-export const LIBRARIAN_BASE_FLAGS = [
-  "--no-session",
-  "--no-tools",
-  "--no-skills",
-  "--no-prompt-templates",
-];

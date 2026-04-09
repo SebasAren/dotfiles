@@ -9,7 +9,7 @@ export interface UsageStats {
   turns: number;
 }
 
-/** Result from a subagent subprocess (explore, librarian, wt-worktree). */
+/** Result from a subagent run (explore, librarian). */
 export interface SubagentResult {
   exitCode: number;
   output: string;
@@ -33,12 +33,4 @@ export function extendUsage(base: UsageStats, extra: UsageStats): UsageStats {
     contextTokens: base.contextTokens + extra.contextTokens,
     turns: base.turns + extra.turns,
   };
-}
-
-/** Options for spawning a subprocess. */
-export interface SpawnOptions {
-  /** Working directory for the subprocess */
-  cwd: string;
-  /** Command-line arguments */
-  args: string[];
 }

@@ -49,15 +49,16 @@ describe("librarian extension", () => {
     expect(registeredCommands[0].command.description).toBeDefined();
   });
 
-  it("skips registration in child processes", () => {
-    process.env.PI_LIBRARIAN_CHILD = "1";
+  it("no longer needs child process guard (in-process SDK)", () => {
+    // Previously: the librarian subprocess would skip registration via PI_LIBRARIAN_CHILD env var.
+    // Now: the librarian runs in-process via the pi SDK, so no guard is needed.
+    // The extension always registers when loaded.
     const mockApi = {
       registerTool: mock(() => {}),
       registerCommand: mock(() => {}),
     };
     librarianExtension(mockApi as any);
-    expect(mockApi.registerTool).not.toHaveBeenCalled();
-    delete process.env.PI_LIBRARIAN_CHILD;
+    expect(mockApi.registerTool).toHaveBeenCalled();
   });
 
   it("declares @pi-ext/shared as a workspace dependency", async () => {

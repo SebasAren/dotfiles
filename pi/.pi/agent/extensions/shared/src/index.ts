@@ -16,5 +16,4 @@ export { runSubagent } from "./subagent";
 export type { RunSubagentOptions } from "./subagent";
 export { splitIntoSentences, formatAsBulletList } from "./sentences";
 export type { SentenceFragment } from "./sentences";
-export { getPiInvocation } from "./subprocess";
-export type { SubagentResult, UsageStats, SpawnOptions } from "./types";
+export type { SubagentResult, UsageStats } from "./types";

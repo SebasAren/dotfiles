@@ -1,5 +1,5 @@
 /**
- * Get the primary model to use for subagent subprocesses.
+ * Get the primary model to use for subagent sessions.
  * Reads from CHEAP_MODEL environment variable.
  * Returns undefined if not set (pi will use its default model).
  */

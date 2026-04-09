@@ -1,17 +1,95 @@
 /**
  * Librarian Subagent — delegate documentation research to a separate model
  *
- * Spawns a `pi` subprocess with web_search (Exa) and context7 tools to research
- * external documentation. The model is configurable via CHEAP_MODEL env var.
+ * Creates an in-process AgentSession with web_search (Exa) and context7 tools
+ * to research external documentation. The model is configurable via CHEAP_MODEL env var.
  */
 
 import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import {
+  type AgentSession,
+  AuthStorage,
+  createAgentSession,
+  DefaultResourceLoader,
+  ModelRegistry,
+  SessionManager,
+  SettingsManager,
+} from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
-import { LIBRARIAN_SYSTEM_PROMPT, LIBRARIAN_BASE_FLAGS, CHILD_ENV_VAR } from "./constants";
+import { LIBRARIAN_SYSTEM_PROMPT } from "./constants";
 import { renderCall, renderResult } from "./render";
+
+// ── Session factory ────────────────────────────────────────────────────────
+
+/** Shared auth/model infrastructure (created once, reused across subagent runs). */
+let authStorage: AuthStorage | undefined;
+let modelRegistry: ModelRegistry | undefined;
+let settingsManager: SettingsManager | undefined;
+
+function getSharedInfrastructure() {
+  if (!authStorage) authStorage = AuthStorage.create();
+  if (!modelRegistry) modelRegistry = ModelRegistry.create(authStorage);
+  if (!settingsManager)
+    settingsManager = SettingsManager.inMemory({ compaction: { enabled: false } });
+  return { authStorage, modelRegistry, settingsManager };
+}
+
+/** Resolve CHEAP_MODEL env var to a Model object, or undefined. */
+function resolveModel(): any | undefined {
+  const modelName = getModel();
+  if (!modelName) return undefined;
+
+  const { modelRegistry } = getSharedInfrastructure();
+
+  // Try "provider/model-id" format
+  if (modelName.includes("/")) {
+    const slashIdx = modelName.indexOf("/");
+    const provider = modelName.slice(0, slashIdx);
+    const modelId = modelName.slice(slashIdx + 1);
+    return modelRegistry.find(provider, modelId);
+  }
+
+  // Try matching against all available models by id
+  const all = modelRegistry.getAll();
+  return all.find((m) => m.id === modelName);
+}
+
+/** Create an AgentSession for the librarian subagent with web research tools. */
+async function createLibrarianSession(systemPrompt: string, cwd: string): Promise<AgentSession> {
+  const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
+
+  // Use DefaultResourceLoader to discover extensions (exa-search, context7)
+  // but skip built-in tools, skills, and prompts — librarian only needs
+  // web_search, web_fetch, context7_search, context7_docs from extensions.
+  const loader = new DefaultResourceLoader({
+    cwd,
+    systemPromptOverride: () => systemPrompt,
+    // No additionalExtensionPaths — let DefaultResourceLoader discover
+    // extensions from ~/.pi/agent/extensions/ and .pi/extensions/ normally
+  });
+  await loader.reload();
+
+  const model = resolveModel();
+
+  const opts: any = {
+    cwd,
+    // No tools — we rely on extensions to provide web_search, context7, etc.
+    // The librarian doesn't need filesystem tools.
+    authStorage,
+    modelRegistry,
+    sessionManager: SessionManager.inMemory(),
+    settingsManager,
+    resourceLoader: loader,
+  };
+
+  if (model) opts.model = model;
+
+  const { session } = await createAgentSession(opts);
+  return session;
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -54,11 +132,6 @@ const LibrarianParams = Type.Object({
 // ── Extension ──────────────────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
-  // Prevent recursive registration in child subagent processes
-  if (process.env[CHILD_ENV_VAR] === "1") {
-    return;
-  }
-
   pi.registerTool({
     name: "librarian",
     label: "Librarian",
@@ -100,7 +173,7 @@ export default function (pi: ExtensionAPI) {
         cwd: realCwd,
         query,
         systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
-        baseFlags: LIBRARIAN_BASE_FLAGS,
+        createSession: createLibrarianSession,
         timeoutMs,
         signal,
         onUpdate: onUpdate
@@ -117,9 +190,7 @@ export default function (pi: ExtensionAPI) {
           : undefined,
         loopDetection: true,
         maxToolCalls,
-        tmpPrefix: "pi-librarian-",
         debugLabel: "librarian",
-        env: { [CHILD_ENV_VAR]: "1" },
       });
 
       const isError = result.exitCode !== 0 || !!result.errorMessage;

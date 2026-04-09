@@ -2,9 +2,6 @@
  * Explore subagent constants — system prompt, base CLI flags, and env var.
  */
 
-/** Env var set on child processes to identify explore subagent */
-export const CHILD_ENV_VAR = "PI_EXPLORE_CHILD";
-
 export const EXPLORE_SYSTEM_PROMPT = `You are a codebase explorer. You MUST stay strictly on-topic AND you MUST finish with a text summary.
 
 ## CRITICAL OUTPUT REQUIREMENT — READ THIS FIRST
@@ -65,13 +62,3 @@ Only the code snippets directly relevant to the query.
 2-5 sentence answer to the query. Nothing else.
 
 Remember: your final message must contain the three sections above as text. Tool-only final messages are failures.`;
-
-/** Base CLI flags for the explore subagent */
-export const EXPLORE_BASE_FLAGS = [
-  "--no-session",
-  "--no-extensions",
-  "--no-skills",
-  "--no-prompt-templates",
-  "--tools",
-  "read,grep,find,ls,bash",
-];

@@ -23,7 +23,8 @@ describe("index exports", () => {
   });
 
   it("exports getPiInvocation", () => {
-    expect(typeof shared.getPiInvocation).toBe("function");
+    // Removed: subagent now runs in-process, no subprocess spawning
+    // getPiInvocation is no longer exported
   });
 
   it("exports splitIntoSentences", () => {
@@ -36,7 +37,7 @@ describe("index exports", () => {
 });
 
 // Type-only exports
-import type { SubagentResult, UsageStats, SpawnOptions, SentenceFragment } from "./index";
+import type { SubagentResult, UsageStats, SentenceFragment } from "./index";
 
 describe("type exports", () => {
   it("exports SubagentResult type", () => {
@@ -72,11 +73,7 @@ describe("type exports", () => {
   });
 
   it("exports SpawnOptions type", () => {
-    const options: SpawnOptions = {
-      cwd: "/tmp",
-      args: [],
-    };
-    expect(options.cwd).toBe("/tmp");
+    // Removed: SpawnOptions no longer exported (no subprocess spawning)
   });
 
   it("exports SentenceFragment type", () => {

@@ -1,18 +1,32 @@
 /**
  * Explore Subagent — delegate codebase exploration to a separate model
  *
- * Spawns a `pi` subprocess with read-only tools to investigate the codebase.
- * The model is configurable via CHEAP_MODEL env var.
+ * Creates an in-process AgentSession with read-only tools to investigate
+ * the codebase. The model is configurable via CHEAP_MODEL env var.
  */
 
 import { spawn } from "node:child_process";
 import * as path from "node:path";
-import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import {
+  type AgentSession,
+  type ExtensionAPI,
+  AuthStorage,
+  createAgentSession,
+  createBashTool,
+  createFindTool,
+  createGrepTool,
+  createLsTool,
+  createReadTool,
+  DefaultResourceLoader,
+  ModelRegistry,
+  SessionManager,
+  SettingsManager,
+} from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
-import { EXPLORE_SYSTEM_PROMPT, EXPLORE_BASE_FLAGS } from "./constants";
+import { EXPLORE_SYSTEM_PROMPT } from "./constants";
 import { renderCall, renderResult } from "./render";
 
 // ── Pre-search ─────────────────────────────────────────────────────────────
@@ -195,6 +209,79 @@ async function preSearch(cwd: string, rawQuery: string): Promise<string> {
   );
 }
 
+// ── Session factory ────────────────────────────────────────────────────────
+
+/** Shared auth/model infrastructure (created once, reused across subagent runs). */
+let authStorage: AuthStorage | undefined;
+let modelRegistry: ModelRegistry | undefined;
+let settingsManager: SettingsManager | undefined;
+
+function getSharedInfrastructure() {
+  if (!authStorage) authStorage = AuthStorage.create();
+  if (!modelRegistry) modelRegistry = ModelRegistry.create(authStorage);
+  if (!settingsManager)
+    settingsManager = SettingsManager.inMemory({ compaction: { enabled: false } });
+  return { authStorage, modelRegistry, settingsManager };
+}
+
+/** Resolve CHEAP_MODEL env var to a Model object, or undefined. */
+function resolveModel(): any | undefined {
+  const modelName = getModel();
+  if (!modelName) return undefined;
+
+  const { modelRegistry } = getSharedInfrastructure();
+
+  // Try "provider/model-id" format
+  if (modelName.includes("/")) {
+    const slashIdx = modelName.indexOf("/");
+    const provider = modelName.slice(0, slashIdx);
+    const modelId = modelName.slice(slashIdx + 1);
+    return modelRegistry.find(provider, modelId);
+  }
+
+  // Try matching against all available models by id
+  const all = modelRegistry.getAll();
+  return all.find((m) => m.id === modelName);
+}
+
+/** Create an AgentSession for the explore subagent with read-only tools. */
+async function createExploreSession(systemPrompt: string, cwd: string): Promise<AgentSession> {
+  const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
+
+  const tools = [
+    createReadTool(cwd),
+    createGrepTool(cwd),
+    createFindTool(cwd),
+    createLsTool(cwd),
+    createBashTool(cwd),
+  ];
+
+  const loader = new DefaultResourceLoader({
+    cwd,
+    systemPromptOverride: () => systemPrompt,
+    // Skip extensions, skills, prompts — not needed for explore
+    additionalExtensionPaths: [],
+  });
+  await loader.reload();
+
+  const model = resolveModel();
+
+  const opts: any = {
+    cwd,
+    tools,
+    authStorage,
+    modelRegistry,
+    sessionManager: SessionManager.inMemory(),
+    settingsManager,
+    resourceLoader: loader,
+  };
+
+  if (model) opts.model = model;
+
+  const { session } = await createAgentSession(opts);
+  return session;
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface ExploreDetails {
@@ -302,7 +389,7 @@ export default function (pi: ExtensionAPI) {
         cwd,
         query,
         systemPrompt: EXPLORE_SYSTEM_PROMPT,
-        baseFlags: EXPLORE_BASE_FLAGS,
+        createSession: createExploreSession,
         timeoutMs,
         signal,
         onUpdate: onUpdate
@@ -315,7 +402,6 @@ export default function (pi: ExtensionAPI) {
           : undefined,
         loopDetection: true,
         maxToolCalls,
-        tmpPrefix: "pi-explore-",
       });
 
       const isError = result.exitCode !== 0 || !!result.errorMessage;

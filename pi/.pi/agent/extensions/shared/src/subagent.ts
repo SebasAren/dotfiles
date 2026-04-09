@@ -1,21 +1,20 @@
 /**
- * Generic subagent subprocess runner.
+ * In-process subagent runner using the pi SDK.
  *
- * Manages the full lifecycle of spawning a pi subprocess for subagent tasks:
- * - Temp dir creation with system prompt file
- * - Process spawning via RPC mode (JSON protocol over stdin/stdout)
+ * Creates an AgentSession with restricted tools, a custom system prompt,
+ * and a cheap model — then collects output via event subscriptions.
+ * Replaces the previous subprocess-based approach (spawning `pi --mode rpc`).
+ *
+ * Manages:
+ * - Tool restriction (via caller-provided session factory)
  * - Usage tracking
- * - Loop detection and tool call limits (configurable)
- * - Budget steering: sends mid-conversation reminders to the LLM
+ * - Loop detection and tool call limits
+ * - Budget steering via session.steer()
  * - Timeout and abort signal handling
- * - Cleanup
+ * - Fallback model retry
  */
 
-import { spawn } from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
-import { getPiInvocation } from "./subprocess.js";
+import type { AgentSession, AgentSessionEvent } from "@mariozechner/pi-coding-agent";
 import { argsSignature, detectLoop } from "./loop-detection.js";
 import { getModel, getFallbackModel, shouldUseFallback } from "./model.js";
 import type { SubagentResult } from "./types.js";
@@ -24,11 +23,9 @@ import type { SubagentResult } from "./types.js";
 const RECENT_CALLS_WINDOW = 5;
 
 /**
- * Grace buffer added to maxToolCalls before hard-killing.
- * When the subagent hits maxToolCalls, we DON'T kill immediately — we give it
- * this many extra calls to either produce a text summary or get killed.
- * This prevents the common failure mode where the subagent is killed
- * mid-investigation right before it was about to write its summary.
+ * Grace buffer added to maxToolCalls before hard-abort.
+ * When the subagent hits maxToolCalls, we DON'T abort immediately — we give it
+ * this many extra calls to either produce a text summary or get aborted.
  */
 const TOOL_CALL_GRACE_BUFFER = 5;
 
@@ -45,52 +42,47 @@ function formatRecentCall(toolName: string, args: Record<string, unknown> | unde
 
 /** Options for {@link runSubagent}. */
 export interface RunSubagentOptions {
-  /** Working directory for the subprocess */
+  /** Working directory for the subagent */
   cwd: string;
   /** The prompt/query to send to the subagent */
   query: string;
   /** System prompt content */
   systemPrompt: string;
   /**
-   * Base CLI flags for the pi invocation.
-   * The runner automatically adds: `--mode rpc`, `--append-system-prompt`,
-   * optional `--model`, and sends the query via stdin prompt command.
+   * Factory that creates an AgentSession for this subagent run.
+   * The caller provides this because different subagents need different
+   * tools and resource loader configurations.
    *
-   * Example: `["--no-session", "--no-extensions", "--no-skills",
-   * "--no-prompt-templates", "--tools", "read,grep,find,ls,bash"]`
+   * @param systemPrompt - The system prompt to inject
+   * @param cwd - Working directory
    */
-  baseFlags: string[];
+  createSession: (systemPrompt: string, cwd: string) => Promise<AgentSession>;
   /** Timeout in milliseconds (default: 120_000) */
   timeoutMs?: number;
   /** Abort signal */
   signal?: AbortSignal;
   /**
    * Callback for streaming updates. Fires whenever the subagent emits new
-   * assistant text or starts a new tool call, so the caller can surface live
-   * activity (e.g. a scrolling tool-call ticker) in the main agent UI.
+   * assistant text or starts a new tool call.
    */
   onUpdate?: (update: { text: string; recentCalls?: string[] }) => void;
   /** Enable loop detection for tool calls (default: false) */
   loopDetection?: boolean;
   /** Maximum number of tool calls before stopping (default: Infinity) */
   maxToolCalls?: number;
-  /** Prefix for temp directory name (default: "pi-subagent-") */
-  tmpPrefix?: string;
   /** Debug label for console.log messages (omit to suppress logs) */
   debugLabel?: string;
   /** Override the default subagent model (falls back to CHEAP_MODEL env var) */
   model?: string;
   /** Override the fallback model (falls back to FALLBACK_MODEL env var) */
   fallbackModel?: string;
-  /** Extra environment variables to set on the child process */
-  env?: Record<string, string>;
 }
 
 /** Default timeout: 2 minutes */
 const DEFAULT_TIMEOUT_MS = 120_000;
 
 /**
- * Spawn a pi subprocess as a subagent and collect its output.
+ * Run a subagent in-process and collect its output.
  *
  * Handles system prompt injection, loop detection, tool call limits,
  * timeout, and abort signals. Streams a rolling window of recent tool
@@ -102,7 +94,7 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
   const fallbackModel = options.fallbackModel || getFallbackModel();
 
   // Run with primary model first
-  const result = await runSubagentOnce(options, model);
+  const result = await runSubagentOnce(options);
 
   // If primary model failed with a transient error and fallback is available, retry
   if (
@@ -118,9 +110,8 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
     if (options.onUpdate)
       options.onUpdate({ text: `[Primary model unavailable, retrying with ${fallbackModel}...]` });
 
-    const fallbackResult = await runSubagentOnce(options, fallbackModel);
+    const fallbackResult = await runSubagentOnce(options);
 
-    // Mark that fallback was used
     if (!fallbackResult.errorMessage) {
       fallbackResult.model = fallbackResult.model || fallbackModel;
     }
@@ -131,37 +122,28 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
 }
 
 /**
- * Single attempt at running a subagent with a specific model.
- * Used internally by runSubagent for both primary and fallback attempts.
+ * Single attempt at running a subagent.
  */
-async function runSubagentOnce(
-  options: RunSubagentOptions,
-  model: string | undefined,
-): Promise<SubagentResult> {
+async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentResult> {
   const {
     cwd,
     query,
     systemPrompt,
-    baseFlags,
+    createSession,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     signal,
     onUpdate,
     loopDetection = false,
     maxToolCalls = Infinity,
-    tmpPrefix = "pi-subagent-",
     debugLabel,
   } = options;
 
-  let tmpDir: string | null = null;
-  let tmpPromptPath: string | null = null;
   const recentCalls: string[] = [];
-  // Full, unbounded log of every tool call the subagent made. Used to
-  // synthesize a fallback summary when the subagent exits without producing
-  // any assistant text (e.g. some models keep tool-calling then hit end_turn
-  // without writing a summary).
   const allCalls: string[] = [];
-  /** Tracks the last loop-warning signature to avoid duplicate steers. */
   let lastWarnSignature: string | null = null;
+  let stoppedEarly = false;
+  let timedOut = false;
+  let aborted = false;
 
   const result: SubagentResult = {
     exitCode: 0,
@@ -189,235 +171,165 @@ async function runSubagentOnce(
     if (debugLabel) console.log(`[${debugLabel}] ${msg}`);
   };
 
+  const session = await createSession(systemPrompt, cwd);
+
   try {
-    // Write system prompt to temp file
-    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), tmpPrefix));
-    tmpPromptPath = path.join(tmpDir, "system-prompt.md");
-    await fs.promises.writeFile(tmpPromptPath, systemPrompt, { encoding: "utf-8", mode: 0o600 });
-
-    // Build CLI args: base flags + system prompt + optional model
-    // Query is sent via RPC stdin prompt command, not as a positional arg
-    const args = ["--mode", "rpc", ...baseFlags, "--append-system-prompt", tmpPromptPath];
-    if (model) args.push("--model", model);
-
-    let wasAborted = false;
-    let stoppedEarly = false;
     const toolHistory: Array<{ name: string; argsSignature: string }> = [];
 
-    const exitCode = await new Promise<number>((resolve) => {
-      let resolved = false;
-      const resolveOnce = (code: number) => {
-        if (!resolved) {
-          resolved = true;
-          resolve(code);
-        }
-      };
-
-      const invocation = getPiInvocation(args);
-      log(`spawning: ${invocation.command} ${invocation.args.join(" ")}`);
-      log(`cwd: ${cwd}`);
-
-      const proc = spawn(invocation.command, invocation.args, {
-        cwd,
-        shell: false,
-        stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env, PI_REAL_CWD: cwd, ...options.env },
-      });
-
-      // Send initial prompt via RPC stdin (keep stdin open for steering/abort)
-      proc.stdin.write(JSON.stringify({ type: "prompt", message: query }) + "\n");
-
-      // Helper to send a steering message injected between LLM turns
-      const sendSteer = (message: string) => {
-        try {
-          proc.stdin.write(JSON.stringify({ type: "steer", message }) + "\n");
-          log(`steered: ${message.slice(0, 100)}`);
-        } catch {
-          /* stdin may already be closed */
-        }
-      };
-
-      // Helper to send RPC abort command before killing
-      const sendAbort = () => {
-        try {
-          proc.stdin.write(JSON.stringify({ type: "abort" }) + "\n");
-        } catch {
-          /* ignore */
-        }
-      };
-
-      // Helper to kill the subprocess with escalation
-      const killProc = (reason: string) => {
-        log(`killing: ${reason}`);
-        proc.kill("SIGTERM");
-        setTimeout(() => {
-          if (!proc.killed) proc.kill("SIGKILL");
-        }, 5000);
-      };
-
-      // Timeout: kill subprocess if it takes too long
-      const timeout = setTimeout(() => {
-        killProc(`timeout after ${timeoutMs}ms`);
-      }, timeoutMs);
-
-      let buffer = "";
-
-      const processLine = (line: string) => {
-        if (!line.trim()) return;
-        let event: any;
-        try {
-          event = JSON.parse(line);
-        } catch {
-          return;
+    // Set up event subscription
+    const unsubscribe = session.subscribe((event: AgentSessionEvent) => {
+      // Track tool calls for loop detection, limits, and live activity display
+      if (event.type === "tool_execution_start") {
+        if (loopDetection || maxToolCalls < Infinity) {
+          toolHistory.push({
+            name: event.toolName,
+            argsSignature: argsSignature(event.args || {}),
+          });
         }
 
-        // Track tool calls for loop detection, limits, and live activity display
-        if (event.type === "tool_execution_start" && event.toolName) {
-          if (loopDetection || maxToolCalls < Infinity) {
-            toolHistory.push({
-              name: event.toolName,
-              argsSignature: argsSignature(event.args || {}),
-            });
-          }
+        const callLine = formatRecentCall(event.toolName, event.args);
+        allCalls.push(callLine);
+        recentCalls.push(callLine);
+        if (recentCalls.length > RECENT_CALLS_WINDOW) recentCalls.shift();
+        emitUpdate();
 
-          // Push into the rolling activity window shown in the main agent UI
-          // and the full log used for the "no text output" fallback.
-          const callLine = formatRecentCall(event.toolName, event.args);
-          allCalls.push(callLine);
-          recentCalls.push(callLine);
-          if (recentCalls.length > RECENT_CALLS_WINDOW) recentCalls.shift();
+        // Budget limit with grace period
+        if (toolHistory.length > maxToolCalls + TOOL_CALL_GRACE_BUFFER) {
+          stoppedEarly = true;
+          result.output += `\n\n[Stopped: exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls (budget was ${maxToolCalls})]`;
           emitUpdate();
+          void session.abort();
+          return;
+        } else if (toolHistory.length > maxToolCalls && !stoppedEarly) {
+          stoppedEarly = true;
+          result.output += `\n\n[Budget exhausted (${maxToolCalls} calls). Writing summary with remaining turns...]`;
+          emitUpdate();
+          void session.steer(
+            `[BUDGET EXHAUSTED] You have used ${maxToolCalls} tool calls. ` +
+              `Stop calling tools NOW and write your summary with ## Files Retrieved, ## Key Code, ## Summary sections. ` +
+              `You have a few remaining turns to produce output before being terminated.`,
+          );
+        }
 
-          // Budget limit with grace period: warn at limit, kill at limit+grace
-          // This gives the subagent a window to write its summary instead of
-          // being killed mid-investigation.
-          if (toolHistory.length > maxToolCalls + TOOL_CALL_GRACE_BUFFER) {
-            stoppedEarly = true;
-            result.output += `\n\n[Stopped: exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls (budget was ${maxToolCalls})]`;
-            emitUpdate();
-            sendAbort();
-            killProc(`exceeded ${maxToolCalls + TOOL_CALL_GRACE_BUFFER} tool calls`);
-            return;
-          } else if (toolHistory.length > maxToolCalls && !stoppedEarly) {
-            // First time hitting the budget: steer the LLM to wind down
-            stoppedEarly = true;
-            result.output += `\n\n[Budget exhausted (${maxToolCalls} calls). Writing summary with remaining turns...]`;
-            emitUpdate();
-            sendSteer(
-              `[BUDGET EXHAUSTED] You have used ${maxToolCalls} tool calls. ` +
-                `Stop calling tools NOW and write your summary with ## Files Retrieved, ## Key Code, ## Summary sections. ` +
-                `You have a few remaining turns to produce output before being terminated.`,
-            );
-          }
-
-          // Pattern-based loop detection
-          if (loopDetection) {
-            const loopResult = detectLoop(toolHistory);
-            if (loopResult) {
-              if (loopResult.severity === "warn") {
-                // Steer the model to change its approach — but only once per
-                // signature to avoid flooding the conversation with warnings.
-                const currentSig = toolHistory[toolHistory.length - 1].argsSignature;
-                if (currentSig !== lastWarnSignature) {
-                  lastWarnSignature = currentSig;
-                  sendSteer(
-                    `[LOOP WARNING] ${loopResult.message}. ` +
+        // Pattern-based loop detection
+        if (loopDetection) {
+          const loopResult = detectLoop(toolHistory);
+          if (loopResult) {
+            if (loopResult.severity === "warn") {
+              const currentSig = toolHistory[toolHistory.length - 1].argsSignature;
+              if (currentSig !== lastWarnSignature) {
+                lastWarnSignature = currentSig;
+                void session.steer(
+                  `[LOOP WARNING] ${loopResult.message}. ` +
                     `Do NOT repeat this exact call again. ` +
                     `Try a different file, different search terms, or write your summary.`,
-                  );
-                }
-              } else {
-                // Kill-level: terminate immediately
-                stoppedEarly = true;
-                result.output += `\n\n[Stopped: ${loopResult.message}]`;
-                emitUpdate();
-                sendAbort();
-                killProc(loopResult.message);
-                return;
+                );
               }
+            } else {
+              // Kill-level: abort immediately
+              stoppedEarly = true;
+              result.output += `\n\n[Stopped: ${loopResult.message}]`;
+              emitUpdate();
+              void session.abort();
+              return;
             }
           }
         }
+      }
 
-        // Handle agent_end: RPC mode signals completion
-        if (event.type === "agent_end") {
-          clearTimeout(timeout);
-          resolveOnce(0);
-          killProc("agent completed");
-          return;
-        }
+      // Handle turn_end — extract usage and model info
+      if (event.type === "turn_end") {
+        const msg = event.message;
+        if (msg.role === "assistant") {
+          result.usage.turns++;
+          if (!result.model && (msg as any).model) result.model = (msg as any).model;
+          if ((msg as any).errorMessage) result.errorMessage = (msg as any).errorMessage;
 
-        if (event.type === "message_end" && event.message) {
-          const msg = event.message;
-          if (msg.role === "assistant") {
-            result.usage.turns++;
-            const usage = msg.usage;
-            if (usage) {
-              result.usage.input += usage.input || 0;
-              result.usage.output += usage.output || 0;
-              result.usage.cacheRead += usage.cacheRead || 0;
-              result.usage.cacheWrite += usage.cacheWrite || 0;
-              result.usage.cost += usage.cost?.total || 0;
-              result.usage.contextTokens = usage.totalTokens || 0;
-            }
-            if (!result.model && msg.model) result.model = msg.model;
-            if (msg.errorMessage) result.errorMessage = msg.errorMessage;
+          // Extract usage from the message if available
+          const usage = (msg as any).usage;
+          if (usage) {
+            result.usage.input += usage.input || 0;
+            result.usage.output += usage.output || 0;
+            result.usage.cacheRead += usage.cacheRead || 0;
+            result.usage.cacheWrite += usage.cacheWrite || 0;
+            result.usage.cost += usage.cost?.total || 0;
+            result.usage.contextTokens = usage.totalTokens || 0;
+          }
 
-            // Extract text content
+          // Extract text content from the message
+          if (msg.content) {
             for (const part of msg.content) {
               if (part.type === "text") {
                 result.output += part.text;
               }
             }
-            emitUpdate();
           }
+          emitUpdate();
         }
-      };
-
-      proc.stdout.on("data", (data) => {
-        const chunk = data.toString();
-        buffer += chunk;
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) processLine(line);
-      });
-
-      proc.stderr.on("data", (data) => {
-        const str = data.toString();
-        result.stderr += str;
-        log(`stderr: ${str.slice(0, 200)}`);
-      });
-
-      proc.on("close", (code) => {
-        clearTimeout(timeout);
-        if (buffer.trim()) processLine(buffer);
-        log(`subprocess exited with code ${code}, output length: ${result.output.length}`);
-        resolveOnce(code ?? 0);
-      });
-
-      proc.on("error", () => {
-        resolveOnce(1);
-      });
-
-      if (signal) {
-        const abortKill = () => {
-          wasAborted = true;
-          killProc("aborted");
-        };
-        if (signal.aborted) abortKill();
-        else signal.addEventListener("abort", abortKill, { once: true });
       }
     });
 
-    result.exitCode = stoppedEarly ? 0 : exitCode;
-    if (wasAborted) throw new Error("Subagent was aborted");
+    // Timeout handling
+    let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+    const _timeoutPromise = new Promise<void>((resolve) => {
+      timeoutTimer = setTimeout(() => {
+        timedOut = true;
+        log(`timeout after ${timeoutMs}ms`);
+        void session.abort();
+        resolve();
+      }, timeoutMs);
+    });
 
-    // Fallback: some models (notably Mistral Small) keep tool-calling until
-    // end_turn without ever emitting an assistant text message, leaving
-    // result.output empty. Synthesize a tool-call log so the main agent can
-    // see what was explored instead of an opaque "(no output)". We keep the
-    // result marked as success so the synthesized sections render normally.
-    if (!result.output.trim() && exitCode === 0 && !result.errorMessage) {
+    // Abort signal handling
+    let abortHandler: (() => void) | undefined;
+    if (signal) {
+      if (signal.aborted) {
+        aborted = true;
+        void session.abort();
+      } else {
+        abortHandler = () => {
+          aborted = true;
+          void session.abort();
+        };
+        void signal.addEventListener("abort", abortHandler, { once: true });
+      }
+    }
+
+    log(`prompting subagent (cwd: ${cwd})`);
+
+    try {
+      // Send prompt and wait for agent to complete
+      await session.prompt(query);
+    } catch (e: any) {
+      // session.prompt() may throw if aborted — that's expected
+      if (!aborted && !timedOut && !stoppedEarly) {
+        log(`prompt error: ${e?.message || e}`);
+        result.stderr += e?.message || String(e);
+      }
+    }
+
+    // Clear timeout
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+
+    // Wait for the agent to finish processing (in case abort triggered async cleanup)
+    try {
+      await session.agent.waitForIdle();
+    } catch {
+      /* ignore */
+    }
+
+    // Cleanup listeners
+    unsubscribe();
+    if (abortHandler && signal) {
+      signal.removeEventListener("abort", abortHandler);
+    }
+
+    if (aborted) {
+      throw new Error("Subagent was aborted");
+    }
+
+    // Fallback: synthesize output if the model never produced text
+    if (!result.output.trim() && !result.errorMessage) {
       if (allCalls.length > 0) {
         const numbered = allCalls.map((c, i) => `${i + 1}. ${c}`).join("\n");
         result.output =
@@ -434,19 +346,10 @@ async function runSubagentOnce(
 
     return result;
   } finally {
-    if (tmpPromptPath) {
-      try {
-        fs.unlinkSync(tmpPromptPath);
-      } catch {
-        /* ignore */
-      }
-    }
-    if (tmpDir) {
-      try {
-        fs.rmdirSync(tmpDir);
-      } catch {
-        /* ignore */
-      }
+    try {
+      session.dispose();
+    } catch {
+      /* ignore */
     }
   }
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect } from "bun:test";
 import { argsSignature, detectLoop } from "./loop-detection";
-import type { LoopResult } from "./loop-detection";
 
 // ── argsSignature ──────────────────────────────────────────────────────────
 
@@ -130,10 +129,7 @@ describe("detectLoop", () => {
   });
 
   it("warns at 2 identical consecutive calls", () => {
-    const history = [
-      call("read", "same-file"),
-      call("read", "same-file"),
-    ];
+    const history = [call("read", "same-file"), call("read", "same-file")];
     const result = detectLoop(history);
     expect(result).not.toBeNull();
     expect(result!.severity).toBe("warn");
