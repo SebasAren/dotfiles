@@ -194,7 +194,6 @@ export default function (pi: ExtensionAPI) {
           : undefined,
         loopDetection: true,
         maxToolCalls,
-        debugLabel: "librarian",
       });
 
       const isError = result.exitCode !== 0 || !!result.errorMessage;
