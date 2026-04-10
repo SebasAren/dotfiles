@@ -98,6 +98,16 @@ local function get_changed_files(base_ref)
 	return list
 end
 
+--- Get the git repo root directory
+---@return string|nil
+local function get_repo_root()
+	local ok, result = pcall(vim.fn.systemlist, { cmd = "git rev-parse --show-toplevel" })
+	if ok and vim.v.shell_error == 0 and #result > 0 then
+		return result[1]
+	end
+	return nil
+end
+
 --- Populate quickfix with all changed hunks using gitsigns,
 --- supplemented with files gitsigns hasn't attached to yet.
 ---@param base_ref string
@@ -113,10 +123,16 @@ local function populate_quickfix(base_ref)
 	-- Supplement with any files that gitsigns might have missed
 	-- (new/untracked files not yet attached)
 	local qf_items = vim.fn.getqflist()
+	local repo_root = get_repo_root() or vim.fn.getcwd()
 	local qf_files = {}
 	for _, item in ipairs(qf_items) do
 		if item.filename then
-			qf_files[vim.fn.fnamemodify(item.filename, ":.")] = true
+			-- Normalize to relative path from repo root for consistent matching
+			local rel_path = item.filename
+			if vim.startswith(item.filename, repo_root) then
+				rel_path = vim.fn.fnamemodify(item.filename, ":.")
+			end
+			qf_files[rel_path] = true
 		end
 	end
 
@@ -124,7 +140,8 @@ local function populate_quickfix(base_ref)
 	for _, file in ipairs(changed) do
 		if not qf_files[file] then
 			table.insert(qf_items, {
-				filename = file,
+				-- Use absolute path for reliable jumping
+				filename = repo_root .. "/" .. file,
 				lnum = 1,
 				col = 1,
 				text = "[new/untracked file]",
@@ -232,10 +249,13 @@ function M.open(ref)
 	-- Set up autocmds for future buffers
 	setup_autocmds()
 
-	-- Jump to first change
-	vim.schedule(function()
-		vim.cmd("cfirst")
-	end)
+	-- Jump to first change (only if there are entries)
+	local qf = vim.fn.getqflist()
+	if #qf > 0 then
+		vim.schedule(function()
+			pcall(vim.cmd, "cfirst")
+		end)
+	end
 
 	local changed = get_changed_files(M.base_ref)
 	vim.notify(
