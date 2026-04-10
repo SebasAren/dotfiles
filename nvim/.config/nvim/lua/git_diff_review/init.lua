@@ -113,34 +113,36 @@ end
 ---@param base_ref string
 local function populate_quickfix(base_ref)
 	local gs = require("gitsigns")
-
-	-- gitsigns setqflist('all') covers all modified files it tracks
-	local ok, err = pcall(gs.setqflist, "all", { open = false })
-	if not ok then
-		vim.notify("gitsigns setqflist failed: " .. tostring(err), vim.log.levels.WARN)
-	end
-
-	-- Supplement with any files that gitsigns might have missed
-	-- (new/untracked files not yet attached)
-	local qf_items = vim.fn.getqflist()
 	local repo_root = get_repo_root() or vim.fn.getcwd()
-	local qf_files = {}
-	for _, item in ipairs(qf_items) do
-		if item.filename then
-			-- Normalize to relative path from repo root for consistent matching
+	local qf_items = {}
+	local qf_files = {} -- track files (as relative paths) to avoid duplicates
+
+	-- Call gitsigns setqflist and read back what it produced
+	gs.setqflist("all", { open = false })
+	local gitsigns_qf = vim.fn.getqflist()
+
+	for _, item in ipairs(gitsigns_qf) do
+		if item.filename and item.filename ~= "" then
+			-- Normalize to relative path for consistent deduplication
 			local rel_path = item.filename
 			if vim.startswith(item.filename, repo_root) then
 				rel_path = vim.fn.fnamemodify(item.filename, ":.")
 			end
 			qf_files[rel_path] = true
+			table.insert(qf_items, {
+				filename = item.filename, -- Keep original path for jumping
+				lnum = item.lnum or 1,
+				col = item.col or 1,
+				text = item.text or "",
+			})
 		end
 	end
 
+	-- Add new/untracked files that gitsigns hasn't attached to
 	local changed = get_changed_files(base_ref)
 	for _, file in ipairs(changed) do
 		if not qf_files[file] then
 			table.insert(qf_items, {
-				-- Use absolute path for reliable jumping
 				filename = repo_root .. "/" .. file,
 				lnum = 1,
 				col = 1,
@@ -215,16 +217,16 @@ local function setup_autocmds()
 				return
 			end
 
-			-- Enter: jump to the change and apply review keymaps
-			vim.keymap.set("n", "<cr>", function()
+			-- Use <Space> to jump and set up keymaps (avoids overriding default <cr>)
+			vim.keymap.set("n", "<space>", function()
 				vim.cmd("cc")
-				setup_buffer_keymaps(vim.api.nvim_get_current_buf())
-			end, { buffer = ev.buf, nowait = true, desc = "Review: jump to change" })
+				vim.schedule(function()
+					setup_buffer_keymaps(vim.api.nvim_get_current_buf())
+				end)
+			end, { buffer = ev.buf, desc = "Review: jump and map" })
 
 			-- q: close quickfix (but don't end review session)
-			vim.keymap.set("n", "q", function()
-				vim.cmd("cclose")
-			end, { buffer = ev.buf, nowait = true, desc = "Review: close quickfix" })
+			vim.keymap.set("n", "q", "<cmd>cclose<cr>", { buffer = ev.buf, desc = "Review: close quickfix" })
 		end,
 	})
 end
