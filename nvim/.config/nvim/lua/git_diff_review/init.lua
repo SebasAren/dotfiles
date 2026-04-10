@@ -42,9 +42,7 @@ local function resolve_base_ref(ref)
 		return vim.env.WPI_BASE_BRANCH
 	end
 	-- Fallback: merge-base with main branch
-	local ok, result = pcall(vim.fn.systemlist, {
-		cmd = "git merge-base main HEAD",
-	})
+	local ok, result = pcall(vim.fn.systemlist, "git merge-base main HEAD")
 	if ok and vim.v.shell_error == 0 and #result > 0 then
 		return result[1]
 	end
@@ -58,9 +56,7 @@ local function get_changed_files(base_ref)
 	local files = {}
 
 	-- Tracked changes (committed since base)
-	local ok, result = pcall(vim.fn.systemlist, {
-		cmd = string.format("git diff --name-only %s HEAD -- .", base_ref),
-	})
+	local ok, result = pcall(vim.fn.systemlist, string.format("git diff --name-only %s HEAD -- .", base_ref))
 	if ok and vim.v.shell_error == 0 then
 		for _, f in ipairs(result) do
 			if f ~= "" then
@@ -70,9 +66,7 @@ local function get_changed_files(base_ref)
 	end
 
 	-- Working tree + staged changes vs base (includes unstaged edits)
-	ok, result = pcall(vim.fn.systemlist, {
-		cmd = string.format("git diff --name-only %s -- .", base_ref),
-	})
+	ok, result = pcall(vim.fn.systemlist, string.format("git diff --name-only %s -- .", base_ref))
 	if ok and vim.v.shell_error == 0 then
 		for _, f in ipairs(result) do
 			if f ~= "" then
@@ -82,9 +76,7 @@ local function get_changed_files(base_ref)
 	end
 
 	-- Untracked files (new files not yet added to git)
-	ok, result = pcall(vim.fn.systemlist, {
-		cmd = "git ls-files --others --exclude-standard -- .",
-	})
+	ok, result = pcall(vim.fn.systemlist, "git ls-files --others --exclude-standard -- .")
 	if ok and vim.v.shell_error == 0 then
 		for _, f in ipairs(result) do
 			if f ~= "" then
@@ -101,7 +93,7 @@ end
 --- Get the git repo root directory
 ---@return string|nil
 local function get_repo_root()
-	local ok, result = pcall(vim.fn.systemlist, { cmd = "git rev-parse --show-toplevel" })
+	local ok, result = pcall(vim.fn.systemlist, "git rev-parse --show-toplevel")
 	if ok and vim.v.shell_error == 0 and #result > 0 then
 		return result[1]
 	end
