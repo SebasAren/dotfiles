@@ -68,6 +68,28 @@
         }
       ]
     },
+    "ollama-cloud": {
+      "baseUrl": "https://ollama.com",
+      "api": "openai-completions",
+      "apiKey": "OLLAMA_API_KEY",
+      "authHeader": true,
+      "models": [
+        {
+          "id": "kimi-k2.5",
+          "name": "Kimi K2.5 (Ollama Cloud)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
     "xiaomi-mimo": {
       "baseUrl": "https://api.xiaomimimo.com/v1",
       "api": "openai-completions",
