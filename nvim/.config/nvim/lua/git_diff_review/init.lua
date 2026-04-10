@@ -170,13 +170,7 @@ local function setup_buffer_keymaps(bufnr)
 	bmap("n", "[Q", "<cmd>cfirst<cr>zz", "Review: first change")
 	bmap("n", "]Q", "<cmd>clast<cr>zz", "Review: last change")
 
-	-- Override <leader>gd to always use the review session's base ref
-	-- (gitsigns on_attach already sets this, but we override to be explicit)
-	bmap("n", "<leader>gd", function()
-		require("gitsigns").diffthis(M.base_ref)
-	end, "Review: diff file vs base")
-
-	-- Open the fzf-lua diff picker to browse files
+	-- Open the fzf-lua diff picker to browse files (review-specific)
 	bmap("n", "<leader>gB", function()
 		require("fzf-lua").git_diff({ ref = M.base_ref })
 	end, "Review: file picker")
@@ -262,7 +256,7 @@ function M.open(ref)
 	local changed = get_changed_files(M.base_ref)
 	vim.notify(
 		string.format(
-			"Review: %d files changed vs %s\n]q next change · [q prev · ]h next hunk · gd side-by-side · q close",
+			"Review: %d files changed vs %s\n]q next change · [q prev · ]h next hunk · <leader>gd diff · q close",
 			#changed,
 			M.base_ref
 		),
@@ -283,7 +277,7 @@ function M.close()
 	-- Clean up buffer-local keymaps
 	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
 		if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "" then
-			for _, key in ipairs({ "]q", "[q", "]Q", "[Q", "<leader>gd", "<leader>gB", "q" }) do
+			for _, key in ipairs({ "]q", "[q", "]Q", "[Q", "<leader>gB", "q" }) do
 				pcall(vim.keymap.del, "n", key, { buffer = buf })
 			end
 		end
