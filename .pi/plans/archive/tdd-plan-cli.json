@@ -1,0 +1,152 @@
+{
+  "title": "Test tdd-plan CLI Tool",
+  "slug": "tdd-plan-cli",
+  "context": "Verify that the tdd-plan CLI tool works correctly: create, list, show, phase, complete, note, and archive commands. This is a smoke test / integration test of the tool itself to validate it functions as documented in the SKILL.md.",
+  "architecture": "Exercise each CLI command sequentially, verifying output and side effects (file creation, status transitions).",
+  "created": "2026-04-12T10:10:37.062Z",
+  "updated": "2026-04-12T10:25:01.869Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Step 1: Create a plan",
+      "red": {
+        "description": "Run tdd-plan create with a known slug, title, and steps JSON. Assert: exit code 0, file .pi/plans/test-smoke.json exists, and tdd-plan list shows the slug.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Run: tdd-plan create test-smoke --title Smoke Test --steps [{\"name\":\"Step 1: Hello\",\"red\":\"fail\",\"green\":\"pass\",\"refactor\":\"\"}] . Verify exit 0 and file exists.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Clean up the test plan after verification if needed.",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Step 2: List plans",
+      "red": {
+        "description": "Run tdd-plan list. Assert: output contains the test-smoke slug. Also verify it lists the tdd-plan-cli plan.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Run tdd-plan list and visually confirm both test-smoke and tdd-plan-cli appear.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "Step 3: Show plan details",
+      "red": {
+        "description": "Run tdd-plan show test-smoke. Assert: output includes the title Smoke Test and the step name Step 1: Hello.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Run tdd-plan show test-smoke and verify the title and step content are printed.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Also test tdd-plan show without a slug — should default to most recent plan.",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 4,
+      "name": "Step 4: Phase transitions",
+      "red": {
+        "description": "Run tdd-plan phase test-smoke 1 red start. Assert: step 1 shows red phase started. Then run tdd-plan phase test-smoke 1 red done and assert phase completed.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Execute phase commands in sequence: red start → red done → green start → green done → refactor start → refactor done. Verify each transition.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 5,
+      "name": "Step 5: Complete a step",
+      "red": {
+        "description": "Run tdd-plan complete test-smoke 1. Assert: step 1 is marked complete in the plan output.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Run tdd-plan complete test-smoke 1 then tdd-plan show test-smoke to verify step status is complete.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 6,
+      "name": "Step 6: Add a note",
+      "red": {
+        "description": "Run tdd-plan note test-smoke \"This is a test note\". Assert: note appears in tdd-plan show test-smoke output.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Add note, then show plan and confirm the note text is present.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 7,
+      "name": "Step 7: Archive a plan",
+      "red": {
+        "description": "Run tdd-plan archive test-smoke. Assert: .pi/plans/test-smoke.* is moved to .pi/plans/archive/ and tdd-plan list no longer shows test-smoke.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Archive the plan, verify it moved to archive dir, verify it disappeared from list.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Clean up the archived test file if desired.",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 8,
+      "name": "Step 8: Error handling",
+      "red": {
+        "description": "Run tdd-plan show nonexistent-plan. Assert: non-zero exit code or clear error message. Run tdd-plan create with missing --title. Assert: error or usage output.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Test invalid inputs and confirm the CLI handles them gracefully without unexpected crashes.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [
+    "This plan is self-referential — we use tdd-plan to test tdd-plan",
+    "The test-smoke slug is used as throwaway test data and should be cleaned up",
+    "phase and complete commands were discovered via --help but not in SKILL.md — verify they match documentation",
+    "Steps JSON uses string step indices — verify if numeric or named references work"
+  ]
+}
