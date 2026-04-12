@@ -7,67 +7,60 @@ description: Creates a detailed implementation plan following TDD (Red-Green-Ref
 
 Create a structured implementation plan for the requested feature or change. The plan MUST follow strict TDD discipline: every step starts with a failing test, then minimal code to pass, then refactor.
 
-## Output Format
+## Process
 
-Write the plan as a markdown file (or inline) with these sections:
+When this skill is invoked:
 
----
+1. **Understand the request.** Ask clarifying questions if the scope is ambiguous. Don't plan blindly.
+2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
+3. **Draft the plan.** Follow the output format below with all RED/GREEN/REFACTOR steps.
+4. **Review for completeness.** Check that every piece of functionality has a corresponding test.
+5. **Create the plan** using the `tdd-plan` CLI tool. Present the plan inline and ask the user to confirm before proceeding with implementation.
 
-## Plan: [Feature/Change Title]
+## Creating a Plan
 
-### Context
-Brief description of what we're building and why. Key constraints or decisions.
+Use the `tdd-plan` CLI tool to create and manage plans. Plans are stored in `.pi/plans/<slug>.json`.
 
-### Architecture
-High-level overview of the components involved and how they interact. Keep it brief — focus on the shape of the solution.
+### Create
 
-### Step 1: [Step Name]
-
-**🔴 RED — Write a failing test**
-```
-Describe the test: what it tests, expected behavior, and why it should fail.
-Include enough detail to write the test (function signatures, expected inputs/outputs).
-```
-
-**🟢 GREEN — Make it pass**
-```
-Describe the minimal implementation to make the test pass. No gold-plating.
+```bash
+tdd-plan create <slug> \
+  --title "Feature Title" \
+  --context "Why we're building this, key constraints" \
+  --architecture "High-level overview" \
+  --steps '<json-array>' \
+  --notes '<json-array>'
 ```
 
-**🔵 REFACTOR — Clean up (if needed)**
+**Steps JSON format:**
+```json
+[
+  {
+    "name": "Step 1: <descriptive name>",
+    "red": "Describe the failing test: what it tests, expected behavior, why it should fail. Include function signatures, expected inputs/outputs.",
+    "green": "Describe the minimal implementation. No gold-plating.",
+    "refactor": "Note refactoring opportunities. Use empty string if not needed."
+  }
+]
 ```
-Note any refactoring opportunities. Skip if the code is already clean.
+
+**Example:**
+```bash
+tdd-plan create user-auth \
+  --title "User JWT Authentication" \
+  --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
+  --architecture "Token-based auth with refresh token rotation" \
+  --steps '[{"name":"Step 1: Token generation","red":"Write test that generates a JWT with correct claims (sub, iat, exp) and expiry","green":"Implement token generation with jsonwebtoken library","refactor":""},{"name":"Step 2: Auth middleware","red":"Write test that middleware rejects requests without valid JWT","green":"Implement auth middleware that validates Bearer tokens","refactor":"Extract token validation into reusable helper"}]' \
+  --notes '["Edge case: expired tokens must return 401","Verify concurrent refresh requests"]'
 ```
 
-### Step 2: [Step Name]
-...repeat the RED/GREEN/REFACTOR pattern for each step...
+### Other commands
 
-### Summary
-
-| Step | Test | Implementation |
-|------|------|---------------|
-| 1 | ... | ... |
-| 2 | ... | ... |
-| N | ... | ... |
-
-### Progress Log
-
-> This section is maintained by the tdd-implement skill. Do not edit manually.
-
-**Status:** Not started
-
-| Step | 🔴 RED | 🟢 GREEN | 🔵 REFACTOR |
-|------|--------|----------|-------------|
-| 1 | ⬜ | ⬜ | ⬜ |
-| 2 | ⬜ | ⬜ | ⬜ |
-| N | ⬜ | ⬜ | ⬜ |
-
-### Notes
-- Edge cases discovered during planning
-- Integration points to verify
-- Things to watch out for
-
----
+```bash
+tdd-plan list                    # List all plans
+tdd-plan show [slug]             # Show plan details (defaults to most recent)
+tdd-plan note <slug> <text>      # Add a note to the plan
+```
 
 ## Planning Rules
 
@@ -80,15 +73,26 @@ Note any refactoring opportunities. Skip if the code is already clean.
 7. **Include edge cases.** If the feature has boundary conditions (empty input, null values, large datasets, concurrent access), add steps for them after the happy path.
 8. **Integration tests last.** After unit-level TDD steps, add a final step for integration/acceptance testing.
 
-## Process
+## Output Format
 
-When this skill is invoked:
+Present the plan to the user in this format for review:
 
-1. **Understand the request.** Ask clarifying questions if the scope is ambiguous. Don't plan blindly.
-2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
-3. **Draft the plan.** Follow the output format above with all RED/GREEN/REFACTOR steps.
-4. **Review for completeness.** Check that every piece of functionality has a corresponding test.
-5. **Write the plan.** Always write the plan to `.pi/plans/<slug>.md` where `<slug>` is a short kebab-case description derived from the feature name (e.g., `user-jwt-auth.md`). Create the `.pi/plans/` directory if it doesn't exist. The plan MUST include the Progress Log section from the template above — fill in one row per step with all phases set to ⬜. After writing, present the plan inline and ask the user to confirm before proceeding with implementation.
+```
+## Plan: [Feature/Change Title]
+
+### Context
+Brief description of what we're building and why.
+
+### Architecture
+High-level overview of the components involved.
+
+### Steps
+1. **Step Name** — 🔴 [test desc] → 🟢 [impl desc] → 🔵 [refactor desc]
+2. ...
+
+### Notes
+- Edge cases, integration points, things to watch out for
+```
 
 ## Usage
 

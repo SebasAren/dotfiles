@@ -11,11 +11,21 @@ Execute an existing TDD implementation plan step-by-step. Each step follows the 
 
 When this skill is invoked:
 
-1. **Locate the plan.** Read the plan file from `.pi/plans/<slug>.md`. If no slug is provided, list available plans and ask which one to implement.
-2. **Confirm the plan.** Show the plan summary table and ask for confirmation before starting.
+1. **Locate the plan.** Run `tdd-plan show <slug>` to display the plan. If no slug is provided, run `tdd-plan list` to show available plans and ask which one to implement.
+2. **Confirm the plan.** Show the plan summary and ask for confirmation before starting.
 3. **Execute each step** in order, following the Red-Green-Refactor cycle below.
-4. **Update progress** by checking off completed steps in the plan file.
-5. **Archive the plan.** After all steps are complete and confirmed by the user, move the plan file from `.pi/plans/<slug>.md` to `.pi/plans/archive/<slug>.md`. Create the `.pi/plans/archive/` directory if it doesn't exist.
+4. **Update progress** using `tdd-plan phase` and `tdd-plan complete` commands after each phase transition.
+5. **Archive the plan.** After all steps are complete and confirmed by the user, run `tdd-plan archive <slug>`.
+
+## CLI Reference
+
+```bash
+tdd-plan show <slug>                                        # Show plan with current progress
+tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>  # Update phase
+tdd-plan complete <slug> <step>                             # Mark step fully complete
+tdd-plan note <slug> <text>                                 # Add a note
+tdd-plan archive <slug>                                     # Archive completed plan
+```
 
 ## Red-Green-Refactor Cycle
 
@@ -23,113 +33,51 @@ For each step in the plan, execute these three phases **in strict order**:
 
 ### 🔴 RED — Write the failing test
 
-- **Update progress:** Set Status to `Step N/M — 🔴 RED`, mark the RED cell 🔄 in the Progress Log table.
-- Read the step's RED section for the test description.
+- **Update progress:** `tdd-plan phase <slug> <step> red start`
+- Read the step's RED description from `tdd-plan show <slug>`.
 - Write the test file or add the test case to the existing test file.
 - Run the test suite to **confirm the test fails** with the expected error.
 - If the test passes or fails with an unexpected error, stop and report the issue. Do not proceed to GREEN.
-- **Update progress:** Mark the RED cell ✅ in the Progress Log table.
+- **Update progress:** `tdd-plan phase <slug> <step> red done`
 - Output the failing test output for the user to see.
 
 ### 🟢 GREEN — Make it pass
 
-- **Update progress:** Set Status to `Step N/M — 🟢 GREEN`, mark the GREEN cell 🔄 in the Progress Log table.
-- Read the step's GREEN section for the minimal implementation.
+- **Update progress:** `tdd-plan phase <slug> <step> green start`
+- Read the step's GREEN description from `tdd-plan show <slug>`.
 - Write the **simplest code** that makes the test pass. No gold-plating, no speculative abstractions.
 - Run the test suite to **confirm the test passes**.
 - If the test still fails, iterate on the implementation — but stay minimal. Do not add extra features.
-- **Update progress:** Mark the GREEN cell ✅ in the Progress Log table.
+- **Update progress:** `tdd-plan phase <slug> <step> green done`
 - Output the passing test output for the user to see.
 
 ### 🔵 REFACTOR — Clean up (if applicable)
 
-- **Update progress:** Set Status to `Step N/M — 🔵 REFACTOR`, mark the REFACTOR cell 🔄 in the Progress Log table. If skipping, mark it ⏭️ instead and update Status to `Step N/M — ✅ Complete`.
-- Read the step's REFACTOR section. Skip this phase entirely if the section says to skip or is empty.
+- Read the step's REFACTOR description from `tdd-plan show <slug>`. Skip this phase entirely if the description is empty.
+- **Update progress:** `tdd-plan phase <slug> <step> refactor start` (or `skip` if no refactoring needed)
 - Apply the described refactoring while keeping all tests green.
 - Run the **full** test suite (not just the current test) to confirm nothing broke.
 - If any test fails, revert the refactoring and try again.
-- **Update progress:** Mark the REFACTOR cell ✅ in the Progress Log table.
+- **Update progress:** `tdd-plan phase <slug> <step> refactor done` (or `skip` was already called)
 - Output the full test suite result.
 
 ## User Verification
 
 After completing each step (the full Red-Green-Refactor cycle), **commit using the commit skill** (`/skill:commit`) with a message like `feat(<scope>): <description> (step N/M)`. The commit skill will handle reflection, rules updates, and the actual commit.
 
-After committing, **pause and ask the user to verify** before proceeding to the next step. Show:
+After committing, **mark the step complete** and **pause and ask the user to verify** before proceeding to the next step:
+
+```bash
+tdd-plan complete <slug> <step>
+```
+
+Show:
 
 1. A brief summary of what was done (test written, implementation added, refactoring applied).
 2. The final test output.
 3. The commit that was made.
 
 Then ask: "Step N/M complete. Continue to the next step?" Do not proceed until the user confirms. If the user requests changes, address them and re-verify before moving on.
-
-## Progress Tracking
-
-Update the plan file's Progress Log section **at every phase transition**, not just at step boundaries. This ensures that if the session is interrupted, the plan file always accurately reflects what has been completed.
-
-### When to update
-
-Update the plan file immediately after **each** of these events:
-
-1. **After confirming a failing test in RED** — mark the RED cell ✅ for that step, update the Status line.
-2. **After confirming a passing test in GREEN** — mark the GREEN cell ✅, update the Status line.
-3. **After completing REFACTOR** (or skipping it) — mark the REFACTOR cell ✅, update the Status line.
-4. **After user confirms the step** — mark the step title with ~~strikethrough~~ ✅.
-
-### Status line
-
-Keep a `**Status:**` line at the top of the Progress Log that always reflects the current state:
-
-```
-**Status:** Step 2/5 — 🟢 GREEN (writing minimal implementation)
-```
-
-Update this line at every phase transition. Use these patterns:
-- `Not started`
-- `Step N/M — 🔴 RED (writing failing test)`
-- `Step N/M — 🟢 GREEN (writing minimal implementation)`
-- `Step N/M — 🔵 REFACTOR (cleaning up)`
-- `Step N/M — ✅ Complete`
-- `All steps complete ✅`
-- `All steps complete ✅ — archived`
-
-### Progress Log table format
-
-Each row tracks the three phases independently:
-
-```markdown
-| Step | 🔴 RED | 🟢 GREEN | 🔵 REFACTOR |
-|------|--------|----------|-------------|
-| 1 | ✅ | ✅ | ✅ |
-| 2 | ✅ | 🔄 | ⬜ |   ← currently in GREEN phase
-| 3 | ⬜ | ⬜ | ⬜ |
-```
-
-Use these markers:
-- ⬜ Not started
-- 🔄 In progress
-- ✅ Done
-- ⏭️ Skipped (refactor phase only)
-
-### Step title marking
-
-After the user confirms a full step is complete, also update the step heading:
-
-```markdown
-### ~~Step 1: [Step Name]~~ ✅
-```
-
-### Example: full progression for one step
-
-1. Start RED: update Status to `Step 1/3 — 🔴 RED`, mark RED cell 🔄
-2. RED test confirmed failing: mark RED cell ✅
-3. Start GREEN: update Status to `Step 1/3 — 🟢 GREEN`, mark GREEN cell 🔄
-4. GREEN test confirmed passing: mark GREEN cell ✅
-5. Start REFACTOR: update Status to `Step 1/3 — 🔵 REFACTOR`, mark REFACTOR cell 🔄
-6. REFACTOR complete: mark REFACTOR cell ✅ (or ⏭️ if skipped)
-7. User confirms step: update Status to `Step 1/3 — ✅ Complete`, strike through step title
-8. Move to next step
-9. After the final step: update Status to `All steps complete ✅`, archive the plan file to `.pi/plans/archive/`
 
 ## Rules
 
@@ -141,7 +89,7 @@ After the user confirms a full step is complete, also update the step heading:
 6. **Stop on unexpected failure.** If a test fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain the problem. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after each step using the commit skill.** After completing a full Red-Green-Refactor cycle, invoke `/skill:commit` with a descriptive message following conventional commits format. Example: `/skill:commit feat(auth): add JWT token generation (step 1/N)`. This ensures each step commit also benefits from reflection and `.claude/rules/` updates.
+9. **Commit after each step using the commit skill.** After completing a full Red-Green-Refactor cycle, invoke `/skill:commit` with a descriptive message following conventional commits format. Example: `/skill:commit feat(auth): add JWT token generation (step 1/N)`.
 
 ## Test Commands
 
