@@ -107,8 +107,11 @@ const DEFAULT_TIMEOUT_MS = 120_000;
  *
  * Retry strategy:
  * 1. Run with primary model.
- * 2. On transient failure, retry up to `maxRetries` times with the same model.
- * 3. If all same-model retries fail and a `fallbackModel` is configured, try once with it.
+ * 2. On transient failure, retry up to `maxRetries` times — reusing the
+ *    same session so the LLM sees the conversation history from the
+ *    failed attempt (tool calls, partial results, etc.).
+ * 3. If all same-model retries fail and a `fallbackModel` is configured,
+ *    try once with a fresh session on the fallback model.
  */
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
   const model = options.model || getModel();
@@ -123,18 +126,30 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
     (result.exitCode !== 0 || !!result.errorMessage) &&
     shouldUseFallback(result.errorMessage || result.stderr);
 
-  // Phase 1: Try primary model (with retries)
-  let result = await runSubagentOnce(options);
+  // Phase 1: Create session once and try primary model (with retries)
+  // Reusing the session across retries preserves conversation history,
+  // so on retry the LLM sees previous tool calls and partial results.
+  const modelName = options.model || getModel();
+  const session = await options.createSession(options.systemPrompt, options.cwd, modelName);
+
+  let result = await runSingleAttempt(options, session, false);
 
   for (let attempt = 1; attempt <= maxRetries && isTransientFailure(result); attempt++) {
-    log(`primary model failed (attempt ${attempt}/${maxRetries}), retrying...`);
+    log(`primary model failed (attempt ${attempt}/${maxRetries}), retrying on same session...`);
     if (options.onUpdate)
       options.onUpdate({
         text: `[Retrying (${attempt}/${maxRetries}) after transient error...]`,
       });
 
     await delay(options._retryDelayMs ?? RETRY_DELAY_MS);
-    result = await runSubagentOnce(options);
+    result = await runSingleAttempt(options, session, false);
+  }
+
+  // Dispose the primary session now that all retries are exhausted
+  try {
+    session.dispose();
+  } catch {
+    /* ignore */
   }
 
   // Phase 2: If primary model still failing and fallback is available, try it
@@ -145,12 +160,13 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
     if (options.onUpdate)
       options.onUpdate({ text: `[Switching to fallback model: ${fallbackModel}...]` });
 
-    const fallbackResult = await runSubagentOnce({ ...options, model: fallbackModel });
+    // Fallback creates its own session (different model) — dispose after use
+    result = await runSingleAttempt({ ...options, model: fallbackModel }, undefined, true);
 
-    if (!fallbackResult.errorMessage) {
-      fallbackResult.model = fallbackResult.model || fallbackModel;
+    if (!result.errorMessage) {
+      result.model = result.model || fallbackModel;
     }
-    return fallbackResult;
+    return result;
   }
 
   return result;
@@ -162,9 +178,22 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Single attempt at running a subagent.
+ * Run a single attempt with a given (or newly created) session.
+ *
+ * @param options - Subagent options (query, timeout, tools config, etc.)
+ * @param existingSession - Reuse an existing session (for retries). When provided,
+ *   the session is NOT disposed after use — the caller is responsible for cleanup.
+ *   When undefined, a new session is created via options.createSession and disposed
+ *   after the attempt.
+ * @param disposeSession - Whether to dispose the session in the finally block.
+ *   Always true when existingSession is undefined (we created it).
+ *   Set to false when the caller wants to reuse the session for retries.
  */
-async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentResult> {
+async function runSingleAttempt(
+  options: RunSubagentOptions,
+  existingSession?: AgentSession,
+  disposeSession = existingSession === undefined,
+): Promise<SubagentResult> {
   const {
     cwd,
     query,
@@ -215,10 +244,9 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
     if (debugLabel) console.log(`[${debugLabel}] ${msg}`);
   };
 
-  // Pass the resolved model name to the session factory so it can use
-  // the fallback model on retries instead of always reading CHEAP_MODEL
+  // Use existing session (retry) or create a new one
   const modelName = options.model || getModel();
-  const session = await createSession(systemPrompt, cwd, modelName);
+  const session = existingSession ?? (await createSession(systemPrompt, cwd, modelName));
 
   try {
     const toolHistory: Array<{ name: string; argsSignature: string }> = [];
@@ -404,10 +432,12 @@ async function runSubagentOnce(options: RunSubagentOptions): Promise<SubagentRes
 
     return result;
   } finally {
-    try {
-      session.dispose();
-    } catch {
-      /* ignore */
+    if (disposeSession) {
+      try {
+        session.dispose();
+      } catch {
+        /* ignore */
+      }
     }
   }
 }

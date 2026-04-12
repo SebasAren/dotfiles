@@ -133,6 +133,53 @@ function createMockSession(config: MockSessionConfig) {
 }
 
 /**
+ * Create a mock AgentSession whose `prompt()` behavior cycles through
+ * a sequence of configs. Each call to `prompt()` produces the next config's
+ * result. This is needed for testing session reuse across retries.
+ */
+function createMockSessionWithBehaviors(configs: MockSessionConfig[]) {
+  const listeners: Array<(event: any) => void> = [];
+  let promptIndex = 0;
+
+  return {
+    subscribe: (cb: (event: any) => void) => {
+      listeners.push(cb);
+      return () => {
+        const idx = listeners.indexOf(cb);
+        if (idx >= 0) listeners.splice(idx, 1);
+      };
+    },
+    prompt: async (_query: string) => {
+      const config = configs[Math.min(promptIndex, configs.length - 1)];
+      promptIndex++;
+      for (const listener of listeners) {
+        listener({
+          type: "turn_end",
+          message: {
+            role: "assistant",
+            errorMessage: config.errorMessage,
+            model: config.model,
+            content: config.output ? [{ type: "text", text: config.output }] : [],
+            usage: {
+              input: 10,
+              output: 5,
+              cacheRead: 0,
+              cacheWrite: 0,
+              cost: { total: 0.001 },
+              totalTokens: 15,
+            },
+          },
+        });
+      }
+    },
+    abort: async () => {},
+    steer: async () => {},
+    dispose: () => {},
+    agent: { waitForIdle: async () => {} },
+  } as any;
+}
+
+/**
  * Create a `createSession` factory that cycles through a sequence of mock
  * session configs. Each call to the factory produces the next config's session.
  * If the factory is called more times than configs provided, it reuses the
@@ -188,10 +235,12 @@ describe("runSubagent retry logic", () => {
   });
 
   it("retries on transient failure and returns when second attempt succeeds", async () => {
-    const createSession = createMockSessionFactory([
+    // Single session reused across attempts — prompt() fails first, succeeds second
+    const session = createMockSessionWithBehaviors([
       { errorMessage: "429 Rate limit exceeded" },
       { output: "recovered" },
     ]);
+    const createSession = async () => session;
 
     const result = await runSubagent(baseOptions({ createSession, maxRetries: 1 }));
 
@@ -237,11 +286,20 @@ describe("runSubagent retry logic", () => {
   });
 
   it("switches to fallback model after retries exhausted", async () => {
-    const createSession = createMockSessionFactory([
+    // Primary session fails on both attempts (original + 1 retry)
+    const primarySession = createMockSessionWithBehaviors([
       { errorMessage: "429 Rate limit exceeded" },
-      { errorMessage: "429 Rate limit exceeded" }, // after 1 retry
-      { output: "fallback success", model: "fallback-model" }, // fallback attempt
+      { errorMessage: "429 Rate limit exceeded" },
     ]);
+    // Fallback session succeeds
+    const fallbackSession = createMockSession({
+      output: "fallback success",
+      model: "fallback-model",
+    });
+    let callCount = 0;
+    const createSession = async () => {
+      return callCount++ === 0 ? primarySession : fallbackSession;
+    };
 
     const result = await runSubagent(
       baseOptions({
@@ -311,15 +369,33 @@ describe("runSubagent retry logic", () => {
   });
 
   it("uses default maxRetries of 1 when not specified", async () => {
-    // Provide exactly 2 configs: 1 initial failure + 1 retry success
-    const createSession = createMockSessionFactory([
+    // Single session reused — prompt() fails first, succeeds on default retry
+    const session = createMockSessionWithBehaviors([
       { errorMessage: "429 Rate limit exceeded" },
       { output: "ok after default retry" },
     ]);
+    const createSession = async () => session;
 
     const result = await runSubagent(baseOptions({ createSession }));
 
     expect(result.output).toBe("ok after default retry");
     expect(result.errorMessage).toBeUndefined();
+  });
+
+  it("reuses the same session across retries (createSession called once)", async () => {
+    let sessionCount = 0;
+    const session = createMockSessionWithBehaviors([
+      { errorMessage: "429 Rate limit exceeded" },
+      { output: "recovered via session reuse" },
+    ]);
+    const createSession = async () => {
+      sessionCount++;
+      return session;
+    };
+
+    await runSubagent(baseOptions({ createSession, maxRetries: 1 }));
+
+    // Session should be created only once and reused for the retry
+    expect(sessionCount).toBe(1);
   });
 });
