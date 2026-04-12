@@ -116,8 +116,9 @@ describe("detectLoop", () => {
     expect(result!.message).toContain("grep, read, find, bash");
   });
 
-  it("kills at 3+ identical consecutive calls", () => {
+  it("kills at 4+ identical consecutive calls", () => {
     const history = [
+      call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
       call("grep", "same-pattern"),
@@ -125,15 +126,34 @@ describe("detectLoop", () => {
     const result = detectLoop(history);
     expect(result).not.toBeNull();
     expect(result!.severity).toBe("kill");
-    expect(result!.message).toContain("called 3 times with same args");
+    expect(result!.message).toContain("called 4 times with same args");
   });
 
-  it("warns at 2 identical consecutive calls", () => {
-    const history = [call("read", "same-file"), call("read", "same-file")];
+  it("warns at 3 identical consecutive calls", () => {
+    const history = [
+      call("read", "same-file"),
+      call("read", "same-file"),
+      call("read", "same-file"),
+    ];
     const result = detectLoop(history);
     expect(result).not.toBeNull();
     expect(result!.severity).toBe("warn");
-    expect(result!.message).toContain("called 2 times with same args");
+    expect(result!.message).toContain("called 3 times with same args");
+  });
+
+  it("does NOT warn at 2 identical consecutive calls (legitimate re-read)", () => {
+    // Re-reading a file or re-running a grep is normal during exploration
+    const history = [call("read", "same-file"), call("read", "same-file")];
+    expect(detectLoop(history)).toBeNull();
+  });
+
+  it("does NOT warn at 3 identical calls when kill would fire (kill takes precedence)", () => {
+    // 3 consecutive identical calls used to warn; now we want no duplicate
+    // warn/kill — kill at 4 means 3 should warn
+    const history = [call("grep", "x"), call("grep", "x"), call("grep", "x")];
+    const result = detectLoop(history);
+    expect(result).not.toBeNull();
+    expect(result!.severity).toBe("warn");
   });
 
   it("does NOT flag a single call", () => {
@@ -143,10 +163,12 @@ describe("detectLoop", () => {
 
   it("escalates from warn to kill as duplicates accumulate", () => {
     const callEntry = call("read", "file.ts");
-    // 2 calls → warn
-    expect(detectLoop([callEntry, callEntry])!.severity).toBe("warn");
-    // 3 calls → kill
-    expect(detectLoop([callEntry, callEntry, callEntry])!.severity).toBe("kill");
+    // 2 calls → null (legitimate)
+    expect(detectLoop([callEntry, callEntry])).toBeNull();
+    // 3 calls → warn
+    expect(detectLoop([callEntry, callEntry, callEntry])!.severity).toBe("warn");
+    // 4 calls → kill
+    expect(detectLoop([callEntry, callEntry, callEntry, callEntry])!.severity).toBe("kill");
   });
 
   it("does NOT flag natural exploration pattern with varied greps and reads", () => {

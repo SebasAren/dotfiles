@@ -56,8 +56,9 @@ export function detectLoop(
   const recent = toolHistory.slice(-windowSize);
 
   // Check for consecutive identical calls.
-  // Kill at 3+, warn at 2. Reading the same file 2+ times in a row with
-  // identical args is always a loop — legitimate exploration never does this.
+  // Kill at 4+, warn at 3. Two consecutive identical calls are legitimate
+  // during exploration (re-reading a file after gaining context, re-running
+  // a grep with truncated output). Only flag when the agent is truly stuck.
   if (recent.length >= 2) {
     const lastSig = recent[recent.length - 1];
     let identicalCount = 0;
@@ -68,13 +69,13 @@ export function detectLoop(
         break;
       }
     }
-    if (identicalCount >= 3) {
+    if (identicalCount >= 4) {
       return {
         severity: "kill",
         message: `Loop detected: ${lastSig.name} called ${identicalCount} times with same args`,
       };
     }
-    if (identicalCount >= 2) {
+    if (identicalCount >= 3) {
       return {
         severity: "warn",
         message: `${lastSig.name} called ${identicalCount} times with same args — change your approach`,
