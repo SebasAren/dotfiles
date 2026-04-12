@@ -40,6 +40,12 @@ function formatRecentCall(toolName: string, args: Record<string, unknown> | unde
   return detail ? `${toolName}: ${detail}` : toolName;
 }
 
+/** Default number of retries with the same model before giving up or switching to fallback. */
+const DEFAULT_MAX_RETRIES = 1;
+
+/** Delay in ms before retrying with the same model. */
+const RETRY_DELAY_MS = 2_000;
+
 /** Options for {@link runSubagent}. */
 export interface RunSubagentOptions {
   /** Working directory for the subagent */
@@ -78,6 +84,14 @@ export interface RunSubagentOptions {
   model?: string;
   /** Override the fallback model (falls back to FALLBACK_MODEL env var) */
   fallbackModel?: string;
+  /**
+   * Maximum number of retries with the same model on transient failure
+   * before switching to the fallback model or giving up (default: 1).
+   * Set to 0 to disable same-model retries.
+   */
+  maxRetries?: number;
+  /** @internal Override retry delay for testing. */
+  _retryDelayMs?: number;
 }
 
 /** Default timeout: 2 minutes */
@@ -90,29 +104,47 @@ const DEFAULT_TIMEOUT_MS = 120_000;
  * timeout, and abort signals. Streams a rolling window of recent tool
  * calls through `onUpdate` so the caller can render a live activity
  * ticker in the main agent UI.
+ *
+ * Retry strategy:
+ * 1. Run with primary model.
+ * 2. On transient failure, retry up to `maxRetries` times with the same model.
+ * 3. If all same-model retries fail and a `fallbackModel` is configured, try once with it.
  */
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
   const model = options.model || getModel();
   const fallbackModel = options.fallbackModel || getFallbackModel();
+  const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
 
-  // Run with primary model first
-  const result = await runSubagentOnce(options);
+  const log = (msg: string) => {
+    if (options.debugLabel) console.log(`[${options.debugLabel}] ${msg}`);
+  };
 
-  // If primary model failed with a transient error and fallback is available, retry
-  if (
-    fallbackModel &&
-    fallbackModel !== model &&
-    (result.exitCode !== 0 || result.errorMessage) &&
-    shouldUseFallback(result.errorMessage || result.stderr)
-  ) {
-    const log = (msg: string) => {
-      if (options.debugLabel) console.log(`[${options.debugLabel}] ${msg}`);
-    };
-    log(`primary model failed, retrying with fallback: ${fallbackModel}`);
+  const isTransientFailure = (result: SubagentResult): boolean =>
+    (result.exitCode !== 0 || !!result.errorMessage) &&
+    shouldUseFallback(result.errorMessage || result.stderr);
+
+  // Phase 1: Try primary model (with retries)
+  let result = await runSubagentOnce(options);
+
+  for (let attempt = 1; attempt <= maxRetries && isTransientFailure(result); attempt++) {
+    log(`primary model failed (attempt ${attempt}/${maxRetries}), retrying...`);
     if (options.onUpdate)
-      options.onUpdate({ text: `[Primary model unavailable, retrying with ${fallbackModel}...]` });
+      options.onUpdate({
+        text: `[Retrying (${attempt}/${maxRetries}) after transient error...]`,
+      });
 
-    // Retry with the fallback model passed through to the session factory
+    await delay(options._retryDelayMs ?? RETRY_DELAY_MS);
+    result = await runSubagentOnce(options);
+  }
+
+  // Phase 2: If primary model still failing and fallback is available, try it
+  if (fallbackModel && fallbackModel !== model && isTransientFailure(result)) {
+    log(
+      `primary model still failing after ${maxRetries} retries, switching to fallback: ${fallbackModel}`,
+    );
+    if (options.onUpdate)
+      options.onUpdate({ text: `[Switching to fallback model: ${fallbackModel}...]` });
+
     const fallbackResult = await runSubagentOnce({ ...options, model: fallbackModel });
 
     if (!fallbackResult.errorMessage) {
@@ -122,6 +154,11 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
   }
 
   return result;
+}
+
+/** Small delay helper. */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
