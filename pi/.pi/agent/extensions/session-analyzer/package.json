@@ -1,0 +1,12 @@
+{
+  "name": "session-analyzer",
+  "version": "1.0.0",
+  "type": "module",
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

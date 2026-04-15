@@ -12,6 +12,7 @@
     "git-checkpoint",
     "librarian",
     "plan-mode",
+    "session-analyzer",
     "shared",
     "todo",
     "tdd-tree",
