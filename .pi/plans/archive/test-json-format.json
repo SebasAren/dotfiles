@@ -1,0 +1,45 @@
+{
+  "title": "Updated Title via Edit",
+  "slug": "test-json-format",
+  "context": "Testing the new --steps-file option",
+  "architecture": "",
+  "created": "2026-04-15T12:16:50.278Z",
+  "updated": "2026-04-15T12:17:01.220Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Step 1: Token generation",
+      "red": {
+        "description": "Write test that generates a JWT with correct claims (sub, iat, exp) and expiry",
+        "status": "not_started"
+      },
+      "green": {
+        "description": "Implement token generation with jsonwebtoken library",
+        "status": "not_started"
+      },
+      "refactor": {
+        "description": "",
+        "status": "not_started"
+      },
+      "completed": false
+    },
+    {
+      "index": 2,
+      "name": "Step 2: Auth middleware",
+      "red": {
+        "description": "Write test that middleware rejects requests without valid JWT",
+        "status": "not_started"
+      },
+      "green": {
+        "description": "Implement auth middleware that validates Bearer tokens",
+        "status": "not_started"
+      },
+      "refactor": {
+        "description": "Extract token validation into reusable helper",
+        "status": "not_started"
+      },
+      "completed": false
+    }
+  ],
+  "notes": []
+}

@@ -161,6 +161,47 @@ function parseArgs(args: string[]): Record<string, string> {
 	return result;
 }
 
+function readStepsFromSource(flags: Record<string, string>): StepInput[] {
+	// 1. Check for --steps-file first
+	if (flags["steps-file"]) {
+		const filePath = flags["steps-file"];
+		if (!existsSync(filePath)) {
+			console.error(`Error: Steps file not found: ${filePath}`);
+			process.exit(1);
+		}
+		try {
+			const content = readFileSync(filePath, "utf8");
+			const steps = JSON.parse(content) as StepInput[];
+			if (!Array.isArray(steps) || steps.length === 0) {
+				console.error("Error: Steps file must contain a non-empty JSON array");
+				process.exit(1);
+			}
+			return steps;
+		} catch (e) {
+			console.error(`Error: Failed to parse steps file ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
+			process.exit(1);
+		}
+	}
+
+	// 2. Check for --steps (inline JSON)
+	if (flags.steps) {
+		try {
+			const steps = JSON.parse(flags.steps) as StepInput[];
+			if (!Array.isArray(steps) || steps.length === 0) {
+				console.error("Error: --steps must be a non-empty JSON array");
+				process.exit(1);
+			}
+			return steps;
+		} catch (e) {
+			console.error(`Error: Failed to parse --steps JSON: ${e instanceof Error ? e.message : String(e)}`);
+			process.exit(1);
+		}
+	}
+
+	console.error("Error: Either --steps or --steps-file is required");
+	process.exit(1);
+}
+
 function showPlan(plan: Plan): void {
 	const status = deriveStatus(plan);
 	const total = plan.steps.length;
@@ -241,7 +282,7 @@ function showPlan(plan: Plan): void {
 function cmdCreate(args: string[]): void {
 	const slug = args[0];
 	if (!slug) {
-		console.error("Usage: tdd-plan create <slug> --title <title> --steps <json>");
+		console.error("Usage: tdd-plan create <slug> --title <title> --steps <json> | --steps-file <path>");
 		process.exit(1);
 	}
 
@@ -252,29 +293,14 @@ function cmdCreate(args: string[]): void {
 
 	const flags = parseArgs(args.slice(1));
 	const title = flags.title;
-	const stepsRaw = flags.steps;
 
 	if (!title) {
 		console.error("Error: --title is required");
 		process.exit(1);
 	}
-	if (!stepsRaw) {
-		console.error("Error: --steps is required (JSON array)");
-		process.exit(1);
-	}
 
-	let stepsInput: StepInput[];
-	try {
-		stepsInput = JSON.parse(stepsRaw);
-	} catch {
-		console.error("Error: --steps must be valid JSON");
-		process.exit(1);
-	}
-
-	if (!Array.isArray(stepsInput) || stepsInput.length === 0) {
-		console.error("Error: --steps must be a non-empty JSON array");
-		process.exit(1);
-	}
+	// Read steps from --steps-file or --steps
+	const stepsInput = readStepsFromSource(flags);
 
 	const plan: Plan = {
 		title,
@@ -299,6 +325,49 @@ function cmdCreate(args: string[]): void {
 
 	writePlan(plan);
 	console.log(`Created plan: ${slug}`);
+	console.log("");
+	showPlan(plan);
+}
+
+function cmdEdit(args: string[]): void {
+	const slug = args[0];
+	if (!slug) {
+		console.error("Usage: tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]");
+		process.exit(1);
+	}
+
+	const plan = readPlan(slug);
+	const flags = parseArgs(args.slice(1));
+
+	// Update fields if provided
+	if (flags.title) {
+		plan.title = flags.title;
+	}
+	if (flags.context !== undefined) {
+		plan.context = flags.context;
+	}
+	if (flags.architecture !== undefined) {
+		plan.architecture = flags.architecture;
+	}
+
+	// Update steps if --steps-file provided
+	if (flags["steps-file"]) {
+		const stepsInput = readStepsFromSource(flags);
+		plan.steps = stepsInput.map((s, i) => ({
+			index: i + 1,
+			name: s.name,
+			red: { description: s.red ?? "", status: "not_started" as PhaseStatus },
+			green: { description: s.green ?? "", status: "not_started" as PhaseStatus },
+			refactor: {
+				description: s.refactor ?? "",
+				status: "not_started" as PhaseStatus,
+			},
+			completed: false,
+		}));
+	}
+
+	writePlan(plan);
+	console.log(`Updated plan: ${slug}`);
 	console.log("");
 	showPlan(plan);
 }
@@ -510,6 +579,9 @@ switch (command) {
 	case "archive":
 		cmdArchive(args);
 		break;
+	case "edit":
+		cmdEdit(args);
+		break;
 	case undefined:
 	case "help":
 	case "--help":
@@ -517,7 +589,8 @@ switch (command) {
 		console.log(`tdd-plan — TDD plan management CLI
 
 Usage:
-  tdd-plan create <slug> --title <title> --steps <json> [--context <text>] [--architecture <text>] [--notes <json>]
+  tdd-plan create <slug> --title <title> (--steps <json> | --steps-file <path>) [--context <text>] [--architecture <text>] [--notes <json>]
+  tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]
   tdd-plan list
   tdd-plan show [slug]
   tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>
@@ -527,6 +600,9 @@ Usage:
 
 Steps JSON format:
   [{"name":"Step 1: ...","red":"Write failing test...","green":"Implement...","refactor":"Clean up..."}]
+
+Alternative: --steps-file for better multi-line support:
+  tdd-plan create my-plan --title "My Plan" --steps-file steps.json
 
 Plans are stored in .pi/plans/<slug>.json`);
 		break;

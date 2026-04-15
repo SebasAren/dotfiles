@@ -1,0 +1,28 @@
+{
+  "title": "Test Inline Steps",
+  "slug": "test-inline",
+  "context": "",
+  "architecture": "",
+  "created": "2026-04-15T12:16:57.155Z",
+  "updated": "2026-04-15T12:17:01.233Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Quick Test",
+      "red": {
+        "description": "fail",
+        "status": "not_started"
+      },
+      "green": {
+        "description": "pass",
+        "status": "not_started"
+      },
+      "refactor": {
+        "description": "",
+        "status": "not_started"
+      },
+      "completed": false
+    }
+  ],
+  "notes": []
+}

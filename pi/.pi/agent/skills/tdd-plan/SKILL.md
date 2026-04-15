@@ -18,7 +18,8 @@ When this skill is invoked, determine the mode from the user's input:
 ## CLI Reference
 
 ```bash
-tdd-plan create <slug> --title <title> --steps <json> [--context <text>] [--architecture <text>] [--notes <json>]
+tdd-plan create <slug> --title <title> [--steps <json> | --steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
+tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]
 tdd-plan list                                               # List all plans
 tdd-plan show [slug]                                        # Show plan details (defaults to most recent)
 tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>  # Update phase status
@@ -62,25 +63,83 @@ If the user selects **refine**, ask what to change and re-draft. If **cancel**, 
 
 ### Steps JSON format
 
+Create a JSON file with your steps, then reference it with `--steps-file`:
+
 ```json
 [
   {
-    "name": "Step 1: <descriptive name>",
-    "red": "Describe the failing test: what it tests, expected behavior, why it should fail. Include function signatures, expected inputs/outputs.",
-    "green": "Describe the minimal implementation. No gold-plating.",
-    "refactor": "Note refactoring opportunities. Use empty string if not needed."
+    "name": "Step 1: Token generation",
+    "red": "Write test that generates a JWT with correct claims (sub, iat, exp) and expiry",
+    "green": "Implement token generation with jsonwebtoken library",
+    "refactor": ""
+  },
+  {
+    "name": "Step 2: Auth middleware",
+    "red": "Write test that middleware rejects requests without valid JWT",
+    "green": "Implement auth middleware that validates Bearer tokens",
+    "refactor": "Extract token validation into reusable helper"
   }
 ]
 ```
 
-### Example
+Then create the plan:
 
 ```bash
 tdd-plan create user-auth \
   --title "User JWT Authentication" \
+  --steps-file steps.json \
+  --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
+  --architecture "Token-based auth with refresh token rotation"
+```
+
+**Alternative:** You can still use `--steps` with inline JSON (useful for simple plans), but `--steps-file` is recommended for readability:
+
+```bash
+tdd-plan create user-auth \
+  --title "User JWT Authentication" \
+  --steps '[{"name":"Step 1: ...","red":"...","green":"..."}]'
+```
+
+### Editing Plans
+
+Use `tdd-plan edit <slug>` to modify an existing plan:
+
+```bash
+# Edit title only
+tdd-plan edit user-auth --title "New Title"
+
+# Replace all steps from file
+tdd-plan edit user-auth --steps-file updated-steps.json
+
+# Update context
+tdd-plan edit user-auth --context "Updated requirements..."
+```
+
+### Example
+
+**Recommended approach - using a steps file:**
+
+```bash
+# Create steps.json
+$EDITOR steps.json
+
+# Then create the plan
+tdd-plan create user-auth \
+  --title "User JWT Authentication" \
+  --steps-file steps.json \
   --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
   --architecture "Token-based auth with refresh token rotation" \
+  --notes '["Edge case: expired tokens must return 401","Verify concurrent refresh requests"]'
+```
+
+**Alternative - inline JSON (useful for simple plans):**
+
+```bash
+tdd-plan create user-auth \
+  --title "User JWT Authentication" \
   --steps '[{"name":"Step 1: Token generation","red":"Write test that generates a JWT with correct claims (sub, iat, exp) and expiry","green":"Implement token generation with jsonwebtoken library","refactor":""},{"name":"Step 2: Auth middleware","red":"Write test that middleware rejects requests without valid JWT","green":"Implement auth middleware that validates Bearer tokens","refactor":"Extract token validation into reusable helper"}]' \
+  --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
+  --architecture "Token-based auth with refresh token rotation" \
   --notes '["Edge case: expired tokens must return 401","Verify concurrent refresh requests"]'
 ```
 
