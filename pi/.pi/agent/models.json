@@ -2,6 +2,14 @@
   "providers": {
     "mistral": {
       "modelOverrides": {
+        "devstral-medium-latest": {
+          "cost": {
+            "input": 0.34,
+            "output": 1.7,
+            "cacheRead": 0.034,
+            "cacheWrite": 0
+          }
+        },
         "mistral-small-latest": {
           "reasoning": false,
           "input": ["text", "image"],
@@ -75,8 +83,22 @@
       "authHeader": true,
       "models": [
         {
-          "id": "kimi-k2.5",
+          "id": "kimi-k2.5:cloud",
           "name": "Kimi K2.5 (Ollama Cloud)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "devstral-2:123b-cloud",
+          "name": "Devstral 2 (Ollama Cloud)",
           "reasoning": true,
           "input": ["text", "image"],
           "contextWindow": 256000,
