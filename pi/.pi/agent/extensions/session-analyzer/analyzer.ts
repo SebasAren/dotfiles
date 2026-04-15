@@ -457,8 +457,6 @@ function detectInefficientPatterns(toolExecutions: ToolExecution[], issues: Issu
         "Prefer specialized tools (read, grep, find, ls) over bash equivalents for better error handling and formatting.",
     });
   }
-
-
 }
 
 /**
