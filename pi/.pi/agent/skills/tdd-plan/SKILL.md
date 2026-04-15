@@ -213,7 +213,7 @@ If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
    - **Other:** Look at Makefile, justfile, or ask the user.
 4. If you cannot determine the test command, ask before proceeding.
 5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration establishes a shared understanding and becomes the session tree kickoff point.
-6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. This labels the current session tree position as the TDD kickoff checkpoint. Each subsequent step can optionally branch fresh from this point.
+6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. This labels the current session tree position as the TDD kickoff checkpoint. **IMPORTANT: This must be called exactly once per plan, only after the initial exploration. Never call `tdd-set-kickoff` again for the same plan.** Each subsequent step can optionally branch fresh from this single kickoff point.
 
 ### Fresh Start (per step, optional)
 
@@ -235,7 +235,7 @@ questionnaire({
 })
 ```
 
-If the user selects **fresh**, send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the kickoff checkpoint and creates a new branch. The abandoned branch is summarized automatically. If **continue**, proceed from the current position.
+If the user selects **fresh**, send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. If **continue**, proceed from the current position. **Never call `tdd-set-kickoff` again — use `/tdd-go-kickoff` to return to the single kickoff point.**
 
 Starting fresh is especially useful when:
 - A previous step's implementation is cluttering context
@@ -349,6 +349,7 @@ If **archive**, run `tdd-plan archive <slug>`.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
 9. **Commit after each step using the commit skill.** After completing a full Red-Green-Refactor cycle, invoke `/skill:commit` with a descriptive message following conventional commits format.
+10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/tdd-go-kickoff <slug>` to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
 
 ## Error Handling
 

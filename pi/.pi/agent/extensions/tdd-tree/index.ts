@@ -62,9 +62,10 @@ export default function (pi: ExtensionAPI) {
       "Each subsequent TDD step can then branch from this point.",
     promptSnippet: "Label the current session position as the TDD kickoff checkpoint",
     promptGuidelines: [
-      "Call tdd-set-kickoff after the explore phase completes, before starting Step 1.",
-      "This creates a labeled checkpoint in the session tree that steps can branch from.",
-      "Use tdd-go-kickoff (via /tdd-go-kickoff <slug>) to navigate back to this point for fresh steps.",
+      "Call tdd-set-kickoff exactly once per plan, after the explore phase completes, before starting Step 1.",
+      "This creates a single labeled checkpoint in the session tree that all steps can branch from.",
+      "Use tdd-go-kickoff (via /tdd-go-kickoff <slug>) to navigate back to this existing point for fresh steps.",
+      "Never call tdd-set-kickoff more than once per plan.",
     ],
     parameters: Type.Object({
       slug: Type.String({
@@ -87,6 +88,19 @@ export default function (pi: ExtensionAPI) {
       }
 
       const label = kickoffLabel(params.slug);
+
+      // Prevent multiple kickoff points for the same slug
+      if (kickoffEntries.has(params.slug)) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `A kickoff point already exists for "${params.slug}". Use /tdd-go-kickoff ${params.slug} to navigate to it instead of creating a new one.`,
+            },
+          ],
+          details: { success: false, error: "kickoff_already_exists" },
+        } as any;
+      }
 
       // Set the label on the current leaf
       pi.setLabel(leafId, label);
