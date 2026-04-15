@@ -35,10 +35,21 @@ export function prepareArguments(args: unknown): {
   if (!args || typeof args !== "object") return args as any;
   const input = args as {
     path?: string;
-    edits?: Array<{ oldText: string; newText: string }>;
+    edits?: Array<{ oldText: string; newText: string }> | string;
     oldText?: unknown;
     newText?: unknown;
   };
+
+  // Fix: some models serialize edits as a JSON string instead of an array.
+  // Detect this and parse it before schema validation rejects it.
+  if (typeof input.edits === "string") {
+    try {
+      input.edits = JSON.parse(input.edits);
+    } catch {
+      // If parsing fails, let schema validation produce the error message
+    }
+  }
+
   if (typeof input.oldText !== "string" || typeof input.newText !== "string") return args as any;
   const edits = [...(input.edits ?? [])];
   edits.push({ oldText: input.oldText, newText: input.newText });

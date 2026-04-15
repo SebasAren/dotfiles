@@ -39,6 +39,7 @@ export default function (pi: ExtensionAPI) {
       "When changing multiple separate locations in one file, use one edit call with multiple entries in edits[] instead of multiple edit calls",
       "Each edits[].oldText is matched against the original file, not after earlier edits are applied. Do not emit overlapping or nested edits. Merge nearby changes into one edit.",
       "Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.",
+      'edits must be a JSON array of objects, not a string. Pass edits as an actual array: "edits": [{"oldText": ..., "newText": ...}] — never "edits": "[...]"',
     ],
     prepareArguments,
 

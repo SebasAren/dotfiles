@@ -63,4 +63,39 @@ describe("prepareArguments", () => {
     const result = prepareArguments(input);
     expect(result.edits).toHaveLength(1);
   });
+
+  it("parses edits when passed as a JSON string", () => {
+    const result = prepareArguments({
+      path: "test.ts",
+      edits: JSON.stringify([{ oldText: "foo", newText: "bar" }]),
+    });
+    expect(result.path).toBe("test.ts");
+    expect(result.edits).toHaveLength(1);
+    expect(result.edits[0]).toEqual({ oldText: "foo", newText: "bar" });
+  });
+
+  it("parses stringified edits with multiple entries", () => {
+    const result = prepareArguments({
+      path: "app.vue",
+      edits: JSON.stringify([
+        { oldText: "<template>", newText: '<template lang="html">' },
+        { oldText: "export default", newText: "export default defineComponent" },
+      ]),
+    });
+    expect(result.edits).toHaveLength(2);
+    expect(result.edits[0]).toEqual({ oldText: "<template>", newText: '<template lang="html">' });
+    expect(result.edits[1]).toEqual({
+      oldText: "export default",
+      newText: "export default defineComponent",
+    });
+  });
+
+  it("passes through unparseable string edits to let schema validation fail", () => {
+    const result = prepareArguments({
+      path: "test.ts",
+      edits: "not valid json{{{",
+    });
+    // edits stays as string — schema validation will produce the error
+    expect(typeof (result as any).edits).toBe("string");
+  });
 });
