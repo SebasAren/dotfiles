@@ -14,6 +14,7 @@ describe("all extensions verification", () => {
     "worktree-scope",
     "fuzzy-edit",
     "plan-mode",
+    "tdd-tree",
   ];
 
   for (const dir of extensionDirs) {

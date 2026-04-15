@@ -41,7 +41,24 @@ Create a structured implementation plan. The plan MUST follow strict TDD discipl
 2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
 3. **Draft the plan.** Follow the output format below with all RED/GREEN/REFACTOR steps.
 4. **Review for completeness.** Check that every piece of functionality has a corresponding test.
-5. **Create the plan** using `tdd-plan create`. Present the plan inline and ask the user to confirm before proceeding.
+5. **Create the plan** using `tdd-plan create`. Present the plan inline, then use the `questionnaire` tool to confirm:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "confirm-plan",
+    prompt: "Does this plan look good?",
+    label: "Plan",
+    options: [
+      { value: "yes", label: "Yes, proceed to implementation" },
+      { value: "refine", label: "Let me refine it" },
+      { value: "cancel", label: "Cancel" }
+    ]
+  }]
+})
+```
+
+If the user selects **refine**, ask what to change and re-draft. If **cancel**, stop. If **yes**, proceed to implementation.
 
 ### Steps JSON format
 
@@ -99,7 +116,7 @@ High-level overview of the components involved.
 - Edge cases, integration points, things to watch out for
 ```
 
-After the user confirms the plan, proceed to [Implementation](#implementation).
+After the user confirms the plan via questionnaire, proceed to [Implementation](#implementation).
 
 ---
 
@@ -110,7 +127,24 @@ Execute an existing plan step-by-step. Each step follows the strict Red-Green-Re
 ### Setup
 
 1. **Locate the plan.** Run `tdd-plan show <slug>` to display the plan. If no slug is provided, run `tdd-plan list` and ask which one to implement.
-2. **Confirm the plan.** Show the plan summary and ask for confirmation before starting.
+2. **Confirm the plan.** Show the plan summary, then use the `questionnaire` tool:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "start-impl",
+    prompt: "Ready to implement this plan?",
+    label: "Start",
+    options: [
+      { value: "start", label: "Yes, start implementing" },
+      { value: "view", label: "Show full plan details first" },
+      { value: "cancel", label: "Not now" }
+    ]
+  }]
+})
+```
+
+If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
 3. **Determine test command.** Check how to run tests in the project:
    - **Node.js:** `package.json` `"test"` script. Common: `npm test`, `npx vitest`, `npx jest`.
    - **Python:** `pyproject.toml` or `setup.cfg`. Common: `pytest`, `python -m pytest`.
@@ -119,6 +153,35 @@ Execute an existing plan step-by-step. Each step follows the strict Red-Green-Re
    - **Ruby:** `bundle exec rspec`
    - **Other:** Look at Makefile, justfile, or ask the user.
 4. If you cannot determine the test command, ask before proceeding.
+5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration establishes a shared understanding and becomes the session tree kickoff point.
+6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. This labels the current session tree position as the TDD kickoff checkpoint. Each subsequent step can optionally branch fresh from this point.
+
+### Fresh Start (per step, optional)
+
+Before starting a step, the user may choose to branch fresh from the kickoff point. This gives each step a clean session context — only the initial exploration is shared.
+
+Use the `questionnaire` tool:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "fresh-start",
+    prompt: `Starting Step ${stepNum}/${total}. Start fresh from kickoff point?`,
+    label: "Branch",
+    options: [
+      { value: "continue", label: "Continue from here", description: "Build on current context" },
+      { value: "fresh", label: "Start fresh from kickoff", description: "Clean branch from exploration state" }
+    ]
+  }]
+})
+```
+
+If the user selects **fresh**, send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the kickoff checkpoint and creates a new branch. The abandoned branch is summarized automatically. If **continue**, proceed from the current position.
+
+Starting fresh is especially useful when:
+- A previous step's implementation is cluttering context
+- You want to approach the step with a clean mental model
+- The step is independent of previous step changes
 
 ### Red-Green-Refactor Cycle
 
@@ -170,11 +233,49 @@ Show:
 2. The final test output.
 3. The commit that was made.
 
-Then ask: "Step N/M complete. Continue to the next step?" Do not proceed until the user confirms. If the user requests changes, address them and re-verify before moving on.
+Then use the `questionnaire` tool to determine next action:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "step-complete",
+    prompt: `Step ${stepNum}/${total} complete. What next?`,
+    label: "Next",
+    options: [
+      { value: "next-continue", label: `Continue to Step ${stepNum + 1}`, description: "Build on current context" },
+      { value: "next-fresh", label: `Step ${stepNum + 1} (fresh from kickoff)`, description: "Clean branch from exploration state" },
+      { value: "changes", label: "I want changes", description: "Address feedback before continuing" },
+      { value: "pause", label: "Pause here", description: "Stop for now" }
+    ]
+  }]
+})
+```
+
+Handle the response:
+- **next-continue**: Proceed to the next step from the current position.
+- **next-fresh**: Send `/tdd-go-kickoff <slug>`, then proceed to the next step.
+- **changes**: Ask what to change, address feedback, re-run tests, then ask again.
+- **pause**: Stop and let the user resume later.
 
 ### Finish
 
-After all steps are complete and confirmed by the user, run `tdd-plan archive <slug>`.
+After all steps are complete, show the final summary and use the `questionnaire` tool:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "plan-done",
+    prompt: "All steps complete! What would you like to do?",
+    label: "Finish",
+    options: [
+      { value: "archive", label: "Archive the plan", description: "Move to .pi/plans/archive/" },
+      { value: "keep", label: "Keep the plan", description: "Leave it for reference" }
+    ]
+  }]
+})
+```
+
+If **archive**, run `tdd-plan archive <slug>`.
 
 ---
 

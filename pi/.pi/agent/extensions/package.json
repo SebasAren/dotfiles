@@ -14,7 +14,8 @@
     "plan-mode",
     "shared",
     "todo",
-"worktree-scope"
+    "tdd-tree",
+    "worktree-scope"
   ],
   "devDependencies": {
     "@eslint/js": "^9.0.0",

@@ -75,6 +75,13 @@
         "@mariozechner/pi-tui": "^0.65.0",
       },
     },
+    "tdd-tree": {
+      "name": "@pi-ext/tdd-tree",
+      "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+    },
     "todo": {
       "name": "@pi-ext/todo",
       "version": "1.0.0",
@@ -234,6 +241,8 @@
     "@pi-ext/plan-mode": ["@pi-ext/plan-mode@workspace:plan-mode"],
 
     "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
+
+    "@pi-ext/tdd-tree": ["@pi-ext/tdd-tree@workspace:tdd-tree"],
 
     "@pi-ext/todo": ["@pi-ext/todo@workspace:todo"],
 
