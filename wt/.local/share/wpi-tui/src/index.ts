@@ -314,10 +314,6 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
       yellow(`Merging '${currentBranch}' → '${source || "default"}'...`),
     );
 
-    // Run wt merge, capturing output
-    const tmpFile = `/tmp/wpi-merge-${Date.now()}`;
-    writeFileSync(tmpFile, "");
-
     // Stop TUI for the merge subprocess
     handle.setHidden(true);
     tui.stop();
@@ -332,7 +328,7 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
 
     const result = spawnSync("wt", mergeArgs, {
       encoding: "utf-8",
-      stdio: ["inherit", "pipe", "pipe"],
+      stdio: "inherit",
       env: {
         ...process.env,
         WORKTRUNK_DIRECTIVE_FILE: directiveTmp,
@@ -359,9 +355,6 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
     }
 
     // Merge failed
-    const mergeOutput = (result.stdout ?? "") + (result.stderr ?? "");
-    const cleanOutput = mergeOutput.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
-
     addStatus(red(`✗ Merge failed (exit ${result.status})`));
     addStatus(dim("Opening pi to resolve..."));
 
@@ -371,8 +364,7 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
       promptFile,
       `wt merge failed with exit code ${result.status}.
 
-Output:
-${cleanOutput}
+The merge output was printed to the terminal above.
 
 Diagnose and fix the failure. Common causes:
 - Test or lint failures in pre-merge hooks — fix the code
