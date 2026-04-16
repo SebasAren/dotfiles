@@ -147,6 +147,9 @@ function runWt(
     `wpi-directive-${Date.now()}`,
   );
 
+  // Create the file before passing to wt — wt expects it to exist (like mktemp does)
+  writeFileSync(tmpFile, "");
+
   const wtEnv: Record<string, string> = {
     WORKTRUNK_DIRECTIVE_FILE: tmpFile,
   };
