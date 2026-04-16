@@ -326,9 +326,14 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
     );
     writeFileSync(directiveTmp, "");
 
-    const result = spawnSync("wt", mergeArgs, {
+    const mergeOutFile = `/tmp/wpi-merge-out-${Date.now()}`;
+    writeFileSync(mergeOutFile, "");
+
+    // stdin=inherit prevents hang, stdout/stderr captured to file for pi
+    const mergeCmd = `wt ${mergeArgs.map((a) => `'${a.replace(/'/g, "'\''")}'`).join(" ")} > '${mergeOutFile}' 2>&1`;
+    const result = spawnSync("bash", ["-c", mergeCmd], {
       encoding: "utf-8",
-      stdio: "inherit",
+      stdio: ["inherit", "inherit", "inherit"],
       env: {
         ...process.env,
         WORKTRUNK_DIRECTIVE_FILE: directiveTmp,
@@ -350,21 +355,26 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
     tui.requestRender(true);
 
     if ((result.status ?? 1) === 0) {
+      if (existsSync(mergeOutFile)) unlinkSync(mergeOutFile);
       addStatus(green(`✓ Merged into '${source || "default"}'`));
       return;
     }
 
-    // Merge failed
+    // Merge failed — pass wt merge output to pi
     addStatus(red(`✗ Merge failed (exit ${result.status})`));
     addStatus(dim("Opening pi to resolve..."));
 
-    // Write error context to a temp file
+    const mergeOutput = existsSync(mergeOutFile)
+      ? readFileSync(mergeOutFile, "utf-8").trim()
+      : "(no output captured)";
+
     const promptFile = `/tmp/wpi-merge-err-${Date.now()}`;
     writeFileSync(
       promptFile,
       `wt merge failed with exit code ${result.status}.
 
-The merge output was printed to the terminal above.
+Output:
+${mergeOutput}
 
 Diagnose and fix the failure. Common causes:
 - Test or lint failures in pre-merge hooks — fix the code
@@ -376,6 +386,7 @@ Do NOT run 'wt merge' yourself. Only fix the code. The user will retry.`,
 
     runPi(tui, handle, [`@${promptFile}`]);
     unlinkSync(promptFile);
+    if (existsSync(mergeOutFile)) unlinkSync(mergeOutFile);
 
     addStatus(green("✓ Pi exited — returning to menu"));
     addStatus(dim("Select Merge to retry"));
