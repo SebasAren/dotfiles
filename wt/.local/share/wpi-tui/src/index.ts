@@ -22,12 +22,13 @@ const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
 // ── Config from environment ───────────────────────────────────────
-const BRANCH = process.env.WPI_BRANCH ?? "???";
+const BRANCH = process.env.WPI_BRANCH ?? "";
 const SOURCE_BRANCH = process.env.WPI_SOURCE_BRANCH ?? "";
 const PI_ARGS = process.env.WPI_PI_ARGS
   ? process.env.WPI_PI_ARGS.split(" ").filter(Boolean)
   : [];
 const DIRECTIVE_FILE = process.env.WPI_DIRECTIVE_FILE;
+const HAS_BRANCH = Boolean(BRANCH);
 
 // ── Current branch (may change as we switch worktrees) ────────────
 function getCurrentBranch(): string {
@@ -107,7 +108,7 @@ function runPi(
 
 // ── Menu items ────────────────────────────────────────────────────
 function buildMenuItems(): SelectItem[] {
-  return [
+  const items: SelectItem[] = [
     {
       value: "pi",
       label: "Pi",
@@ -118,19 +119,27 @@ function buildMenuItems(): SelectItem[] {
       label: "Review",
       description: "Diff review with nvim, then pi if comments found",
     },
-    {
+  ];
+
+  if (HAS_BRANCH) {
+    items.push({
       value: "merge",
       label: "Merge",
       description: SOURCE_BRANCH
         ? `Squash-merge into '${SOURCE_BRANCH}'`
         : "Squash-merge into source branch",
-    },
-    {
-      value: "exit",
-      label: "Exit",
-      description: "Leave the wpi session (worktree is kept)",
-    },
-  ];
+    });
+  }
+
+  items.push({
+    value: "exit",
+    label: "Exit",
+    description: HAS_BRANCH
+      ? "Leave the wpi session (worktree is kept)"
+      : "Leave the wpi session",
+  });
+
+  return items;
 }
 
 function theme() {
@@ -150,7 +159,8 @@ tui.start();
 
 // Header
 const header = new Container();
-header.addChild(new Text(`${bold("╲ wpi")} ${dim(`— ${BRANCH}`)}`));
+const headerBranch = BRANCH || getCurrentBranch();
+header.addChild(new Text(`${bold("╲ wpi")} ${dim(`— ${headerBranch}`)}`));
 header.addChild(new Spacer(1));
 header.addChild(new Text(dim("↑↓ Navigate  ↵ Select  Esc Quit")));
 header.addChild(new Spacer(1));
