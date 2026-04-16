@@ -595,10 +595,12 @@ root.render = function (width: number): string[] {
 root.invalidate = function () {
   // Invalidate all children
   for (const child of root.children) {
-    child.invalidate();
+    child.invalidate?.();
   }
-  inputField.invalidate();
-  tui.invalidate();
+  inputField.invalidate?.();
+  // NOTE: do NOT call tui.invalidate() here — root is an overlay on tui,
+  // so tui.invalidate() would re-invalidate root, causing infinite recursion.
+  tui.requestRender();
 };
 
 // ── Process signals ───────────────────────────────────────────────
