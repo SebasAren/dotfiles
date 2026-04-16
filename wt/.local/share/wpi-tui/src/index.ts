@@ -36,7 +36,7 @@ function getCurrentBranch(): string {
     encoding: "utf-8",
     stdio: "pipe",
   });
-  return result.stdout.trim() || "???";
+  return (result.stdout ?? "").trim() || "???";
 }
 
 // ── Run command, handing terminal to subprocess ───────────────────
@@ -248,7 +248,7 @@ selectList.onSelect = (item) => {
         encoding: "utf-8",
         stdio: "pipe",
       });
-      const mergeBase = baseResult.stdout.trim();
+      const mergeBase = (baseResult.stdout ?? "").trim();
 
       if (!mergeBase) {
         addStatus(red("✗ Could not determine merge base"));
@@ -356,8 +356,10 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
 
     if ((result.status ?? 1) === 0) {
       if (existsSync(mergeOutFile)) unlinkSync(mergeOutFile);
-      addStatus(green(`✓ Merged into '${source || "default"}'`));
-      return;
+      handle.hide();
+      tui.stop();
+      process.stdout.write(`\r\n${green(`✓ Merged into '${source || "default"}'`)}\r\n`);
+      process.exit(0);
     }
 
     // Merge failed — pass wt merge output to pi
