@@ -1,24 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# wpi - TUI frontend for Worktree + Pi workflow
+# wpi - Worktree + Pi: create worktree, then run pi in a TUI loop
 #
-# Usage: wpi               # show interactive TUI menu
-#        wpi <branch> [..]  # run full pipeline (backward compat)
-#        wpi --attach <br>  # resume interrupted session
+# Usage: wpi <branch> [pi-args...]
 #        wpi -h|--help
 #
-# The TUI lets you pick individual stages: create worktree, start pi,
-# review changes, merge, or attach to a session.
-# When called with arguments, delegates to wpi-backend for the full flow.
+# Creates a worktree for <branch>, then opens a TUI where you can
+# cycle through: Pi → Review → Merge. Exit the TUI to finish.
 
 _self_dir="$(cd "$(dirname "$0")" && pwd)"
 _tui_src="$_self_dir/../share/wpi-tui/src/index.ts"
 
-if [[ $# -eq 0 ]]; then
-    # No args: show TUI menu
-    exec bun run "$_tui_src"
-else
-    # Args provided: delegate to backend for backward compatibility
-    exec "$_self_dir/wpi-backend" "$@"
+if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    echo "Usage: wpi <branch> [pi-args...]"
+    echo ""
+    echo "Create a worktree, open a TUI loop: Pi → Review → Merge."
+    echo "Exit the TUI when done."
+    echo ""
+    echo "Examples:"
+    echo "  wpi fix-login-bug"
+    echo "  wpi refactor-api --provider anthropic --model sonnet"
+    exit 0
 fi
+
+for _cmd in wt pi git bun; do
+    if ! command -v "$_cmd" >/dev/null 2>&1; then
+        echo "wpi requires '$_cmd' in PATH." >&2
+        exit 1
+    fi
+done
+unset _cmd
+
+branch="$1"
+shift
+
+# Directive file for wt shell integration
+directive_file="$(mktemp)"
+trap 'rm -f "$directive_file"' EXIT
+
+# Create worktree and switch to it
+source_branch="$(git branch --show-current 2>/dev/null || echo '')"
+if ! WORKTRUNK_DIRECTIVE_FILE="$directive_file" wt switch --create "$branch"; then
+    echo "  Could not create worktree for '$branch'." >&2
+    exit 1
+fi
+# Source the directive to cd into the worktree in this process
+if [[ -s "$directive_file" ]]; then
+    # shellcheck source=/dev/null
+    source "$directive_file"
+fi
+
+# Pass branch, source, and extra pi args to the TUI
+export WPI_BRANCH="$branch"
+export WPI_SOURCE_BRANCH="$source_branch"
+export WPI_PI_ARGS="$*"
+export WPI_DIRECTIVE_FILE="$directive_file"
+
+exec bun run "$_tui_src"

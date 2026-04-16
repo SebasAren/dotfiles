@@ -10,14 +10,7 @@ import {
   type OverlayHandle,
 } from "@mariozechner/pi-tui";
 import { spawnSync } from "child_process";
-import {
-  existsSync,
-  readdirSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} from "fs";
-import { homedir } from "os";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 
 // ── ANSI helpers ──────────────────────────────────────────────────
@@ -26,54 +19,17 @@ const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
+const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 
-// ── State dir ─────────────────────────────────────────────────────
-const STATE_DIR = join(
-  process.env.XDG_CACHE_HOME || join(homedir(), ".cache"),
-  "wpi",
-);
+// ── Config from environment ───────────────────────────────────────
+const BRANCH = process.env.WPI_BRANCH ?? "???";
+const SOURCE_BRANCH = process.env.WPI_SOURCE_BRANCH ?? "";
+const PI_ARGS = process.env.WPI_PI_ARGS
+  ? process.env.WPI_PI_ARGS.split(" ").filter(Boolean)
+  : [];
+const DIRECTIVE_FILE = process.env.WPI_DIRECTIVE_FILE;
 
-// ── Repo ID ───────────────────────────────────────────────────────
-function getRepoId(): string {
-  const result = spawnSync("git", ["rev-parse", "--show-toplevel"], {
-    encoding: "utf-8",
-    stdio: "pipe",
-  });
-  const root = result.stdout.trim() || process.cwd();
-  // Simple hash (MD5 not available in Bun crypto without import, use a basic hash)
-  let hash = 0;
-  for (let i = 0; i < root.length; i++) {
-    const ch = root.charCodeAt(i);
-    hash = ((hash << 5) - hash + ch) | 0;
-  }
-  return Math.abs(hash).toString(16).slice(0, 8).padStart(8, "0");
-}
-
-// ── State helpers ─────────────────────────────────────────────────
-interface WpiState {
-  branch: string;
-  sourceBranch: string;
-  stage: string;
-  repoId: string;
-}
-
-function loadStates(): WpiState[] {
-  if (!existsSync(STATE_DIR)) return [];
-  const repoId = getRepoId();
-  const states: WpiState[] = [];
-  for (const f of readdirSync(STATE_DIR)) {
-    if (!f.endsWith(".state")) continue;
-    const content = readFileSync(join(STATE_DIR, f), "utf-8");
-    const repoIdMatch = content.match(/^repo_id=(.+)$/m);
-    if (repoIdMatch?.[1] !== repoId) continue;
-    const branch = content.match(/^branch=(.+)$/m)?.[1] ?? "";
-    const sourceBranch = content.match(/^source_branch=(.+)$/m)?.[1] ?? "";
-    const stage = content.match(/^stage=(.+)$/m)?.[1] ?? "";
-    states.push({ branch, sourceBranch, stage, repoId });
-  }
-  return states;
-}
-
+// ── Current branch (may change as we switch worktrees) ────────────
 function getCurrentBranch(): string {
   const result = spawnSync("git", ["branch", "--show-current"], {
     encoding: "utf-8",
@@ -82,20 +38,16 @@ function getCurrentBranch(): string {
   return result.stdout.trim() || "???";
 }
 
-// ── Run command helper ────────────────────────────────────────────
-// Stops TUI, runs command with inherited stdio, restarts TUI
+// ── Run command, handing terminal to subprocess ───────────────────
 function runInteractive(
   tui: TUI,
   handle: OverlayHandle,
   command: string,
   args: string[],
   env?: Record<string, string>,
-): { exitCode: number; stdout: string; stderr: string } {
-  // Hide overlay and stop TUI so the subprocess gets the terminal
+): number {
   handle.setHidden(true);
   tui.stop();
-
-  // Write a newline to clean up after TUI
   process.stdout.write("\r\n");
 
   const result = spawnSync(command, args, {
@@ -104,286 +56,109 @@ function runInteractive(
     env: { ...process.env, ...env },
   });
 
-  // Restart TUI and show overlay
   tui.start();
   handle.setHidden(false);
   tui.requestRender(true);
 
-  return {
-    exitCode: result.status ?? 1,
-    stdout: "",
-    stderr: "",
-  };
+  return result.status ?? 1;
 }
 
-// Runs a command capturing output (no terminal takeover needed)
-function runCapture(
-  command: string,
-  args: string[],
-  env?: Record<string, string>,
-): { exitCode: number; stdout: string; stderr: string } {
-  const result = spawnSync(command, args, {
-    encoding: "utf-8",
-    stdio: "pipe",
-    env: { ...process.env, ...env },
-  });
-  return {
-    exitCode: result.status ?? 1,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
-  };
-}
-
-// ── Directive file handling ───────────────────────────────────────
-// When wt outputs directives (cd commands), forward them to WPI_DIRECTIVE_FILE
-function runWt(
-  tui: TUI,
-  handle: OverlayHandle,
-  args: string[],
-): { exitCode: number } {
-  const directiveFile = process.env.WPI_DIRECTIVE_FILE;
+// ── Run wt with directive forwarding ──────────────────────────────
+function runWt(tui: TUI, handle: OverlayHandle, args: string[]): number {
   const tmpFile = join(
     process.env.TMPDIR || "/tmp",
     `wpi-directive-${Date.now()}`,
   );
-
-  // Create the file before passing to wt — wt expects it to exist (like mktemp does)
   writeFileSync(tmpFile, "");
 
-  const wtEnv: Record<string, string> = {
+  const result = runInteractive(tui, handle, "wt", args, {
     WORKTRUNK_DIRECTIVE_FILE: tmpFile,
-  };
-
-  const result = runInteractive(tui, handle, "wt", args, wtEnv);
+  });
 
   // Forward directives to parent shell
-  if (directiveFile && existsSync(tmpFile)) {
+  if (DIRECTIVE_FILE && existsSync(tmpFile)) {
     const content = readFileSync(tmpFile, "utf-8");
     if (content.trim()) {
-      writeFileSync(directiveFile, content, { flag: "a" });
+      writeFileSync(DIRECTIVE_FILE, content, { flag: "a" });
     }
   }
 
-  // Clean up
-  if (existsSync(tmpFile)) {
-    unlinkSync(tmpFile);
-  }
-
-  return { exitCode: result.exitCode };
+  if (existsSync(tmpFile)) unlinkSync(tmpFile);
+  return result;
 }
 
-// ── Stage implementations ────────────────────────────────────────
-
-function stageCreateWorktree(
+// ── Run pi via bash (needed for @file syntax) ─────────────────────
+function runPi(
   tui: TUI,
   handle: OverlayHandle,
-  statusContainer: Container,
-  branchName: string,
-): void {
-  addStatus(
-    statusContainer,
-    tui,
-    yellow(`Creating worktree for '${branchName}'...`),
-  );
-
-  const result = runWt(tui, handle, ["switch", "--create", branchName]);
-
-  if (result.exitCode === 0) {
-    addStatus(
-      statusContainer,
-      tui,
-      green(`✓ Worktree created and switched to '${branchName}'`),
-    );
-  } else {
-    addStatus(
-      statusContainer,
-      tui,
-      red(`✗ Failed to create worktree (exit ${result.exitCode})`),
-    );
-  }
-}
-
-function stageStartPi(
-  tui: TUI,
-  handle: OverlayHandle,
-  statusContainer: Container,
   extraArgs: string[] = [],
-): void {
-  const branch = getCurrentBranch();
-  addStatus(statusContainer, tui, yellow(`Starting pi in '${branch}'...`));
-
-  const args = [...extraArgs];
+): number {
+  const args = [...PI_ARGS, ...extraArgs];
   if (args.length > 0) {
     args.push(
-      "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually when ready.",
+      "IMPORTANT: Do NOT call 'wt merge' yourself. Only fix the code. The user will run the merge manually.",
     );
   }
 
-  const result = runInteractive(tui, handle, "pi", args);
-  addStatus(
-    statusContainer,
-    tui,
-    result.exitCode === 0
-      ? green(`✓ Pi exited successfully`)
-      : red(`✓ Pi exited (code ${result.exitCode})`),
-  );
+  // Use bash -c so @file arguments are processed by pi's shell wrapper
+  const cmd = `pi ${args.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ")}`;
+  return runInteractive(tui, handle, "bash", ["-c", cmd]);
 }
 
-function stageReview(
-  tui: TUI,
-  handle: OverlayHandle,
-  statusContainer: Container,
-): void {
-  // Find merge base
-  const sourceBranch =
-    loadStates().find((s) => s.branch === getCurrentBranch())?.sourceBranch ||
-    "main";
-  const baseResult = runCapture("git", ["merge-base", sourceBranch, "HEAD"]);
-  const mergeBase = baseResult.stdout.trim();
-
-  if (!mergeBase) {
-    addStatus(
-      statusContainer,
-      tui,
-      red("✗ Could not determine merge base for review"),
-    );
-    return;
-  }
-
-  addStatus(statusContainer, tui, yellow("Opening nvim diff review..."));
-
-  runInteractive(
-    tui,
-    handle,
-    "nvim",
-    ["-c", `lua require('git_diff_review').open('${mergeBase}')`],
-    {
-      WPI_BASE_REF: mergeBase,
-    },
-  );
-
-  addStatus(statusContainer, tui, green("✓ Review session closed"));
-}
-
-function stageMerge(
-  tui: TUI,
-  handle: OverlayHandle,
-  statusContainer: Container,
-): void {
-  // Find source branch from saved state, or default to current branch's source
-  const branch = getCurrentBranch();
-  const state = loadStates().find((s) => s.branch === branch);
-  const sourceBranch = state?.sourceBranch || "main";
-
-  addStatus(
-    statusContainer,
-    tui,
-    yellow(`Merging '${branch}' → '${sourceBranch}'...`),
-  );
-
-  const result = runWt(tui, handle, [
-    "merge",
-    ...(sourceBranch ? [sourceBranch] : []),
-  ]);
-
-  if (result.exitCode === 0) {
-    addStatus(statusContainer, tui, green(`✓ Merged to '${sourceBranch}'`));
-    // Clear state on successful merge
-    if (state) {
-      const stateFile = join(STATE_DIR, `${state.repoId}-${branch}.state`);
-      if (existsSync(stateFile)) unlinkSync(stateFile);
-    }
-  } else {
-    addStatus(
-      statusContainer,
-      tui,
-      red(
-        `✗ Merge failed (exit ${result.exitCode}). Try 'wpi-backend --attach ${branch}' for retry flow.`,
-      ),
-    );
-  }
-}
-
-// ── UI helpers ────────────────────────────────────────────────────
-
-function addStatus(container: Container, tui: TUI, message: string) {
-  container.addChild(new Text(message));
-  tui.invalidate();
-}
-
-// ── Theme ─────────────────────────────────────────────────────────
-function theme() {
-  return {
-    selectedPrefix: (text: string) => `\x1b[36m${text}\x1b[0m`,
-    selectedText: (text: string) => `\x1b[1m${text}\x1b[0m`,
-    description: (text: string) => `\x1b[2m${text}\x1b[0m`,
-    scrollInfo: (text: string) => `\x1b[2m${text}\x1b[0m`,
-    noMatch: (text: string) => `\x1b[2m${text}\x1b[0m`,
-  };
-}
-
-// ── Build menu ────────────────────────────────────────────────────
-
-type MenuStage = "create-worktree" | "start-pi" | "review" | "merge" | "attach";
-
+// ── Menu items ────────────────────────────────────────────────────
 function buildMenuItems(): SelectItem[] {
-  const branch = getCurrentBranch();
-  const states = loadStates();
-  const hasWorktree = branch !== "???" && branch !== "";
-
   return [
     {
-      value: "create-worktree",
-      label: "Create worktree",
-      description: "Create/switch to a worktree for a branch",
-    },
-    {
-      value: "start-pi",
-      label: "Start Pi",
-      description: hasWorktree
-        ? `Launch pi in '${branch}'`
-        : "Launch pi in current directory",
+      value: "pi",
+      label: "Pi",
+      description: `Launch pi in '${getCurrentBranch()}'`,
     },
     {
       value: "review",
       label: "Review",
-      description: "Open nvim diff review for changes",
+      description: "Diff review with nvim, then pi if comments found",
     },
     {
       value: "merge",
       label: "Merge",
-      description: hasWorktree
-        ? `Squash-merge '${branch}' back to source`
-        : "Squash-merge worktree back to source branch",
+      description: SOURCE_BRANCH
+        ? `Squash-merge into '${SOURCE_BRANCH}'`
+        : "Squash-merge into source branch",
     },
     {
-      value: "attach",
-      label: "Attach",
-      description:
-        states.length > 0
-          ? `Resume a session (${states.length} active)`
-          : "No active sessions",
+      value: "exit",
+      label: "Exit",
+      description: "Leave the wpi session (worktree is kept)",
     },
   ];
 }
 
-// ── Main ──────────────────────────────────────────────────────────
+function theme() {
+  return {
+    selectedPrefix: (t: string) => cyan(t),
+    selectedText: (t: string) => bold(t),
+    description: (t: string) => dim(t),
+    scrollInfo: (t: string) => dim(t),
+    noMatch: (t: string) => dim(t),
+  };
+}
 
+// ── Main ──────────────────────────────────────────────────────────
 const terminal = new ProcessTerminal();
 const tui = new TUI(terminal);
 tui.start();
 
 // Header
 const header = new Container();
-header.addChild(new Text(bold("╲ wpi — Worktree + Pi ╱")));
+header.addChild(new Text(`${bold("╲ wpi")} ${dim(`— ${BRANCH}`)}`));
 header.addChild(new Spacer(1));
 header.addChild(new Text(dim("↑↓ Navigate  ↵ Select  Esc Quit")));
 header.addChild(new Spacer(1));
 
-// Status area (shown after actions)
+// Status area for messages between actions
 const statusContainer = new Container();
 
-// Build initial menu
+// Build menu
 const menuItems = buildMenuItems();
 const selectList = new SelectList(menuItems, menuItems.length, theme());
 
@@ -402,7 +177,7 @@ const handle = tui.showOverlay(root, {
 
 tui.setFocus(selectList);
 
-// ── Input mode for branch name ────────────────────────────────────
+// ── Input mode for "Pi with prompt" ──────────────────────────────
 let inputMode = false;
 let inputCallback: ((value: string) => void) | null = null;
 const inputField = new Input();
@@ -421,140 +196,94 @@ inputField.onSubmit = (value) => {
   }
 };
 
-// ── Attach mode for session selection ─────────────────────────────
-let attachMode = false;
-let attachSelectList: SelectList | null = null;
-
-function showAttachMenu() {
-  const states = loadStates();
-  if (states.length === 0) {
-    addStatus(statusContainer, tui, dim("No active sessions to attach to."));
-    return;
-  }
-
-  const items: SelectItem[] = states.map((s) => ({
-    value: s.branch,
-    label: s.branch,
-    description: `stage: ${s.stage}`,
-  }));
-
-  attachSelectList = new SelectList(items, items.length, {
-    selectedPrefix: (text) => `\x1b[36m${text}\x1b[0m`,
-    selectedText: (text) => `\x1b[1m${text}\x1b[0m`,
-    description: (text) => `\x1b[2m${text}\x1b[0m`,
-    scrollInfo: (text) => `\x1b[2m${text}\x1b[0m`,
-    noMatch: (text) => `\x1b[2m${text}\x1b[0m`,
-  });
-
-  attachSelectList.onSelect = (item) => {
-    attachMode = false;
-    tui.setFocus(null);
-    tui.invalidate();
-
-    // Switch to the worktree then reopen the TUI — the user can now
-    // pick the stage they want to resume from.
-    const branch = item.value;
-    addStatus(
-      statusContainer,
-      tui,
-      yellow(`Switching to worktree '${branch}'...`),
-    );
-    runWt(tui, handle, ["switch", branch]);
-    refreshMenu();
-    addStatus(
-      statusContainer,
-      tui,
-      green(`✓ Switched to '${branch}'. Pick a stage to continue.`),
-    );
-    tui.setFocus(selectList);
-  };
-
-  attachSelectList.onCancel = () => {
-    attachMode = false;
-    tui.setFocus(selectList);
-    tui.invalidate();
-  };
-
-  attachMode = true;
-  tui.setFocus(attachSelectList);
+// ── Status helper ─────────────────────────────────────────────────
+function addStatus(message: string) {
+  statusContainer.addChild(new Text(message));
   tui.invalidate();
 }
 
-// Mutable ref so stage handlers always point to the current menu
+// ── Refresh menu in-place ─────────────────────────────────────────
 const menuRef: { current: SelectList } = { current: selectList };
 
-// ── Refresh menu with current state ───────────────────────────────
 function refreshMenu() {
   const items = buildMenuItems();
-  const newSelectList = new SelectList(items, items.length, theme());
+  const newList = new SelectList(items, items.length, theme());
+  newList.onSelect = menuRef.current.onSelect;
+  newList.onCancel = menuRef.current.onCancel;
 
-  // Wire up the same handlers
-  newSelectList.onSelect = menuRef.current.onSelect;
-  newSelectList.onCancel = menuRef.current.onCancel;
-
-  // Replace in root container
   const idx = root.children.indexOf(menuRef.current);
-  if (idx >= 0) {
-    root.children[idx] = newSelectList;
-  }
-
-  menuRef.current = newSelectList;
-  tui.setFocus(newSelectList);
+  if (idx >= 0) root.children[idx] = newList;
+  menuRef.current = newList;
+  tui.setFocus(newList);
   tui.invalidate();
 }
 
-// ── Stage selection handler ───────────────────────────────────────
+// ── Menu handler ──────────────────────────────────────────────────
 selectList.onSelect = (item) => {
-  const stage = item.value as MenuStage;
+  const stage = item.value;
 
   switch (stage) {
-    case "create-worktree": {
-      // Show branch name input
-      inputMode = true;
-      inputField.setValue("");
-      tui.setFocus(inputField);
-      tui.invalidate();
-
-      inputCallback = (branchName) => {
-        if (!branchName.trim()) {
-          addStatus(statusContainer, tui, dim("Cancelled — no branch name."));
-          tui.setFocus(menuRef.current);
-          return;
-        }
-        stageCreateWorktree(tui, handle, statusContainer, branchName.trim());
-        refreshMenu();
-        tui.setFocus(menuRef.current);
-      };
-      break;
-    }
-
-    case "start-pi": {
-      tui.setFocus(null);
-      stageStartPi(tui, handle, statusContainer);
+    case "pi": {
+      addStatus(yellow("Starting pi..."));
+      runPi(tui, handle);
+      addStatus(green("✓ Pi exited"));
       refreshMenu();
-      tui.setFocus(menuRef.current);
       break;
     }
 
     case "review": {
-      tui.setFocus(null);
-      stageReview(tui, handle, statusContainer);
+      // Step 1: Open nvim diff review
+      const source = SOURCE_BRANCH || "main";
+      const baseResult = spawnSync("git", ["merge-base", source, "HEAD"], {
+        encoding: "utf-8",
+        stdio: "pipe",
+      });
+      const mergeBase = baseResult.stdout.trim();
+
+      if (!mergeBase) {
+        addStatus(red("✗ Could not determine merge base"));
+        refreshMenu();
+        break;
+      }
+
+      addStatus(yellow("Opening nvim diff review..."));
+      runInteractive(
+        tui,
+        handle,
+        "nvim",
+        ["-c", `lua require('git_diff_review').open('${mergeBase}')`],
+        { WPI_BASE_REF: mergeBase },
+      );
+
+      // Step 2: Check for review comments → feed to pi
+      const reviewFile = ".code-review.md";
+      if (existsSync(reviewFile) && readFileSync(reviewFile, "utf-8").trim()) {
+        addStatus(yellow("Review comments found — reopening pi..."));
+        runPi(tui, handle, [
+          `@${reviewFile}`,
+          "Apply these review comments. Fix each issue.",
+        ]);
+        unlinkSync(reviewFile);
+        addStatus(green("✓ Review comments applied"));
+      } else {
+        if (existsSync(reviewFile)) unlinkSync(reviewFile);
+        addStatus(green("✓ Review complete (no comments)"));
+      }
+
       refreshMenu();
-      tui.setFocus(menuRef.current);
       break;
     }
 
     case "merge": {
-      tui.setFocus(null);
-      stageMerge(tui, handle, statusContainer);
+      handleMerge(tui, handle);
       refreshMenu();
-      tui.setFocus(menuRef.current);
       break;
     }
 
-    case "attach": {
-      showAttachMenu();
-      break;
+    case "exit": {
+      handle.hide();
+      tui.stop();
+      process.exit(0);
     }
   }
 };
@@ -565,30 +294,104 @@ selectList.onCancel = () => {
   process.exit(0);
 };
 
+// ── Merge with retry-through-pi loop ──────────────────────────────
+function handleMerge(tui: TUI, handle: OverlayHandle): void {
+  const source = SOURCE_BRANCH || "";
+  const currentBranch = getCurrentBranch();
+
+  while (true) {
+    addStatus(
+      yellow(`Merging '${currentBranch}' → '${source || "default"}'...`),
+    );
+
+    // Run wt merge, capturing output
+    const tmpFile = `/tmp/wpi-merge-${Date.now()}`;
+    writeFileSync(tmpFile, "");
+
+    // Stop TUI for the merge subprocess
+    handle.setHidden(true);
+    tui.stop();
+    process.stdout.write("\r\n");
+
+    const mergeArgs = ["merge", ...(source ? [source] : [])];
+    const directiveTmp = join(
+      process.env.TMPDIR || "/tmp",
+      `wpi-directive-${Date.now()}`,
+    );
+    writeFileSync(directiveTmp, "");
+
+    const result = spawnSync("wt", mergeArgs, {
+      encoding: "utf-8",
+      stdio: ["inherit", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        WORKTRUNK_DIRECTIVE_FILE: directiveTmp,
+      },
+    });
+
+    // Forward directives
+    if (DIRECTIVE_FILE && existsSync(directiveTmp)) {
+      const content = readFileSync(directiveTmp, "utf-8");
+      if (content.trim()) {
+        writeFileSync(DIRECTIVE_FILE, content, { flag: "a" });
+      }
+    }
+    if (existsSync(directiveTmp)) unlinkSync(directiveTmp);
+
+    // Restart TUI
+    tui.start();
+    handle.setHidden(false);
+    tui.requestRender(true);
+
+    if ((result.status ?? 1) === 0) {
+      addStatus(green(`✓ Merged into '${source || "default"}'`));
+      return;
+    }
+
+    // Merge failed
+    const mergeOutput = (result.stdout ?? "") + (result.stderr ?? "");
+    const cleanOutput = mergeOutput.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+
+    addStatus(red(`✗ Merge failed (exit ${result.status})`));
+    addStatus(dim("Opening pi to resolve..."));
+
+    // Write error context to a temp file
+    const promptFile = `/tmp/wpi-merge-err-${Date.now()}`;
+    writeFileSync(
+      promptFile,
+      `wt merge failed with exit code ${result.status}.
+
+Output:
+${cleanOutput}
+
+Diagnose and fix the failure. Common causes:
+- Test or lint failures in pre-merge hooks — fix the code
+- Rebase conflicts — resolve conflicts and complete the rebase
+- Uncommitted changes — commit or revert them
+
+Do NOT run 'wt merge' yourself. Only fix the code. The user will retry.`,
+    );
+
+    runPi(tui, handle, [`@${promptFile}`]);
+    unlinkSync(promptFile);
+
+    addStatus(green("✓ Pi exited — returning to menu"));
+    addStatus(dim("Select Merge to retry"));
+    return;
+  }
+}
+
 // ── Custom render for input mode ──────────────────────────────────
-// We need to show the input field when in input mode.
-// Patch the root container's render to inject the input field.
 const originalRender = root.render.bind(root);
 root.render = function (width: number): string[] {
   const lines = originalRender(width);
 
   if (inputMode) {
-    // Find where the selectList is and insert input before it
     const inputLines = inputField.render(width);
-    const promptLine = `\x1b[1mBranch name:\x1b[0m ${inputLines[0] || ""}`;
-    // Replace the menu area with the input prompt
-    // Find the first menu line (after header) and replace
-    const headerEnd = 4; // header has 4 lines (title + spacer + hints + spacer)
-    if (lines.length > headerEnd) {
-      lines.splice(headerEnd, lines.length - headerEnd, promptLine);
-    }
-  }
-
-  if (attachMode && attachSelectList) {
-    const attachLines = attachSelectList.render(width);
+    const promptLine = `${bold("Prompt:")} ${inputLines[0] || ""}`;
     const headerEnd = 4;
     if (lines.length > headerEnd) {
-      lines.splice(headerEnd, lines.length - headerEnd, ...attachLines);
+      lines.splice(headerEnd, lines.length - headerEnd, promptLine);
     }
   }
 
@@ -596,13 +399,10 @@ root.render = function (width: number): string[] {
 };
 
 root.invalidate = function () {
-  // Invalidate all children
   for (const child of root.children) {
     child.invalidate?.();
   }
   inputField.invalidate?.();
-  // NOTE: do NOT call tui.invalidate() here — root is an overlay on tui,
-  // so tui.invalidate() would re-invalidate root, causing infinite recursion.
   tui.requestRender();
 };
 
