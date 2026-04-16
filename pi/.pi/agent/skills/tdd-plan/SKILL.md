@@ -219,23 +219,7 @@ If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
 
 Before starting a step, the user may choose to branch fresh from the kickoff point. This gives each step a clean session context — only the initial exploration is shared.
 
-Use the `questionnaire` tool:
-
-```typescript
-questionnaire({
-  questions: [{
-    id: "fresh-start",
-    prompt: `Starting Step ${stepNum}/${total}. Start fresh from kickoff point?`,
-    label: "Branch",
-    options: [
-      { value: "continue", label: "Continue from here", description: "Build on current context" },
-      { value: "fresh", label: "Start fresh from kickoff", description: "Clean branch from exploration state" }
-    ]
-  }]
-})
-```
-
-If the user selects **fresh**, send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. If **continue**, proceed from the current position. **Never call `tdd-set-kickoff` again — use `/tdd-go-kickoff` to return to the single kickoff point.**
+If the user wants to start fresh, they can say so naturally (e.g., "fresh branch from kickoff") and you will send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. **Never call `tdd-set-kickoff` again — use `/tdd-go-kickoff` to return to the single kickoff point.**
 
 Starting fresh is especially useful when:
 - A previous step's implementation is cluttering context
@@ -280,7 +264,8 @@ For each step in the plan, execute these three phases **in strict order**:
 
 After completing each step (the full Red-Green-Refactor cycle), **commit using the commit skill** (`/skill:commit`) with a message like `feat(<scope>): <description> (step N/M)`.
 
-After committing, **mark the step complete** and **pause and ask the user to verify** before proceeding:
+
+After committing, **mark the step complete**:
 
 ```bash
 tdd-plan complete <slug> <step>
@@ -292,29 +277,12 @@ Show:
 2. The final test output.
 3. The commit that was made.
 
-Then use the `questionnaire` tool to determine next action:
 
-```typescript
-questionnaire({
-  questions: [{
-    id: "step-complete",
-    prompt: `Step ${stepNum}/${total} complete. What next?`,
-    label: "Next",
-    options: [
-      { value: "next-continue", label: `Continue to Step ${stepNum + 1}`, description: "Build on current context" },
-      { value: "next-fresh", label: `Step ${stepNum + 1} (fresh from kickoff)`, description: "Clean branch from exploration state" },
-      { value: "changes", label: "I want changes", description: "Address feedback before continuing" },
-      { value: "pause", label: "Pause here", description: "Stop for now" }
-    ]
-  }]
-})
-```
-
-Handle the response:
-- **next-continue**: Proceed to the next step from the current position.
-- **next-fresh**: Send `/tdd-go-kickoff <slug>`, then proceed to the next step.
-- **changes**: Ask what to change, address feedback, re-run tests, then ask again.
-- **pause**: Stop and let the user resume later.
+**Then stop and ask the user what to do next.** The user will naturally say things like:
+- "Continue to next step" → proceed to the next step
+- "Fresh branch from kickoff" → send `/tdd-go-kickoff <slug>`, then proceed
+- "I want to make some changes" → address feedback, then ask again
+- "Pause here" → stop and let the user resume later
 
 ### Finish
 
