@@ -48,18 +48,30 @@ This is necessary because subprocesses can't modify their parent shell's working
 
 ## Worktree + Pi (`wpi`)
 
-Combined workflow: create worktree → run pi → merge back.
+TUI menu for the Worktree + Pi workflow. Built with `@mariozechner/pi-tui`.
 
 ```bash
-wpi <branch-name> [pi-args...]
+wpi                      # show interactive TUI menu
+wpi <branch-name> [..]   # full pipeline (backward compat)
+wpi --attach <branch>    # resume interrupted session
 ```
 
-1. Creates worktree via `wt switch --create` (or switches if it exists)
-2. Runs `pi` with provided args — includes hint not to call `wt merge`
-3. After pi exits, prompts to merge back to source branch
-4. If merge fails: reopens pi with full error context, then retries on confirmation
+### TUI Menu Stages
 
-The merge loop (`_wpi_merge_loop`) strips ANSI from output for clean pi prompts.
+- **Create worktree** — `wt switch --create <branch>`
+- **Start Pi** — launch pi AI agent in current worktree
+- **Review** — open nvim diff review
+- **Merge** — squash-merge back to source branch
+- **Attach** — resume an interrupted session
+
+### Architecture
+
+- `wt/.local/bin/wpi` — bash shim: no args → TUI, with args → `wpi-backend`
+- `wt/.local/bin/wpi-backend` — original bash script (full pipeline, `--attach`)
+- `wt/.local/share/wpi-tui/` — TUI source (TypeScript, runs via `bun`)
+
+The bashrc wrapper sources directive files from `wt` to propagate directory changes
+to the parent shell, same as the original script.
 
 ## Conventions
 

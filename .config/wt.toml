@@ -5,6 +5,7 @@ mise-trust = "mise trust"
 mise-install = "mise install"
 luacheck-install = "mise exec -- luarocks install luacheck 2>/dev/null || true"
 pi-install = "cd pi/.pi/agent/extensions && bun install"
+wpi-install = "cd wt/.local/share/wpi-tui && bun install"
 
 [post-start]
 copy = "wt step copy-ignored"
