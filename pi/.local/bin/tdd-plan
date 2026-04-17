@@ -64,6 +64,82 @@ interface StepInput {
 	refactor?: string;
 }
 
+// Text format parser for agent-friendly step input
+// Format:
+//   STEP 1: Step name
+//   RED: Description
+//   GREEN: Description
+//   REFACTOR: Description (optional, empty if no refactoring)
+//   ---
+//   STEP 2: Next step...
+//   ...
+
+function parseStepsFromText(text: string): StepInput[] {
+	const steps: StepInput[] = [];
+	let currentStep: Partial<StepInput> | null = null;
+
+	// Normalize line endings and split
+	const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+
+		// Skip empty lines (but not separator)
+		if (!line) continue;
+
+		// Step header
+		const stepMatch = line.match(/^STEP\s+(\d+)\s*:\s*(.+)$/i);
+		if (stepMatch) {
+			// Save previous step if exists
+			if (currentStep) {
+				if (!currentStep.name || !currentStep.red || !currentStep.green) {
+					console.error("Error: Step missing required fields (name, red, green)");
+					process.exit(1);
+				}
+				steps.push(currentStep as StepInput);
+			}
+			currentStep = { name: stepMatch[2] };
+			continue;
+		}
+
+		// Phase descriptions
+		const phaseMatch = line.match(/^(RED|GREEN|REFACTOR)\s*:\s*(.*)$/i);
+		if (phaseMatch) {
+			if (!currentStep) {
+				console.error(`Error: Phase "${phaseMatch[1]}" outside of a step`);
+				process.exit(1);
+			}
+			const key = phaseMatch[1].toLowerCase() as "red" | "green" | "refactor";
+			(currentStep as Record<string, string>)[key] = phaseMatch[2];
+			continue;
+		}
+
+		// Separator (ignore, just for readability)
+		if (line === "---") {
+			continue;
+		}
+
+		// Skip comment lines
+		if (line.startsWith("#")) continue;
+	}
+
+	// Don't forget the last step
+	if (currentStep) {
+		if (!currentStep.name || !currentStep.red || !currentStep.green) {
+			console.error("Error: Step missing required fields (name, red, green)");
+			process.exit(1);
+		}
+		steps.push(currentStep as StepInput);
+	}
+
+	if (steps.length === 0) {
+		console.error("Error: No steps found in input");
+		process.exit(1);
+	}
+
+	return steps;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -169,37 +245,36 @@ function readStepsFromSource(flags: Record<string, string>): StepInput[] {
 			console.error(`Error: Steps file not found: ${filePath}`);
 			process.exit(1);
 		}
-		try {
-			const content = readFileSync(filePath, "utf8");
-			const steps = JSON.parse(content) as StepInput[];
-			if (!Array.isArray(steps) || steps.length === 0) {
-				console.error("Error: Steps file must contain a non-empty JSON array");
-				process.exit(1);
-			}
-			return steps;
-		} catch (e) {
-			console.error(`Error: Failed to parse steps file ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
-			process.exit(1);
-		}
+		const content = readFileSync(filePath, "utf8");
+		return parseStepsInput(content);
 	}
 
-	// 2. Check for --steps (inline JSON)
+	// 2. Check for --steps (inline)
 	if (flags.steps) {
-		try {
-			const steps = JSON.parse(flags.steps) as StepInput[];
-			if (!Array.isArray(steps) || steps.length === 0) {
-				console.error("Error: --steps must be a non-empty JSON array");
-				process.exit(1);
-			}
-			return steps;
-		} catch (e) {
-			console.error(`Error: Failed to parse --steps JSON: ${e instanceof Error ? e.message : String(e)}`);
-			process.exit(1);
-		}
+		return parseStepsInput(flags.steps);
 	}
 
 	console.error("Error: Either --steps or --steps-file is required");
 	process.exit(1);
+}
+
+function parseStepsInput(content: string): StepInput[] {
+	const trimmed = content.trim();
+
+	// Try JSON first
+	if (trimmed.startsWith("[")) {
+		try {
+			const steps = JSON.parse(trimmed) as StepInput[];
+			if (Array.isArray(steps) && steps.length > 0) {
+				return steps;
+			}
+		} catch {
+			// Not valid JSON, fall through to text format
+		}
+	}
+
+	// Fall back to text format
+	return parseStepsFromText(trimmed);
 }
 
 function showPlan(plan: Plan): void {

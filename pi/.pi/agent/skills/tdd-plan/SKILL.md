@@ -18,8 +18,8 @@ When this skill is invoked, determine the mode from the user's input:
 ## CLI Reference
 
 ```bash
-tdd-plan create <slug> --title <title> [--steps <json> | --steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
-tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]
+tdd-plan create <slug> --title <title> --steps <text> [--steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
+tdd-plan edit <slug> [--title <title>] [--steps <text>] [--steps-file <path>] [--context <text>] [--architecture <text>]
 tdd-plan list                                               # List all plans
 tdd-plan show [slug]                                        # Show plan details (defaults to most recent)
 tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>  # Update phase status
@@ -61,43 +61,60 @@ questionnaire({
 
 If the user selects **refine**, ask what to change and re-draft. If **cancel**, stop. If **yes**, proceed to implementation.
 
-### Steps JSON format
+### Steps format
 
-Create a JSON file with your steps, then reference it with `--steps-file`:
+Steps can be provided as **text format** (recommended for agents) or **JSON**. The CLI auto-detects the format.
 
-```json
-[
-  {
-    "name": "Step 1: Token generation",
-    "red": "Write test that generates a JWT with correct claims (sub, iat, exp) and expiry",
-    "green": "Implement token generation with jsonwebtoken library",
-    "refactor": ""
-  },
-  {
-    "name": "Step 2: Auth middleware",
-    "red": "Write test that middleware rejects requests without valid JWT",
-    "green": "Implement auth middleware that validates Bearer tokens",
-    "refactor": "Extract token validation into reusable helper"
-  }
-]
+**Text format (agent-friendly):**
+
 ```
+STEP 1: Token generation
+RED: Write test that generates a JWT with correct claims (sub, iat, exp) and expiry
+GREEN: Implement token generation with jsonwebtoken library
+REFACTOR:
+---
+STEP 2: Auth middleware
+RED: Write test that middleware rejects requests without valid JWT
+GREEN: Implement auth middleware that validates Bearer tokens
+REFACTOR: Extract token validation into reusable helper
+```
+
+Rules:
+- `STEP N:` starts a new step (N is optional, auto-incremented)
+- `RED:` / `GREEN:` / `REFACTOR:` labels the phase description
+- `REFACTOR:` can be empty (no refactoring for this step)
+- `---` is an optional separator between steps
+- Lines starting with `#` are comments
 
 Then create the plan:
 
 ```bash
 tdd-plan create user-auth \
   --title "User JWT Authentication" \
-  --steps-file steps.json \
+  --steps "STEP 1: Token generation
+RED: Write test that generates a JWT with correct claims (sub, iat, exp) and expiry
+GREEN: Implement token generation with jsonwebtoken library
+REFACTOR:
+---
+STEP 2: Auth middleware
+RED: Write test that middleware rejects requests without valid JWT
+GREEN: Implement auth middleware that validates Bearer tokens
+REFACTOR: Extract token validation into reusable helper" \
   --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
   --architecture "Token-based auth with refresh token rotation"
 ```
 
-**Alternative:** You can still use `--steps` with inline JSON (useful for simple plans), but `--steps-file` is recommended for readability:
+**JSON format (also supported):**
 
 ```bash
 tdd-plan create user-auth \
-  --title "User JWT Authentication" \
   --steps '[{"name":"Step 1: ...","red":"...","green":"..."}]'
+```
+
+**Steps file:** If using `--steps-file`, use text format:
+
+```bash
+tdd-plan create user-auth --steps-file steps.txt ...
 ```
 
 ### Editing Plans
@@ -108,8 +125,11 @@ Use `tdd-plan edit <slug>` to modify an existing plan:
 # Edit title only
 tdd-plan edit user-auth --title "New Title"
 
-# Replace all steps from file
-tdd-plan edit user-auth --steps-file updated-steps.json
+# Replace all steps using text format
+tdd-plan edit user-auth --steps "STEP 1: New step
+RED: New test...
+GREEN: New implementation...
+REFACTOR:"
 
 # Update context
 tdd-plan edit user-auth --context "Updated requirements..."
@@ -117,26 +137,29 @@ tdd-plan edit user-auth --context "Updated requirements..."
 
 ### Example
 
-**Recommended approach - using a steps file:**
+**Recommended approach - text format (agent-friendly):**
 
 ```bash
-# Create steps.json
-$EDITOR steps.json
-
-# Then create the plan
 tdd-plan create user-auth \
   --title "User JWT Authentication" \
-  --steps-file steps.json \
+  --steps "STEP 1: Token generation
+RED: Write test that generates a JWT with correct claims (sub, iat, exp) and expiry
+GREEN: Implement token generation with jsonwebtoken library
+REFACTOR:
+---
+STEP 2: Auth middleware
+RED: Write test that middleware rejects requests without valid JWT
+GREEN: Implement auth middleware that validates Bearer tokens
+REFACTOR: Extract token validation into reusable helper" \
   --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
   --architecture "Token-based auth with refresh token rotation" \
   --notes '["Edge case: expired tokens must return 401","Verify concurrent refresh requests"]'
 ```
 
-**Alternative - inline JSON (useful for simple plans):**
+**Alternative - JSON:**
 
 ```bash
 tdd-plan create user-auth \
-  --title "User JWT Authentication" \
   --steps '[{"name":"Step 1: Token generation","red":"Write test that generates a JWT with correct claims (sub, iat, exp) and expiry","green":"Implement token generation with jsonwebtoken library","refactor":""},{"name":"Step 2: Auth middleware","red":"Write test that middleware rejects requests without valid JWT","green":"Implement auth middleware that validates Bearer tokens","refactor":"Extract token validation into reusable helper"}]' \
   --context "Add JWT auth to the REST API. Tokens expire in 1h, refresh tokens in 7d." \
   --architecture "Token-based auth with refresh token rotation" \
