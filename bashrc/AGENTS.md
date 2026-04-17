@@ -53,13 +53,14 @@ TUI menu for the Worktree + Pi workflow. Built with `@mariozechner/pi-tui`.
 ```bash
 wpi                      # show interactive TUI menu
 wpi <branch-name> [..]   # full pipeline (backward compat)
+wpi --claude <branch>    # use Claude instead of Pi
 wpi --attach <branch>    # resume interrupted session
 ```
 
 ### TUI Menu Stages
 
 - **Create worktree** — `wt switch --create <branch>`
-- **Start Pi** — launch pi AI agent in current worktree
+- **Start Pi** — launch AI agent (pi or claude via `--claude`) in current worktree
 - **Review** — open nvim diff review
 - **Merge** — squash-merge back to source branch
 - **Attach** — resume an interrupted session

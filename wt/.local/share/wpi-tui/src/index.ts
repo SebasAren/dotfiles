@@ -24,11 +24,13 @@ const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
 // ── Config from environment ───────────────────────────────────────
 const BRANCH = process.env.WPI_BRANCH ?? "";
 const SOURCE_BRANCH = process.env.WPI_SOURCE_BRANCH ?? "";
+const AGENT = process.env.WPI_AGENT ?? "pi";
 const PI_ARGS = process.env.WPI_PI_ARGS
   ? process.env.WPI_PI_ARGS.split(" ").filter(Boolean)
   : [];
 const DIRECTIVE_FILE = process.env.WPI_DIRECTIVE_FILE;
 const HAS_BRANCH = Boolean(BRANCH);
+const AGENT_LABEL = AGENT === "claude" ? "Claude" : "Pi";
 
 // ── Current branch (may change as we switch worktrees) ────────────
 function getCurrentBranch(): string {
@@ -88,7 +90,7 @@ function runWt(tui: TUI, handle: OverlayHandle, args: string[]): number {
   return result;
 }
 
-// ── Run pi via bash (needed for @file syntax) ─────────────────────
+// ── Run agent (pi or claude) via bash ─────────────────────────────
 function runPi(
   tui: TUI,
   handle: OverlayHandle,
@@ -101,6 +103,11 @@ function runPi(
     );
   }
 
+  if (AGENT === "claude") {
+    // claude doesn't use bash -c for @file syntax — pass args directly
+    return runInteractive(tui, handle, "claude", args);
+  }
+
   // Use bash -c so @file arguments are processed by pi's shell wrapper
   const cmd = `pi ${args.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ")}`;
   return runInteractive(tui, handle, "bash", ["-c", cmd]);
@@ -111,13 +118,13 @@ function buildMenuItems(): SelectItem[] {
   const items: SelectItem[] = [
     {
       value: "pi",
-      label: "Pi",
-      description: `Launch pi in '${getCurrentBranch()}'`,
+      label: AGENT_LABEL,
+      description: `Launch ${AGENT} in '${getCurrentBranch()}'`,
     },
     {
       value: "review",
       label: "Review",
-      description: "Diff review with nvim, then pi if comments found",
+      description: `Diff review with nvim, then ${AGENT} if comments found`,
     },
   ];
 
@@ -160,7 +167,11 @@ tui.start();
 // Header
 const header = new Container();
 const headerBranch = BRANCH || getCurrentBranch();
-header.addChild(new Text(`${bold("╲ wpi")} ${dim(`— ${headerBranch}`)}`));
+header.addChild(
+  new Text(
+    `${bold("╲ wpi")} ${dim(`— ${headerBranch}`)} ${AGENT === "claude" ? dim("[claude]") : ""}`,
+  ),
+);
 header.addChild(new Spacer(1));
 header.addChild(new Text(dim("↑↓ Navigate  ↵ Select  Esc Quit")));
 header.addChild(new Spacer(1));
@@ -234,9 +245,9 @@ selectList.onSelect = (item) => {
 
   switch (stage) {
     case "pi": {
-      addStatus(yellow("Starting pi..."));
+      addStatus(yellow(`Starting ${AGENT}...`));
       runPi(tui, handle);
-      addStatus(green("✓ Pi exited"));
+      addStatus(green(`✓ ${AGENT_LABEL} exited`));
       refreshMenu();
       break;
     }
@@ -268,7 +279,7 @@ selectList.onSelect = (item) => {
       // Step 2: Check for review comments → feed to pi
       const reviewFile = ".code-review.md";
       if (existsSync(reviewFile) && readFileSync(reviewFile, "utf-8").trim()) {
-        addStatus(yellow("Review comments found — reopening pi..."));
+        addStatus(yellow(`Review comments found — reopening ${AGENT}...`));
         runPi(tui, handle, [
           `@${reviewFile}`,
           "Apply these review comments. Fix each issue.",
@@ -358,13 +369,15 @@ function handleMerge(tui: TUI, handle: OverlayHandle): void {
       if (existsSync(mergeOutFile)) unlinkSync(mergeOutFile);
       handle.hide();
       tui.stop();
-      process.stdout.write(`\r\n${green(`✓ Merged into '${source || "default"}'`)}\r\n`);
+      process.stdout.write(
+        `\r\n${green(`✓ Merged into '${source || "default"}'`)}\r\n`,
+      );
       process.exit(0);
     }
 
     // Merge failed — pass wt merge output to pi
     addStatus(red(`✗ Merge failed (exit ${result.status})`));
-    addStatus(dim("Opening pi to resolve..."));
+    addStatus(dim(`Opening ${AGENT} to resolve...`));
 
     const mergeOutput = existsSync(mergeOutFile)
       ? readFileSync(mergeOutFile, "utf-8").trim()
@@ -390,7 +403,7 @@ Do NOT run 'wt merge' yourself. Only fix the code. The user will retry.`,
     unlinkSync(promptFile);
     if (existsSync(mergeOutFile)) unlinkSync(mergeOutFile);
 
-    addStatus(green("✓ Pi exited — returning to menu"));
+    addStatus(green(`✓ ${AGENT_LABEL} exited — returning to menu`));
     addStatus(dim("Select Merge to retry"));
     return;
   }

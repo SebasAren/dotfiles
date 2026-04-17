@@ -3,8 +3,11 @@ set -euo pipefail
 
 # wpi - Worktree + Pi: create worktree, then run pi in a TUI loop
 #
-# Usage: wpi [<branch>] [pi-args...]
+# Usage: wpi [options] [<branch>] [pi-args...]
 #        wpi -h|--help
+#
+# Options:
+#   --claude    Use claude instead of pi as the agent
 #
 # If <branch> is given, creates a worktree for it, then opens a TUI
 # where you can cycle through: Pi → Review → Merge.
@@ -14,19 +17,27 @@ _self_dir="$(cd "$(dirname "$0")" && pwd)"
 _tui_src="$_self_dir/../share/wpi-tui/src/index.ts"
 
 if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
-    echo "Usage: wpi [<branch>] [pi-args...]"
+    echo "Usage: wpi [--claude] [<branch>] [pi-args...]"
     echo ""
     echo "With <branch>: create a worktree, open a TUI loop: Pi → Review → Merge."
     echo "Without <branch>: open the TUI in the current worktree."
     echo ""
     echo "Examples:"
     echo "  wpi fix-login-bug"
+    echo "  wpi --claude fix-login-bug"
     echo "  wpi refactor-api --provider anthropic --model sonnet"
     echo "  wpi"
     exit 0
 fi
 
-for _cmd in pi git bun; do
+# ── Parse --claude flag ───────────────────────────────────────────
+_agent="pi"
+if [[ "${1:-}" == "--claude" ]]; then
+    _agent="claude"
+    shift
+fi
+
+for _cmd in git bun; do
     if ! command -v "$_cmd" >/dev/null 2>&1; then
         echo "wpi requires '$_cmd' in PATH." >&2
         exit 1
@@ -34,9 +45,17 @@ for _cmd in pi git bun; do
 done
 unset _cmd
 
+if ! command -v "$_agent" >/dev/null 2>&1; then
+    echo "wpi requires '$_agent' in PATH." >&2
+    exit 1
+fi
+
 # Directive file for wt shell integration (cleaned up on exit)
 directive_file="$(mktemp)"
 trap 'rm -f "$directive_file"' EXIT
+
+export WPI_AGENT="$_agent"
+unset _agent
 
 if [[ $# -gt 0 ]]; then
     # ── Branch mode: create worktree, then launch TUI ──────────
