@@ -105,7 +105,7 @@ function runPi(
 
   if (AGENT === "claude") {
     // claude doesn't use bash -c for @file syntax — pass args directly
-    return runInteractive(tui, handle, "claude", args);
+    return runInteractive(tui, handle, "claude", ["--dangerously-skip-permissions", ...args]);
   }
 
   // Use bash -c so @file arguments are processed by pi's shell wrapper
