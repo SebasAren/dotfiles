@@ -74,9 +74,7 @@ describe("before_provider_request handler", () => {
   it("returns undefined (no modification) for non-matching models", () => {
     const payload = {
       model: "anthropic/claude-sonnet-4",
-      messages: [
-        { role: "system", content: "You are helpful." },
-      ],
+      messages: [{ role: "system", content: "You are helpful." }],
     };
 
     const result = handler({ payload }, {});
@@ -88,9 +86,7 @@ describe("before_provider_request handler", () => {
 
   it("returns undefined when model field is missing", () => {
     const payload = {
-      messages: [
-        { role: "system", content: "You are helpful." },
-      ],
+      messages: [{ role: "system", content: "You are helpful." }],
     };
 
     const result = handler({ payload }, {});
@@ -140,9 +136,7 @@ describe("before_provider_request handler", () => {
       messages: [
         {
           role: "system",
-          content: [
-            { type: "text", text: "Part 1", cache_control: existing },
-          ],
+          content: [{ type: "text", text: "Part 1", cache_control: existing }],
         },
         { role: "user", content: "Hello" },
       ],
@@ -155,11 +149,7 @@ describe("before_provider_request handler", () => {
   });
 
   it("matches any qwen/ model", () => {
-    for (const modelId of [
-      "qwen/qwen3.6-plus",
-      "qwen/qwen3.5-plus",
-      "qwen/qwen3-coder-plus",
-    ]) {
+    for (const modelId of ["qwen/qwen3.6-plus", "qwen/qwen3.5-plus", "qwen/qwen3-coder-plus"]) {
       const handlers: Record<string, Function> = {};
       const mockApi = {
         on: mock((event: string, h: Function) => {

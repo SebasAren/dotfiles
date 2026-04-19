@@ -38,9 +38,7 @@ export default function (pi: ExtensionAPI) {
     if (!modelId) return;
 
     // Only inject for models that need explicit cache_control
-    const needsCacheControl = CACHE_MODEL_PREFIXES.some((prefix) =>
-      modelId.startsWith(prefix),
-    );
+    const needsCacheControl = CACHE_MODEL_PREFIXES.some((prefix) => modelId.startsWith(prefix));
     if (!needsCacheControl) return;
 
     const messages = payload.messages as Array<Record<string, any>>;
