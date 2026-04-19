@@ -407,7 +407,7 @@ function cmdCreate(args: string[]): void {
 function cmdEdit(args: string[]): void {
 	const slug = args[0];
 	if (!slug) {
-		console.error("Usage: tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]");
+		console.error("Usage: tdd-plan edit <slug> [--title <title>] [--steps <text> | --steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]");
 		process.exit(1);
 	}
 
@@ -425,8 +425,8 @@ function cmdEdit(args: string[]): void {
 		plan.architecture = flags.architecture;
 	}
 
-	// Update steps if --steps-file provided
-	if (flags["steps-file"]) {
+	// Update steps if --steps or --steps-file provided
+	if (flags["steps-file"] || flags.steps) {
 		const stepsInput = readStepsFromSource(flags);
 		plan.steps = stepsInput.map((s, i) => ({
 			index: i + 1,
@@ -439,6 +439,16 @@ function cmdEdit(args: string[]): void {
 			},
 			completed: false,
 		}));
+	}
+
+	// Update notes if provided
+	if (flags.notes !== undefined) {
+		try {
+			plan.notes = JSON.parse(flags.notes);
+		} catch {
+			console.error("Error: --notes must be valid JSON array, e.g. '[\"note1\",\"note2\"]'");
+			process.exit(1);
+		}
 	}
 
 	writePlan(plan);
@@ -665,7 +675,7 @@ switch (command) {
 
 Usage:
   tdd-plan create <slug> --title <title> (--steps <json> | --steps-file <path>) [--context <text>] [--architecture <text>] [--notes <json>]
-  tdd-plan edit <slug> [--title <title>] [--steps-file <path>] [--context <text>] [--architecture <text>]
+  tdd-plan edit <slug> [--title <title>] [--steps <text> | --steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
   tdd-plan list
   tdd-plan show [slug]
   tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>

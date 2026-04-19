@@ -12,6 +12,7 @@ describe("all extensions verification", () => {
     "explore",
     "librarian",
     "worktree-scope",
+    "cache-control",
     "fuzzy-edit",
     "plan-mode",
     "tdd-tree",
