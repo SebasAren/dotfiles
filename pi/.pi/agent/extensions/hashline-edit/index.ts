@@ -12,6 +12,7 @@
 
 import type { ExtensionAPI, EditToolDetails } from "@mariozechner/pi-coding-agent";
 import { withFileMutationQueue } from "@mariozechner/pi-coding-agent";
+import { Text } from "@mariozechner/pi-tui";
 import { readFile, writeFile, access, constants } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -136,6 +137,13 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         content: [{ type: "text" as const, text }],
         details: undefined,
       };
+    },
+
+    renderResult(result) {
+      const text = result.content[0]?.type === "text" ? result.content[0].text : "";
+      // Strip hash anchors (LINE#HASH: ) from display for user
+      const cleaned = text.replace(/^\d+#[A-Z]{1,2}: /gm, "");
+      return new Text(cleaned, 0, 0);
     },
   });
 

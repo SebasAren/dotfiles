@@ -31,10 +31,13 @@ interface ParsedEdit {
 
 /**
  * Strip hashline prefixes that models may accidentally include from read output.
+ * Also strips diff format prefixes like "+ 1#KT: " or "-42#AB: ".
+ * E.g. "11#KT:   return x;" → "  return x;"
+ * E.g. "+ 11#KT:   return x;" → "  return x;"
  * E.g. "11#KT:   return x;" → "  return x;"
  */
 function stripHashlinePrefix(line: string): string {
-  const match = line.match(/^\d+#[A-Z]{1,2}: ?/);
+  const match = line.match(/^[+-]?\s*\d+#[A-Z]{1,2}: ?/);
   return match ? line.slice(match[0].length) : line;
 }
 

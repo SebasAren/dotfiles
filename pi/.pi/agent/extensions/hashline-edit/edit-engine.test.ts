@@ -178,5 +178,23 @@ describe("applyHashlineEdits", () => {
       // models shouldn't be writing literal hash anchors into file content.
       expect(result.content).toBe("line1\nconfig\nline3\nline4\nline5");
     });
+
+    it("strips diff format prefix with sign and padding", () => {
+      // Model copies from diff output: "+ 2#XX: inserted"
+      const pos = anchor(content, 2);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: ["+ 2#XX: inserted"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\ninserted\nline3\nline4\nline5");
+    });
+
+    it("strips diff format prefix with minus sign", () => {
+      // Model copies from diff output: "- 1#XX: old"
+      const pos = anchor(content, 1);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, lines: ["- 1#XX: replaced"] },
+      ]);
+      expect(result.content).toBe("replaced\nline2\nline3\nline4\nline5");
+    });
   });
 });
