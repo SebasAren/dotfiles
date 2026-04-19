@@ -11,8 +11,8 @@
  */
 
 import type { ExtensionAPI, EditToolDetails } from "@mariozechner/pi-coding-agent";
-import { withFileMutationQueue } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import { getMarkdownTheme, withFileMutationQueue } from "@mariozechner/pi-coding-agent";
+import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { readFile, writeFile, access, constants } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -139,11 +139,59 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       };
     },
 
-    renderResult(result) {
-      const text = result.content[0]?.type === "text" ? result.content[0].text : "";
-      // Strip hash anchors (LINE#HASH: ) from display for user
+    renderCall(args, theme, _context) {
+      let text = theme.fg("toolTitle", theme.bold("read "));
+      text += theme.fg("accent", args.path);
+      if (args.offset || args.limit) {
+        const parts: string[] = [];
+        if (args.offset) parts.push(`offset=${args.offset}`);
+        if (args.limit) parts.push(`limit=${args.limit}`);
+        text += theme.fg("dim", ` (${parts.join(", ")})`);
+      }
+      return new Text(text, 0, 0);
+    },
+
+    renderResult(result, state, theme, _context) {
+      const { expanded, isPartial } = state;
+      if (isPartial) return new Text(theme.fg("warning", "Reading..."), 0, 0);
+
+      const content = result.content[0];
+
+      if (content?.type === "image") {
+        return new Text(theme.fg("success", "Image loaded"), 0, 0);
+      }
+
+      if (content?.type !== "text") {
+        return new Text(theme.fg("error", "No content"), 0, 0);
+      }
+
+      const text = content.text;
       const cleaned = text.replace(/^\d+#[A-Z]{1,2}: /gm, "");
-      return new Text(cleaned, 0, 0);
+      const lines = cleaned.split("\n");
+      const lineCount = lines.length;
+      let rendered = theme.fg("success", `${lineCount} lines`);
+
+      if (!expanded) {
+        rendered += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
+        return new Text(rendered, 0, 0);
+      }
+
+      // Expanded: show file content with syntax highlighting via Markdown
+      const container = new Container();
+      container.addChild(new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`, 0, 0));
+      container.addChild(new Spacer(1));
+
+      // Show truncated preview (first 50 lines) with syntax highlighting
+      const previewLines = lines.slice(0, 50);
+      const previewText = previewLines.join("\n");
+      const mdTheme = getMarkdownTheme();
+      container.addChild(new Markdown(`\`\`\`\n${previewText}\n\`\`\`\``, 0, 0, mdTheme));
+
+      if (lineCount > 50) {
+        container.addChild(new Text(theme.fg("muted", `... ${lineCount - 50} more lines`), 0, 0));
+      }
+
+      return container;
     },
   });
 
@@ -222,6 +270,73 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
           } satisfies EditToolDetails,
         };
       });
+    },
+
+    renderCall(args, theme, _context) {
+      let text = theme.fg("toolTitle", theme.bold("edit "));
+      text += theme.fg("accent", args.path);
+      const editCount = args.edits?.length ?? 0;
+      text += theme.fg("dim", ` (${editCount} edit${editCount !== 1 ? "s" : ""})`);
+      return new Text(text, 0, 0);
+    },
+
+    renderResult(result, state, theme, _context) {
+      const { expanded, isPartial } = state;
+      if (isPartial) return new Text(theme.fg("warning", "Editing..."), 0, 0);
+
+      const details = result.details as EditToolDetails | undefined;
+      const content = result.content[0];
+
+      if (content?.type === "text" && content.text.startsWith("Error")) {
+        return new Text(theme.fg("error", content.text.split("\n")[0]), 0, 0);
+      }
+
+      if (!details?.diff) {
+        return new Text(theme.fg("success", "Applied"), 0, 0);
+      }
+
+      // Count additions and removals from the diff
+      const diffLines = details.diff.split("\n");
+      let additions = 0;
+      let removals = 0;
+      for (const line of diffLines) {
+        if (line.startsWith("+") && !line.startsWith("+++")) additions++;
+        if (line.startsWith("-") && !line.startsWith("---")) removals++;
+      }
+
+      let text = theme.fg("success", `+${additions}`);
+      text += theme.fg("dim", " / ");
+      text += theme.fg("error", `-${removals}`);
+
+      if (!expanded) {
+        text += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
+        return new Text(text, 0, 0);
+      }
+
+      // Expanded: show diff with colored lines
+      const container = new Container();
+      container.addChild(new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`, 0, 0));
+      container.addChild(new Spacer(1));
+
+      for (const line of diffLines.slice(0, 50)) {
+        if (line.startsWith("+") && !line.startsWith("+++")) {
+          container.addChild(new Text(theme.fg("toolDiffAdded", line), 0, 0));
+        } else if (line.startsWith("-") && !line.startsWith("---")) {
+          container.addChild(new Text(theme.fg("toolDiffRemoved", line), 0, 0));
+        } else if (line.startsWith("@@")) {
+          container.addChild(new Text(theme.fg("syntaxKeyword", line), 0, 0));
+        } else if (line === "--- original" || line === "+++ modified") {
+          container.addChild(new Text(theme.fg("muted", line), 0, 0));
+        } else {
+          container.addChild(new Text(theme.fg("toolDiffContext", line), 0, 0));
+        }
+      }
+
+      if (diffLines.length > 50) {
+        container.addChild(new Text(theme.fg("muted", `... ${diffLines.length - 50} more diff lines`), 0, 0));
+      }
+
+      return container;
     },
   });
 }
