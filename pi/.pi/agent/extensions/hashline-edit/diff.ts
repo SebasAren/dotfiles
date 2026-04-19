@@ -1,5 +1,5 @@
 /**
- * Diff generation for the fuzzy edit tool.
+ * Diff generation for the hashline edit tool.
  * Produces line-numbered diffs matching the built-in edit tool's format.
  */
 

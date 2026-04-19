@@ -25,8 +25,8 @@
  * Complete mock for `@mariozechner/pi-coding-agent`.
  * Covers every export used by any extension:
  *   - `getMarkdownTheme` (explore, librarian, wt-worktree)
- *   - `createEditTool`   (fuzzy-edit)
- *   - `withFileMutationQueue` (fuzzy-edit)
+ *   - `createEditTool`   (hashline-edit)
+ *   - `withFileMutationQueue` (hashline-edit)
  */
 export const piCodingAgentMock = () => ({
   getMarkdownTheme: () => ({}),
@@ -35,6 +35,10 @@ export const piCodingAgentMock = () => ({
     execute: () => {
       throw new Error("Could not find oldText in file.");
     },
+  }),
+  createReadTool: () => ({
+    description: "read tool",
+    execute: () => ({ content: [{ type: "text", text: "" }] }),
   }),
   withFileMutationQueue: (_path: string, fn: () => Promise<any>) => fn(),
 });
@@ -138,6 +142,8 @@ export const typeboxMock = () => ({
     Boolean: (props: any) => ({ type: "boolean", ...props }),
     Optional: (schema: any) => ({ ...schema, optional: true }),
     Array: (items: any, options: any) => ({ type: "array", items, ...options }),
+    Literal: (value: any) => ({ const: value }),
+    Union: (schemas: any[]) => ({ anyOf: schemas }),
     Unsafe: (schema: any) => schema,
   },
 });
