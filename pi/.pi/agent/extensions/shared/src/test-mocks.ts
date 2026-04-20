@@ -41,6 +41,10 @@ export const piCodingAgentMock = () => ({
     execute: () => ({ content: [{ type: "text", text: "" }] }),
   }),
   withFileMutationQueue: (_path: string, fn: () => Promise<any>) => fn(),
+  renderDiff: (text: string) => text,
+  highlightCode: (text: string) => text.split("\n"),
+  getLanguageFromPath: () => undefined,
+  keyHint: (_binding: string, description: string) => description,
 });
 
 /**

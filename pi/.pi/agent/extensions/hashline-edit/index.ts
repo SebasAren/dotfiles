@@ -11,8 +11,14 @@
  */
 
 import type { ExtensionAPI, EditToolDetails } from "@mariozechner/pi-coding-agent";
-import { getMarkdownTheme, withFileMutationQueue } from "@mariozechner/pi-coding-agent";
-import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
+import {
+  getLanguageFromPath,
+  highlightCode,
+  keyHint,
+  renderDiff,
+  withFileMutationQueue,
+} from "@mariozechner/pi-coding-agent";
+import { Text } from "@mariozechner/pi-tui";
 import { readFile, writeFile, access, constants } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -139,74 +145,78 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       };
     },
 
-    renderCall(args, theme, _context) {
-      let text = theme.fg("toolTitle", theme.bold("read "));
-      text += theme.fg("accent", args.path);
-      if (args.offset || args.limit) {
-        const parts: string[] = [];
-        if (args.offset) parts.push(`offset=${args.offset}`);
-        if (args.limit) parts.push(`limit=${args.limit}`);
-        text += theme.fg("dim", ` (${parts.join(", ")})`);
+    renderCall(args, theme, context) {
+      const text =
+        context.lastComponent instanceof Text ? context.lastComponent : new Text("", 0, 0);
+      const path = args?.path ?? "";
+      let pathDisplay = path ? theme.fg("accent", path) : theme.fg("toolOutput", "...");
+      if (args?.offset !== undefined || args?.limit !== undefined) {
+        const startLine = args.offset ?? 1;
+        const endLine = args.limit !== undefined ? startLine + args.limit - 1 : "";
+        pathDisplay += theme.fg("warning", `:${startLine}${endLine ? `-${endLine}` : ""}`);
       }
-      return new Text(text, 0, 0);
+      text.setText(`${theme.fg("toolTitle", theme.bold("read"))} ${pathDisplay}`);
+      return text;
     },
 
-    renderResult(result, state, theme, _context) {
+    renderResult(result, state, theme, context) {
+      const text =
+        context.lastComponent instanceof Text ? context.lastComponent : new Text("", 0, 0);
       const { expanded, isPartial } = state;
-      if (isPartial) return new Text(theme.fg("warning", "Reading..."), 0, 0);
+
+      if (isPartial) {
+        text.setText(theme.fg("warning", "\nReading..."));
+        return text;
+      }
 
       const content = result.content[0];
 
       if (content?.type === "image") {
-        const container = new Container();
-        container.addChild(
-          new Text(
-            `${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`,
-            0,
-            0,
-          ),
-        );
-        container.addChild(new Text(`  ${theme.fg("dim", "image")}`, 0, 0));
-        return container;
+        text.setText("");
+        return text;
       }
 
       if (content?.type !== "text") {
-        return new Text(theme.fg("error", "No content"), 0, 0);
+        text.setText(theme.fg("error", "\n[No content]"));
+        return text;
       }
 
-      const text = content.text;
-      const cleaned = text.replace(/^\d+#[A-Z]{1,2}: /gm, "");
-      const lines = cleaned.split("\n");
-      // Strip trailing truncation notice from line count
-      const realLines = lines.filter((l) => !l.startsWith("[Output truncated"));
-      const lineCount = realLines.length;
+      // Strip hash anchors (LINE#HASH: ) for display
+      const raw = content.text;
+      const cleaned = raw.replace(/^\d+#[A-Z]{1,2}: /gm, "");
 
-      if (!expanded) {
-        return new Text(
-          `  ${theme.fg("dim", `${lineCount} line${lineCount !== 1 ? "s" : ""}`)}`,
-          0,
-          0,
-        );
+      // Split content from trailing `[Output truncated: ...]` notice
+      const allLines = cleaned.split("\n");
+      const noticeIdx = allLines.findIndex((l) => l.startsWith("[Output truncated"));
+      const fileLines = noticeIdx >= 0 ? allLines.slice(0, noticeIdx) : allLines;
+      while (fileLines.length > 0 && fileLines[fileLines.length - 1] === "") {
+        fileLines.pop();
       }
 
-      // Expanded: show file content with syntax highlighting via Markdown
-      const container = new Container();
-      container.addChild(
-        new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`, 0, 0),
-      );
-      container.addChild(new Spacer(1));
+      const path = (context.args as { path?: string } | undefined)?.path ?? "";
+      const lang = path ? getLanguageFromPath(path) : undefined;
+      const bodyText = fileLines.join("\n").replace(/\t/g, "   ");
+      const rendered = lang ? highlightCode(bodyText, lang) : bodyText.split("\n");
 
-      // Show truncated preview (first 50 lines) with syntax highlighting
-      const previewLines = lines.slice(0, 50);
-      const previewText = previewLines.join("\n");
-      const mdTheme = getMarkdownTheme();
-      container.addChild(new Markdown(`\`\`\`\n${previewText}\n\`\`\``, 0, 0, mdTheme));
+      const maxLines = expanded ? rendered.length : 10;
+      const displayLines = rendered.slice(0, maxLines);
+      const remaining = rendered.length - maxLines;
 
-      if (lineCount > 50) {
-        container.addChild(new Text(theme.fg("muted", `... ${lineCount - 50} more lines`), 0, 0));
+      let output = `\n${displayLines
+        .map((line) => (lang ? line : theme.fg("toolOutput", line)))
+        .join("\n")}`;
+
+      if (remaining > 0) {
+        output += `${theme.fg("muted", `\n... (${remaining} more lines,`)} ${keyHint("app.tools.expand", "to expand")})`;
       }
 
-      return container;
+      if (noticeIdx >= 0) {
+        const notice = allLines.slice(noticeIdx).join("\n").trim();
+        if (notice) output += `\n${theme.fg("warning", notice)}`;
+      }
+
+      text.setText(output);
+      return text;
     },
   });
 
@@ -287,82 +297,41 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       });
     },
 
-    renderCall(args, theme, _context) {
-      let text = theme.fg("toolTitle", theme.bold("edit "));
-      text += theme.fg("accent", args.path);
-      const editCount = args.edits?.length ?? 0;
-      text += theme.fg("dim", ` (${editCount} edit${editCount !== 1 ? "s" : ""})`);
-      return new Text(text, 0, 0);
+    renderCall(args, theme, context) {
+      const text =
+        context.lastComponent instanceof Text ? context.lastComponent : new Text("", 0, 0);
+      const path = args?.path ?? "";
+      const pathDisplay = path ? theme.fg("accent", path) : theme.fg("toolOutput", "...");
+      text.setText(`${theme.fg("toolTitle", theme.bold("edit"))} ${pathDisplay}`);
+      return text;
     },
 
-    renderResult(result, state, theme, _context) {
-      const { expanded, isPartial } = state;
-      if (isPartial) return new Text(theme.fg("warning", "Editing..."), 0, 0);
+    renderResult(result, state, theme, context) {
+      const text =
+        context.lastComponent instanceof Text ? context.lastComponent : new Text("", 0, 0);
+      const { isPartial } = state;
+
+      if (isPartial) {
+        text.setText(theme.fg("warning", "\nEditing..."));
+        return text;
+      }
 
       const details = result.details as EditToolDetails | undefined;
       const content = result.content[0];
 
       if (content?.type === "text" && content.text.startsWith("Error")) {
-        return new Text(theme.fg("error", content.text.split("\n")[0]), 0, 0);
+        text.setText(`\n${theme.fg("error", content.text)}`);
+        return text;
       }
 
       if (!details?.diff) {
-        const container = new Container();
-        container.addChild(
-          new Text(
-            `${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`,
-            0,
-            0,
-          ),
-        );
-        const textContent = content?.type === "text" ? content.text : JSON.stringify(content);
-        container.addChild(new Text(`  ${theme.fg("dim", textContent)}`, 0, 0));
-        return container;
+        text.setText("");
+        return text;
       }
 
-      const diffLines = details.diff.split("\n");
-      let additions = 0;
-      let removals = 0;
-      for (const line of diffLines) {
-        if (line.startsWith("+") && !line.startsWith("+++")) additions++;
-        if (line.startsWith("-") && !line.startsWith("---")) removals++;
-      }
-
-      if (!expanded) {
-        return new Text(
-          `  ${theme.fg("toolDiffAdded", `+${additions}`)}${theme.fg("dim", " / ")}${theme.fg("toolDiffRemoved", `-${removals}`)}`,
-          0,
-          0,
-        );
-      }
-
-      const container = new Container();
-      container.addChild(
-        new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`, 0, 0),
-      );
-      container.addChild(new Spacer(1));
-
-      for (const line of diffLines.slice(0, 50)) {
-        if (line.startsWith("+") && !line.startsWith("+++")) {
-          container.addChild(new Text(theme.fg("toolDiffAdded", line), 0, 0));
-        } else if (line.startsWith("-") && !line.startsWith("---")) {
-          container.addChild(new Text(theme.fg("toolDiffRemoved", line), 0, 0));
-        } else if (line.startsWith("@@")) {
-          container.addChild(new Text(theme.fg("syntaxKeyword", line), 0, 0));
-        } else if (line === "--- original" || line === "+++ modified") {
-          container.addChild(new Text(theme.fg("muted", line), 0, 0));
-        } else {
-          container.addChild(new Text(theme.fg("toolDiffContext", line), 0, 0));
-        }
-      }
-
-      if (diffLines.length > 50) {
-        container.addChild(
-          new Text(theme.fg("muted", `... ${diffLines.length - 50} more diff lines`), 0, 0),
-        );
-      }
-
-      return container;
+      const path = (context.args as { path?: string } | undefined)?.path;
+      text.setText(`\n${renderDiff(details.diff, { filePath: path })}`);
+      return text;
     },
   });
 }
