@@ -180,9 +180,7 @@ describe("applyHashlineEdits", () => {
     it("caps anchors per edit and notes overflow", () => {
       const pos = anchor(content, 2);
       const manyLines = Array.from({ length: 10 }, (_, i) => `new${i}`);
-      const result = applyHashlineEdits(content, [
-        { op: "insert_after", pos, lines: manyLines },
-      ]);
+      const result = applyHashlineEdits(content, [{ op: "insert_after", pos, lines: manyLines }]);
       // 10 new lines; per-edit cap is 5 + overflow note
       const anchorCount = result.updatedAnchors.filter((a) => /^\d+#/.test(a)).length;
       expect(anchorCount).toBe(5);
@@ -289,9 +287,7 @@ describe("applyHashlineEdits", () => {
     it("does not add a trailing newline when original had none", () => {
       const withoutNewline = "line1\nline2\nline3";
       const pos = anchor(withoutNewline, 2);
-      const result = applyHashlineEdits(withoutNewline, [
-        { op: "replace", pos, lines: ["LINE2"] },
-      ]);
+      const result = applyHashlineEdits(withoutNewline, [{ op: "replace", pos, lines: ["LINE2"] }]);
       expect(result.content.endsWith("\n")).toBe(false);
       expect(result.content).toBe("line1\nLINE2\nline3");
     });
@@ -343,9 +339,9 @@ describe("applyHashlineEdits", () => {
       // Single replace where lines[0] === anchor content would be a no-op,
       // handled by the existing "No changes made" error.
       const pos = anchor(content, 2);
-      expect(() =>
-        applyHashlineEdits(content, [{ op: "replace", pos, lines: ["line2"] }]),
-      ).toThrow(/No changes/);
+      expect(() => applyHashlineEdits(content, [{ op: "replace", pos, lines: ["line2"] }])).toThrow(
+        /No changes/,
+      );
     });
 
     it("allows range replace where only one endpoint appears in lines", () => {

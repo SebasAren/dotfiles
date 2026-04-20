@@ -276,7 +276,9 @@ function computeUpdatedAnchors(parsedEdits: ParsedEdit[], finalLines: string[]):
         out.push(`${lineNum}#${hashLine(lineContent, lineNum)}: ${lineContent}`);
       }
       if (addedCount > shown && out.length < UPDATED_ANCHORS_TOTAL_CAP) {
-        out.push(`  (${addedCount - shown} more line(s) from this edit — re-read for full anchors)`);
+        out.push(
+          `  (${addedCount - shown} more line(s) from this edit — re-read for full anchors)`,
+        );
       }
     }
 

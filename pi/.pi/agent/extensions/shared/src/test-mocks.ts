@@ -31,9 +31,20 @@
 export const piCodingAgentMock = () => ({
   getMarkdownTheme: () => ({}),
   getSettingsListTheme: () => ({}),
-  createEditTool: () => ({ description: "edit tool", execute: () => { throw new Error("Could not find oldText in file."); } }),
-  createReadTool: () => ({ description: "read tool", execute: () => ({ content: [{ type: "text", text: "" }] }) }),
-  createBashTool: () => ({ description: "bash tool", execute: () => ({ stdout: "", stderr: "", code: 0 }) }),
+  createEditTool: () => ({
+    description: "edit tool",
+    execute: () => {
+      throw new Error("Could not find oldText in file.");
+    },
+  }),
+  createReadTool: () => ({
+    description: "read tool",
+    execute: () => ({ content: [{ type: "text", text: "" }] }),
+  }),
+  createBashTool: () => ({
+    description: "bash tool",
+    execute: () => ({ stdout: "", stderr: "", code: 0 }),
+  }),
   createWriteTool: () => ({ description: "write tool", execute: () => ({}) }),
   createFindTool: () => ({ description: "find tool", execute: () => ({ stdout: "" }) }),
   createGrepTool: () => ({ description: "grep tool", execute: () => ({ stdout: "" }) }),
@@ -54,13 +65,53 @@ export const piCodingAgentMock = () => ({
   truncateHead: (content: string) => ({ content, truncated: false }),
   VERSION: "0.0.0-mock",
   // Class mocks
-  DefaultResourceLoader: class { constructor() {} async loadExtensions() { return []; } async loadTools() { return []; } },
-  DynamicBorder: class { constructor() {} invalidate() {} render() { return []; } },
-  Theme: class { fg(_c: string, t: string) { return t; } bg(_c: string, t: string) { return t; } bold(t: string) { return t; } },
-  AuthStorage: class { static getInstance() { return {}; } getKey() { return undefined; } setKey() {} },
-  ModelRegistry: class { static getInstance() { return {}; } },
+  DefaultResourceLoader: class {
+    constructor() {}
+    async loadExtensions() {
+      return [];
+    }
+    async loadTools() {
+      return [];
+    }
+  },
+  DynamicBorder: class {
+    constructor() {}
+    invalidate() {}
+    render() {
+      return [];
+    }
+  },
+  Theme: class {
+    fg(_c: string, t: string) {
+      return t;
+    }
+    bg(_c: string, t: string) {
+      return t;
+    }
+    bold(t: string) {
+      return t;
+    }
+  },
+  AuthStorage: class {
+    static getInstance() {
+      return {};
+    }
+    getKey() {
+      return undefined;
+    }
+    setKey() {}
+  },
+  ModelRegistry: class {
+    static getInstance() {
+      return {};
+    }
+  },
   SessionManager: class {},
-  SettingsManager: class { static getInstance() { return {}; } },
+  SettingsManager: class {
+    static getInstance() {
+      return {};
+    }
+  },
   BorderedLoader: class {},
   AgentSession: class {},
   CustomEditor: class {},
@@ -211,9 +262,13 @@ export const piCodingAgentThemeMock = () => ({
   DynamicBorder: class DynamicBorder {
     constructor() {}
     invalidate() {}
-    render() { return []; }
+    render() {
+      return [];
+    }
   },
   AuthStorage: class AuthStorage {
-    static getInstance() { return new AuthStorage(); }
+    static getInstance() {
+      return new AuthStorage();
+    }
   },
 });

@@ -1,7 +1,6 @@
 import { describe, it, expect, mock, afterAll } from "bun:test";
 import { typeboxMock, piCodingAgentMock } from "../shared/src/test-mocks";
 
-
 // Mock external dependencies
 mock.module("exa-js", () => ({}));
 

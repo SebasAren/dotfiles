@@ -15,7 +15,6 @@ mock.module("@sinclair/typebox", () => ({
   },
 }));
 
-
 import { editSchema, readSchema, prepareArguments } from "./schema";
 
 describe("readSchema", () => {

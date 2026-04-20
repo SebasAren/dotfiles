@@ -1,7 +1,6 @@
 import { describe, it, expect, mock, afterAll } from "bun:test";
 import { typeboxMock } from "../shared/src/test-mocks";
 
-
 // Mock external dependencies
 mock.module("@upstash/context7-sdk", () => ({
   Context7: class Context7 {},
