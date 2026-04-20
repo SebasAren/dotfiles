@@ -137,6 +137,7 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
 
   // ── Phase 3: Apply edits ──
   const lines = [...originalLines];
+  const hadTrailingNewline = content.endsWith("\n");
 
   for (const edit of sorted) {
     if (edit.op === "replace") {
@@ -150,7 +151,8 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
     }
   }
 
-  const newContent = lines.join("\n");
+  const joined = lines.join("\n");
+  const newContent = hadTrailingNewline && joined.length > 0 ? joined + "\n" : joined;
 
   if (content === newContent) {
     throw new Error("No changes made. The replacement produced identical content.");

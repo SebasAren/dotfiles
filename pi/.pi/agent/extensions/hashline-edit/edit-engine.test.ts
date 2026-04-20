@@ -137,6 +137,29 @@ describe("applyHashlineEdits", () => {
     });
   });
 
+  describe("trailing newline", () => {
+    it("preserves trailing newline so diff doesn't flag the last line", () => {
+      const withNewline = "line1\nline2\nline3\n";
+      const pos = anchor(withNewline, 2);
+      const result = applyHashlineEdits(withNewline, [{ op: "replace", pos, lines: ["LINE2"] }]);
+      expect(result.content.endsWith("\n")).toBe(true);
+      expect(result.content).toBe("line1\nLINE2\nline3\n");
+      // Unchanged last line must not appear as +/- in the diff
+      expect(result.diff).not.toMatch(/^-\s*3 line3/m);
+      expect(result.diff).not.toMatch(/^\+\s*3 line3/m);
+    });
+
+    it("does not add a trailing newline when original had none", () => {
+      const withoutNewline = "line1\nline2\nline3";
+      const pos = anchor(withoutNewline, 2);
+      const result = applyHashlineEdits(withoutNewline, [
+        { op: "replace", pos, lines: ["LINE2"] },
+      ]);
+      expect(result.content.endsWith("\n")).toBe(false);
+      expect(result.content).toBe("line1\nLINE2\nline3");
+    });
+  });
+
   describe("duplication detection", () => {
     it("rejects insert_after when lines[0] matches anchor content", () => {
       const pos = anchor(content, 2);
