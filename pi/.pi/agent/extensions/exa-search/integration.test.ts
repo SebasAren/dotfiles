@@ -1,25 +1,13 @@
 import { describe, it, expect, mock, afterAll } from "bun:test";
+import { typeboxMock, piCodingAgentMock } from "../shared/src/test-mocks";
+
 
 // Mock external dependencies
 mock.module("exa-js", () => ({}));
 
-mock.module("@mariozechner/pi-coding-agent", () => ({
-  DEFAULT_MAX_BYTES: 50000,
-  DEFAULT_MAX_LINES: 500,
-  truncateHead: (content: string) => ({ content, truncated: false }),
-}));
+mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
 
-mock.module("@sinclair/typebox", () => ({
-  Type: {
-    Object: (props: any) => ({ type: "object", ...props }),
-    String: (props: any) => ({ type: "string", ...props }),
-    Number: (props: any) => ({ type: "number", ...props }),
-    Boolean: (props: any) => ({ type: "boolean", ...props }),
-    Optional: (schema: any) => ({ ...schema, optional: true }),
-    Array: (items: any, options: any) => ({ type: "array", items, ...options }),
-    Unsafe: (schema: any) => schema,
-  },
-}));
+mock.module("@sinclair/typebox", typeboxMock);
 
 mock.module("@mariozechner/pi-ai", () => ({
   StringEnum: (values: any, options: any) => ({ type: "string", enum: values, ...options }),

@@ -1,4 +1,6 @@
 import { describe, it, expect, mock, afterAll } from "bun:test";
+import { typeboxMock } from "../shared/src/test-mocks";
+
 
 // Mock external dependencies
 mock.module("@upstash/context7-sdk", () => ({
@@ -6,17 +8,7 @@ mock.module("@upstash/context7-sdk", () => ({
   Context7Error: class Context7Error extends Error {},
 }));
 
-mock.module("@sinclair/typebox", () => ({
-  Type: {
-    Object: (props: any) => ({ type: "object", ...props }),
-    String: (props: any) => ({ type: "string", ...props }),
-    Number: (props: any) => ({ type: "number", ...props }),
-    Boolean: (props: any) => ({ type: "boolean", ...props }),
-    Optional: (schema: any) => ({ ...schema, optional: true }),
-    Array: (items: any, options: any) => ({ type: "array", items, ...options }),
-    Unsafe: (schema: any) => schema,
-  },
-}));
+mock.module("@sinclair/typebox", typeboxMock);
 
 mock.module("@mariozechner/pi-ai", () => ({
   StringEnum: (values: any, options: any) => ({ type: "string", enum: values, ...options }),

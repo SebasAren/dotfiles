@@ -20,13 +20,14 @@ globs:
 ## Bun / TypeScript Gotchas
 
 - **Bun virtual path handling**: Bun virtualizes `process.cwd()` into `/bunfs/...` which doesn't exist for subprocesses. Pass the real cwd via env var (e.g., `PI_REAL_CWD`).
-- **`mock.module()` cross-contamination**: Mocks are global across the test process. Use shared factories from `@pi-ext/shared/test-mocks` rather than inline mocks.
-- **`mock.module()` last-registration-wins**: The last registration wins globally. Tests needing richer mocks must register their own `mock.module()` before importing.
+- **`mock.module()` cross-contamination**: Mocks are global across the test process. Use shared factories from `@pi-ext/shared/test-mocks` rather than inline mocks. The shared `piCodingAgentMock` must be a superset of **every** export any extension uses — a missing export in any mock registration will break other tests.
+- **`mock.module()` last-registration-wins**: The last registration wins globally. Tests needing richer mocks must register their own `mock.module()` before importing. Never use inline mocks for `@mariozechner/pi-coding-agent` or `@sinclair/typebox` — always import from `@pi-ext/shared/test-mocks` to avoid missing exports (e.g. `Type.Literal`, `DefaultResourceLoader`, `SettingsManager`).
 - **Two tiers of TUI mock**: Most tests need `piTuiMock` (`.text` access). Rendering tests need `piTuiRenderMock` (working `render()` methods). Use `piCodingAgentThemeMock` for asserting on content without ANSI noise.
 - **`type: "text"` literal widening**: TypeScript widens `"text"` to `string` in tool result arrays. Use `type: "text" as const` or declare callback with literal type.
 - **`AgentToolResult<unknown>` in renderResult**: `details` is typed as `unknown`. Cast with `as any` in the callback.
 - **`@types/bun` required for `tsc`**: Add `"types": ["node", "bun"]` to tsconfig.
 - **Exclude test files from tsconfig `include`**: Tests that mock modules can conflict with real types. Bun's test runner doesn't typecheck.
+- **Bun parser: trailing commas after class expressions in objects**: `class {}` as an object property value must have a trailing comma. Missing comma reports the error on the *next* property line, not where the comma is missing, making it hard to spot.
 
 ## Extension Architecture
 
@@ -52,8 +53,8 @@ globs:
 - **Unit tests**: Co-locate with source (e.g., `render.test.ts` next to `render.ts`).
 - **Integration tests**: `integration.test.ts` per extension — tests full load/register cycle.
 - **Shared test utilities**: Import from `@pi-ext/shared/test-mocks`.
+- **Auto-discovery runner removed**: No longer using `__tests__/all-extensions.test.ts` — it spawned subprocesses with no timeout and caused cross-workspace resolution issues. Run `bun test` from `pi/.pi/agent/extensions/` instead.
 - **Mock pattern**: `mock.module()` from `bun:test` before importing the module under test.
-- **Auto-discovery runner**: `__tests__/all-extensions.test.ts` auto-discovers and runs `bun test` in each extension directory.
 
 ## New Extension Checklist
 
@@ -61,5 +62,4 @@ globs:
 2. Write tests first (`index.test.ts` or `integration.test.ts`)
 3. Implement the extension
 4. Add to workspace `package.json` `workspaces` array
-5. Add to `__tests__/all-extensions.test.ts` runner
-6. Verify tests pass and types check
+5. Verify tests pass and types check
