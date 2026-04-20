@@ -15,6 +15,7 @@ describe("all extensions verification", () => {
     "cache-control",
     "hashline-edit",
     "plan-mode",
+    "qwen-reasoning-fix",
     "tdd-tree",
   ];
 
