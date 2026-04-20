@@ -3,6 +3,10 @@
  *
  * Validates all hash anchors against the original file content, then applies
  * edits bottom-up so that earlier edits don't shift later line numbers.
+ *
+ * Duplication patterns (model echoing anchor content into `lines`) are
+ * auto-corrected — the duplicated line is silently stripped rather than
+ * rejecting the edit.
  */
 
 import { hashLine, validateAnchor } from "./hash";
@@ -23,6 +27,8 @@ export interface EditResult {
   /** Fresh LINE#HASH: content entries for lines this edit produced, so the
    * model can chain further edits without re-reading. */
   updatedAnchors: string[];
+  /** Notices about auto-corrections applied during editing. */
+  notices: string[];
 }
 
 interface ParsedEdit {
@@ -40,7 +46,6 @@ const UPDATED_ANCHORS_TOTAL_CAP = 20;
  * Also strips diff format prefixes like "+ 1#KT: " or "-42#AB: ".
  * E.g. "11#KT:   return x;" → "  return x;"
  * E.g. "+ 11#KT:   return x;" → "  return x;"
- * E.g. "11#KT:   return x;" → "  return x;"
  */
 function stripHashlinePrefix(line: string): string {
   const match = line.match(/^[+-]?\s*\d+#[A-Z]{1,2}: ?/);
@@ -48,80 +53,66 @@ function stripHashlinePrefix(line: string): string {
 }
 
 /**
- * Detect likely-duplication patterns where the model has echoed the anchor
- * line's original content into `lines`, which would produce a duplicated line.
- *
- * Rejects with a clear message pointing the model at the right operation
- * rather than silently writing the duplicate.
+ * Auto-correct duplication patterns where the model has echoed the anchor
+ * line's original content into `lines`. Strips the duplicated line(s) in place
+ * and returns any notices about what was corrected.
  */
-function detectDuplication(
+function autoCorrectDuplication(
   op: string,
-  pos: string,
-  end: string | undefined,
   newLines: string[],
   originalLines: string[],
   startLine: number,
   endLine: number,
-): void {
-  if (newLines.length === 0) return;
+): string[] {
+  if (newLines.length === 0) return [];
 
+  const notices: string[] = [];
   const posContent = originalLines[startLine - 1];
-  const first = newLines[0];
-  const last = newLines[newLines.length - 1];
 
-  if (op === "insert_after" && first === posContent) {
-    throw new Error(
-      `Likely duplication: insert_after ${pos} starts with the anchor line's existing content. ` +
-        `insert_after adds lines AFTER the anchor without repeating it — remove the first line of ` +
-        `"lines", or switch to "replace" if you meant to overwrite the anchor.`,
-    );
+  // insert_after: strip echoed anchor from start
+  if (op === "insert_after" && newLines[0] === posContent) {
+    newLines.shift();
+    notices.push("Auto-corrected: removed anchor content echoed at start of insert_after lines.");
   }
 
-  if (op === "insert_before" && last === posContent) {
-    throw new Error(
-      `Likely duplication: insert_before ${pos} ends with the anchor line's existing content. ` +
-        `insert_before adds lines BEFORE the anchor without repeating it — remove the last line of ` +
-        `"lines", or switch to "replace" if you meant to overwrite the anchor.`,
-    );
+  // insert_before: strip echoed anchor from end
+  if (op === "insert_before" && newLines[newLines.length - 1] === posContent) {
+    newLines.pop();
+    notices.push("Auto-corrected: removed anchor content echoed at end of insert_before lines.");
   }
 
-  if (op === "replace" && end && endLine > startLine) {
+  // replace with range
+  if (op === "replace" && endLine > startLine) {
     const endContent = originalLines[endLine - 1];
     const rangeCount = endLine - startLine + 1;
+    const first = newLines[0];
+    const last = newLines[newLines.length - 1];
 
+    // Both endpoints echoed
     if (first === posContent && last === endContent) {
-      throw new Error(
-        `Likely duplication: replace ${pos}..${end} both starts and ends with the original anchor ` +
-          `lines. "replace" overwrites the entire range — do not include the original first/last ` +
-          `lines in "lines". If you only want to change content between the endpoints, anchor on ` +
-          `the lines you actually want to change.`,
+      newLines.shift();
+      newLines.pop();
+      notices.push(
+        "Auto-corrected: removed original first/last lines echoed in range replace.",
       );
     }
-
-    // Asymmetric echo: only one endpoint is echoed, and the replacement is
-    // longer than the range. The echoed endpoint therefore appears both as the
-    // (unchanged) original line AND as an extra copy in the replacement —
-    // producing a duplicate. Legitimate "shrink the range by keeping one
-    // endpoint" is unaffected because it never grows the line count.
-    if (newLines.length > rangeCount) {
+    // Asymmetric echo when replacement grows the range
+    else if (newLines.length > rangeCount) {
       if (last === endContent) {
-        throw new Error(
-          `Likely duplication: replace ${pos}..${end} ends with the original content of ${end}, ` +
-            `and the replacement grows the range (${newLines.length} lines vs ${rangeCount}). ` +
-            `This duplicates the end line. Either shrink the range to stop before ${end} and drop ` +
-            `the echoed last line from "lines", or use insert_before ${end} for the new content.`,
+        newLines.pop();
+        notices.push(
+          "Auto-corrected: removed echoed end line from growing range replace.",
         );
-      }
-      if (first === posContent) {
-        throw new Error(
-          `Likely duplication: replace ${pos}..${end} starts with the original content of ${pos}, ` +
-            `and the replacement grows the range (${newLines.length} lines vs ${rangeCount}). ` +
-            `This duplicates the start line. Either shrink the range to start after ${pos} and drop ` +
-            `the echoed first line from "lines", or use insert_after ${pos} for the new content.`,
+      } else if (first === posContent) {
+        newLines.shift();
+        notices.push(
+          "Auto-corrected: removed echoed start line from growing range replace.",
         );
       }
     }
   }
+
+  return notices;
 }
 
 /**
@@ -156,6 +147,10 @@ function describeEdit(edit: ParsedEdit): string {
  * All anchors are validated against the original content before any
  * modifications are made. Edits are applied bottom-up so line indices
  * stay stable.
+ *
+ * Duplication patterns (model echoing anchor content) are auto-corrected
+ * rather than rejected — the duplicated line is stripped and a notice is
+ * returned.
  */
 export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResult {
   // ── Phase 1: Validate all anchors against original content ──
@@ -164,6 +159,7 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
     originalLines.pop();
 
   const parsedEdits: ParsedEdit[] = [];
+  const notices: string[] = [];
 
   for (const edit of edits) {
     const op = edit.op || "replace";
@@ -184,7 +180,14 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
     }
 
     const newLines = edit.lines.map(stripHashlinePrefix);
-    detectDuplication(op, edit.pos, edit.end, newLines, originalLines, startLine, endLine);
+    const dupNotices = autoCorrectDuplication(
+      op,
+      newLines,
+      originalLines,
+      startLine,
+      endLine,
+    );
+    notices.push(...dupNotices);
 
     parsedEdits.push({ op, startLine, endLine, newLines });
   }
@@ -240,6 +243,7 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
     firstChangedLine,
     stats: { applied: edits.length, total: edits.length },
     updatedAnchors,
+    notices,
   };
 }
 

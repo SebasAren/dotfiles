@@ -147,7 +147,6 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         details: undefined,
       };
     },
-
     renderCall(args, theme, context) {
       const text =
         context.lastComponent instanceof Text ? context.lastComponent : new Text("", 0, 0);
@@ -266,10 +265,14 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
 
       const edits = params.edits;
       if (!edits || edits.length === 0) {
-        throw new Error("edits must contain at least one edit.");
+        return {
+          content: [{ type: "text" as const, text: "Error: edits must contain at least one edit." }],
+          details: undefined,
+        };
       }
 
-      return withFileMutationQueue(absolutePath, async () => {
+      try {
+      return await withFileMutationQueue(absolutePath, async () => {
         // Check file access
         try {
           await access(absolutePath, constants.R_OK | constants.W_OK);
@@ -300,6 +303,9 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         await writeFile(absolutePath, result.content, "utf-8");
 
         let responseText = `Applied ${result.stats.applied} hashline edit(s) in ${editPath}.`;
+        if (result.notices.length > 0) {
+          responseText += `\n\n${result.notices.join("\n")}`;
+        }
         if (result.updatedAnchors.length > 0) {
           responseText +=
             `\n\nFresh anchors for the edited lines (use these for follow-up edits without re-reading):\n` +
@@ -314,6 +320,12 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
           } satisfies EditToolDetails,
         };
       });
+      } catch (err) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${err instanceof Error ? err.message : String(err)}` }],
+          details: undefined,
+        };
+      }
     },
 
     renderCall(args, theme, context) {

@@ -293,96 +293,96 @@ describe("applyHashlineEdits", () => {
     });
   });
 
-  describe("duplication detection", () => {
-    it("rejects insert_after when lines[0] matches anchor content", () => {
+  describe("auto-correct duplication", () => {
+    it("auto-corrects insert_after when lines[0] matches anchor content", () => {
       const pos = anchor(content, 2);
-      expect(() =>
-        applyHashlineEdits(content, [{ op: "insert_after", pos, lines: ["line2", "new"] }]),
-      ).toThrow(/duplication.*insert_after/i);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: ["line2", "new"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\nnew\nline3\nline4\nline5");
+      expect(result.notices).toHaveLength(1);
+      expect(result.notices[0]).toMatch(/insert_after/);
     });
 
-    it("rejects insert_before when lines[last] matches anchor content", () => {
+    it("auto-corrects insert_before when lines[last] matches anchor content", () => {
       const pos = anchor(content, 3);
-      expect(() =>
-        applyHashlineEdits(content, [{ op: "insert_before", pos, lines: ["new", "line3"] }]),
-      ).toThrow(/duplication.*insert_before/i);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_before", pos, lines: ["new", "line3"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\nnew\nline3\nline4\nline5");
+      expect(result.notices).toHaveLength(1);
+      expect(result.notices[0]).toMatch(/insert_before/);
     });
 
-    it("rejects range replace when endpoints are duplicated in lines", () => {
+    it("auto-corrects range replace when both endpoints are echoed", () => {
       const pos = anchor(content, 2);
       const end = anchor(content, 4);
-      expect(() =>
-        applyHashlineEdits(content, [
-          { op: "replace", pos, end, lines: ["line2", "NEW_MIDDLE", "line4"] },
-        ]),
-      ).toThrow(/duplication.*replace/i);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, end, lines: ["line2", "NEW_MIDDLE", "line4"] },
+      ]);
+      expect(result.content).toBe("line1\nNEW_MIDDLE\nline5");
+      expect(result.notices).toHaveLength(1);
+      expect(result.notices[0]).toMatch(/first\/last/);
     });
 
-    it("catches duplication even when model includes hashline prefix on the echoed line", () => {
+    it("auto-corrects when model includes hashline prefix on the echoed line", () => {
       const pos = anchor(content, 2);
-      // Model echoes the full tagged line from read output
       const tagged = `2#${hashLine("line2", 2)}: line2`;
-      expect(() =>
-        applyHashlineEdits(content, [{ op: "insert_after", pos, lines: [tagged, "new"] }]),
-      ).toThrow(/duplication/i);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: [tagged, "new"] },
+      ]);
+      // hashline prefix stripped → "line2" matches anchor → auto-corrected
+      expect(result.content).toBe("line1\nline2\nnew\nline3\nline4\nline5");
+      expect(result.notices).toHaveLength(1);
     });
 
-    it("allows insert_after where lines[0] differs from anchor", () => {
+    it("auto-corrects range replace when only end is echoed and range grows", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 3);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, end, lines: ["NEW", "line3", "line3"] },
+      ]);
+      // end line echoed → stripped → ["NEW", "line3"] replaces [2, 3]
+      expect(result.content).toBe("line1\nNEW\nline3\nline4\nline5");
+      expect(result.notices).toHaveLength(1);
+      expect(result.notices[0]).toMatch(/end line/);
+    });
+
+    it("auto-corrects range replace when only start is echoed and range grows", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 3);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, end, lines: ["line2", "line2", "NEW"] },
+      ]);
+      // start line echoed → stripped → ["line2", "NEW"] replaces [2, 3]
+      expect(result.content).toBe("line1\nline2\nNEW\nline4\nline5");
+      expect(result.notices).toHaveLength(1);
+      expect(result.notices[0]).toMatch(/start line/);
+    });
+
+    it("produces no notices when no duplication is detected", () => {
       const pos = anchor(content, 2);
       const result = applyHashlineEdits(content, [
         { op: "insert_after", pos, lines: ["line2_extra", "new"] },
       ]);
-      expect(result.content).toBe("line1\nline2\nline2_extra\nnew\nline3\nline4\nline5");
+      expect(result.notices).toHaveLength(0);
     });
 
-    it("allows single-line replace without end even if content happens to match (caught by no-op check)", () => {
-      // Single replace where lines[0] === anchor content would be a no-op,
-      // handled by the existing "No changes made" error.
+    it("single-line replace with identical content still throws no-op", () => {
       const pos = anchor(content, 2);
-      expect(() => applyHashlineEdits(content, [{ op: "replace", pos, lines: ["line2"] }])).toThrow(
-        /No changes/,
-      );
+      expect(() =>
+        applyHashlineEdits(content, [{ op: "replace", pos, lines: ["line2"] }]),
+      ).toThrow(/No changes/);
     });
 
-    it("allows range replace where only one endpoint appears in lines", () => {
+    it("allows range replace where only one endpoint appears (no auto-correct needed)", () => {
       const pos = anchor(content, 2);
       const end = anchor(content, 4);
-      // Keeping just the start but replacing the rest is legitimate
       const result = applyHashlineEdits(content, [
         { op: "replace", pos, end, lines: ["line2", "NEW"] },
       ]);
       expect(result.content).toBe("line1\nline2\nNEW\nline5");
-    });
-
-    it("rejects range replace when only end is echoed and new range grows", () => {
-      // Mirrors an observed failure: agent replaces [N, N+1] with [new, endLine, endLine]
-      // — the grown range duplicates the echoed end line.
-      const pos = anchor(content, 2);
-      const end = anchor(content, 3);
-      expect(() =>
-        applyHashlineEdits(content, [
-          { op: "replace", pos, end, lines: ["NEW", "line3", "line3"] },
-        ]),
-      ).toThrow(/duplication/i);
-    });
-
-    it("rejects range replace when only start is echoed and new range grows", () => {
-      const pos = anchor(content, 2);
-      const end = anchor(content, 3);
-      expect(() =>
-        applyHashlineEdits(content, [
-          { op: "replace", pos, end, lines: ["line2", "line2", "NEW"] },
-        ]),
-      ).toThrow(/duplication/i);
-    });
-
-    it("allows range replace when neither endpoint is echoed even if it grows", () => {
-      const pos = anchor(content, 2);
-      const end = anchor(content, 3);
-      const result = applyHashlineEdits(content, [
-        { op: "replace", pos, end, lines: ["A", "B", "C", "D"] },
-      ]);
-      expect(result.content).toBe("line1\nA\nB\nC\nD\nline4\nline5");
+      expect(result.notices).toHaveLength(0);
     });
   });
 
