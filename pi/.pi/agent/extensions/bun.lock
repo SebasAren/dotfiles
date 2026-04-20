@@ -52,16 +52,16 @@
         "@pi-ext/shared": "workspace:*",
       },
     },
-    "git-checkpoint": {
-      "name": "git-checkpoint",
-      "version": "1.0.0",
-    },
-    "hashline-edit": {
-      "name": "@pi-ext/hashline-edit",
+    "fuzzy-edit": {
+      "name": "@pi-ext/fuzzy-edit",
       "version": "1.0.0",
       "dependencies": {
         "diff": "^8.0.2",
       },
+    },
+    "git-checkpoint": {
+      "name": "git-checkpoint",
+      "version": "1.0.0",
     },
     "librarian": {
       "name": "@pi-ext/librarian",
@@ -247,7 +247,7 @@
 
     "@pi-ext/explore": ["@pi-ext/explore@workspace:explore"],
 
-    "@pi-ext/hashline-edit": ["@pi-ext/hashline-edit@workspace:hashline-edit"],
+    "@pi-ext/fuzzy-edit": ["@pi-ext/fuzzy-edit@workspace:fuzzy-edit"],
 
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 

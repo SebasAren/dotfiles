@@ -12,6 +12,7 @@ describe("generateDiff", () => {
   it("detects a single line removal", () => {
     const result = generateDiff("line1\nline2\nline3", "line1\nline3");
     expect(result.diff).toContain("-");
+    // firstChangedLine is only set for additions, not removals
     expect(result.firstChangedLine).toBeUndefined();
   });
 
@@ -50,6 +51,7 @@ describe("generateDiff", () => {
 
   it("produces zero-padded line numbers", () => {
     const result = generateDiff("a\nb", "a\nc");
+    // Line numbers should be padded to the width of the max line count
     expect(result.diff).toMatch(/ \d/);
   });
 

@@ -25,8 +25,8 @@
  * Complete mock for `@mariozechner/pi-coding-agent`.
  * Covers every export used by any extension:
  *   - `getMarkdownTheme` (explore, librarian, wt-worktree)
- *   - `createEditTool`   (hashline-edit)
- *   - `withFileMutationQueue` (hashline-edit)
+ *   - `createEditTool`   (fuzzy-edit)
+ *   - `withFileMutationQueue` (fuzzy-edit)
  */
 export const piCodingAgentMock = () => ({
   getMarkdownTheme: () => ({}),
