@@ -357,6 +357,37 @@ describe("applyHashlineEdits", () => {
       ]);
       expect(result.content).toBe("line1\nline2\nNEW\nline5");
     });
+
+    it("rejects range replace when only end is echoed and new range grows", () => {
+      // Mirrors an observed failure: agent replaces [N, N+1] with [new, endLine, endLine]
+      // — the grown range duplicates the echoed end line.
+      const pos = anchor(content, 2);
+      const end = anchor(content, 3);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos, end, lines: ["NEW", "line3", "line3"] },
+        ]),
+      ).toThrow(/duplication/i);
+    });
+
+    it("rejects range replace when only start is echoed and new range grows", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 3);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos, end, lines: ["line2", "line2", "NEW"] },
+        ]),
+      ).toThrow(/duplication/i);
+    });
+
+    it("allows range replace when neither endpoint is echoed even if it grows", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 3);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, end, lines: ["A", "B", "C", "D"] },
+      ]);
+      expect(result.content).toBe("line1\nA\nB\nC\nD\nline4\nline5");
+    });
   });
 
   describe("hashline prefix stripping", () => {

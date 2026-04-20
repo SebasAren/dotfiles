@@ -87,6 +87,8 @@ function detectDuplication(
 
   if (op === "replace" && end && endLine > startLine) {
     const endContent = originalLines[endLine - 1];
+    const rangeCount = endLine - startLine + 1;
+
     if (first === posContent && last === endContent) {
       throw new Error(
         `Likely duplication: replace ${pos}..${end} both starts and ends with the original anchor ` +
@@ -94,6 +96,30 @@ function detectDuplication(
           `lines in "lines". If you only want to change content between the endpoints, anchor on ` +
           `the lines you actually want to change.`,
       );
+    }
+
+    // Asymmetric echo: only one endpoint is echoed, and the replacement is
+    // longer than the range. The echoed endpoint therefore appears both as the
+    // (unchanged) original line AND as an extra copy in the replacement —
+    // producing a duplicate. Legitimate "shrink the range by keeping one
+    // endpoint" is unaffected because it never grows the line count.
+    if (newLines.length > rangeCount) {
+      if (last === endContent) {
+        throw new Error(
+          `Likely duplication: replace ${pos}..${end} ends with the original content of ${end}, ` +
+            `and the replacement grows the range (${newLines.length} lines vs ${rangeCount}). ` +
+            `This duplicates the end line. Either shrink the range to stop before ${end} and drop ` +
+            `the echoed last line from "lines", or use insert_before ${end} for the new content.`,
+        );
+      }
+      if (first === posContent) {
+        throw new Error(
+          `Likely duplication: replace ${pos}..${end} starts with the original content of ${pos}, ` +
+            `and the replacement grows the range (${newLines.length} lines vs ${rangeCount}). ` +
+            `This duplicates the start line. Either shrink the range to start after ${pos} and drop ` +
+            `the echoed first line from "lines", or use insert_after ${pos} for the new content.`,
+        );
+      }
     }
   }
 }
