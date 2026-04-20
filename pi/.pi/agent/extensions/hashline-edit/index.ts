@@ -178,7 +178,9 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
 
       // Expanded: show file content with syntax highlighting via Markdown
       const container = new Container();
-      container.addChild(new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`, 0, 0));
+      container.addChild(
+        new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`, 0, 0),
+      );
       container.addChild(new Spacer(1));
 
       // Show truncated preview (first 50 lines) with syntax highlighting
@@ -315,7 +317,9 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
 
       // Expanded: show diff with colored lines
       const container = new Container();
-      container.addChild(new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`, 0, 0));
+      container.addChild(
+        new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`, 0, 0),
+      );
       container.addChild(new Spacer(1));
 
       for (const line of diffLines.slice(0, 50)) {
@@ -333,7 +337,9 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       }
 
       if (diffLines.length > 50) {
-        container.addChild(new Text(theme.fg("muted", `... ${diffLines.length - 50} more diff lines`), 0, 0));
+        container.addChild(
+          new Text(theme.fg("muted", `... ${diffLines.length - 50} more diff lines`), 0, 0),
+        );
       }
 
       return container;
