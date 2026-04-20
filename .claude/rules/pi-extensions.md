@@ -43,6 +43,7 @@ globs:
 ## Model Configuration
 
 - **Mistral Small 4** (`mistral-small-latest`): Must use `reasoning: false` in `models.json` — `reasoning: true` causes API errors despite native `reasoning_effort` support.
+- **Moonshot/Kimi models** (`kimi-k2.6`, `kimi-k2.5`): Must add `"compat": { "supportsDeveloperRole": false }` — the API only accepts `system`/`user`/`assistant` roles and returns `ROLE_UNSPECIFIED` for the `developer` role.
 
 ## exa-js Typing
 
