@@ -158,7 +158,16 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       const content = result.content[0];
 
       if (content?.type === "image") {
-        return new Text(theme.fg("success", "Image loaded"), 0, 0);
+        const container = new Container();
+        container.addChild(
+          new Text(
+            `${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("read"))}`,
+            0,
+            0,
+          ),
+        );
+        container.addChild(new Text(`  ${theme.fg("dim", "image")}`, 0, 0));
+        return container;
       }
 
       if (content?.type !== "text") {
@@ -168,12 +177,16 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       const text = content.text;
       const cleaned = text.replace(/^\d+#[A-Z]{1,2}: /gm, "");
       const lines = cleaned.split("\n");
-      const lineCount = lines.length;
-      let rendered = theme.fg("success", `${lineCount} lines`);
+      // Strip trailing truncation notice from line count
+      const realLines = lines.filter((l) => !l.startsWith("[Output truncated"));
+      const lineCount = realLines.length;
 
       if (!expanded) {
-        rendered += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
-        return new Text(rendered, 0, 0);
+        return new Text(
+          `  ${theme.fg("dim", `${lineCount} line${lineCount !== 1 ? "s" : ""}`)}`,
+          0,
+          0,
+        );
       }
 
       // Expanded: show file content with syntax highlighting via Markdown
@@ -187,7 +200,7 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       const previewLines = lines.slice(0, 50);
       const previewText = previewLines.join("\n");
       const mdTheme = getMarkdownTheme();
-      container.addChild(new Markdown(`\`\`\`\n${previewText}\n\`\`\`\``, 0, 0, mdTheme));
+      container.addChild(new Markdown(`\`\`\`\n${previewText}\n\`\`\``, 0, 0, mdTheme));
 
       if (lineCount > 50) {
         container.addChild(new Text(theme.fg("muted", `... ${lineCount - 50} more lines`), 0, 0));
@@ -294,10 +307,19 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       }
 
       if (!details?.diff) {
-        return new Text(theme.fg("success", "Applied"), 0, 0);
+        const container = new Container();
+        container.addChild(
+          new Text(
+            `${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`,
+            0,
+            0,
+          ),
+        );
+        const textContent = content?.type === "text" ? content.text : JSON.stringify(content);
+        container.addChild(new Text(`  ${theme.fg("dim", textContent)}`, 0, 0));
+        return container;
       }
 
-      // Count additions and removals from the diff
       const diffLines = details.diff.split("\n");
       let additions = 0;
       let removals = 0;
@@ -306,16 +328,14 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         if (line.startsWith("-") && !line.startsWith("---")) removals++;
       }
 
-      let text = theme.fg("success", `+${additions}`);
-      text += theme.fg("dim", " / ");
-      text += theme.fg("error", `-${removals}`);
-
       if (!expanded) {
-        text += `\n  ${theme.fg("muted", "(Ctrl+O to expand)")}`;
-        return new Text(text, 0, 0);
+        return new Text(
+          `  ${theme.fg("toolDiffAdded", `+${additions}`)}${theme.fg("dim", " / ")}${theme.fg("toolDiffRemoved", `-${removals}`)}`,
+          0,
+          0,
+        );
       }
 
-      // Expanded: show diff with colored lines
       const container = new Container();
       container.addChild(
         new Text(`${theme.fg("success", "✓")} ${theme.fg("toolTitle", theme.bold("edit"))}`, 0, 0),

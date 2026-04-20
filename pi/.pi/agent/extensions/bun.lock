@@ -71,6 +71,10 @@
       "name": "@pi-ext/plan-mode",
       "version": "1.0.0",
     },
+    "qwen-reasoning-fix": {
+      "name": "@pi-ext/qwen-reasoning-fix",
+      "version": "1.0.0",
+    },
     "session-analyzer": {
       "name": "session-analyzer",
       "version": "1.0.0",
@@ -252,6 +256,8 @@
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 
     "@pi-ext/plan-mode": ["@pi-ext/plan-mode@workspace:plan-mode"],
+
+    "@pi-ext/qwen-reasoning-fix": ["@pi-ext/qwen-reasoning-fix@workspace:qwen-reasoning-fix"],
 
     "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
 
