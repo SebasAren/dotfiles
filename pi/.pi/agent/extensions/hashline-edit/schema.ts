@@ -40,7 +40,8 @@ const hashEditSchema = Type.Object(
       }),
     ),
     lines: Type.Array(Type.String(), {
-      description: "New content lines for this edit.",
+      description:
+        "New content ONLY — not a diff. For `replace`, these lines overwrite the anchored range (do not copy the original line's text here). For `insert_after`/`insert_before`, these are the lines to insert without repeating the anchor line.",
     }),
   },
   { additionalProperties: false },

@@ -42,6 +42,57 @@ function stripHashlinePrefix(line: string): string {
 }
 
 /**
+ * Detect likely-duplication patterns where the model has echoed the anchor
+ * line's original content into `lines`, which would produce a duplicated line.
+ *
+ * Rejects with a clear message pointing the model at the right operation
+ * rather than silently writing the duplicate.
+ */
+function detectDuplication(
+  op: string,
+  pos: string,
+  end: string | undefined,
+  newLines: string[],
+  originalLines: string[],
+  startLine: number,
+  endLine: number,
+): void {
+  if (newLines.length === 0) return;
+
+  const posContent = originalLines[startLine - 1];
+  const first = newLines[0];
+  const last = newLines[newLines.length - 1];
+
+  if (op === "insert_after" && first === posContent) {
+    throw new Error(
+      `Likely duplication: insert_after ${pos} starts with the anchor line's existing content. ` +
+        `insert_after adds lines AFTER the anchor without repeating it — remove the first line of ` +
+        `"lines", or switch to "replace" if you meant to overwrite the anchor.`,
+    );
+  }
+
+  if (op === "insert_before" && last === posContent) {
+    throw new Error(
+      `Likely duplication: insert_before ${pos} ends with the anchor line's existing content. ` +
+        `insert_before adds lines BEFORE the anchor without repeating it — remove the last line of ` +
+        `"lines", or switch to "replace" if you meant to overwrite the anchor.`,
+    );
+  }
+
+  if (op === "replace" && end && endLine > startLine) {
+    const endContent = originalLines[endLine - 1];
+    if (first === posContent && last === endContent) {
+      throw new Error(
+        `Likely duplication: replace ${pos}..${end} both starts and ends with the original anchor ` +
+          `lines. "replace" overwrites the entire range — do not include the original first/last ` +
+          `lines in "lines". If you only want to change content between the endpoints, anchor on ` +
+          `the lines you actually want to change.`,
+      );
+    }
+  }
+}
+
+/**
  * Apply hash-anchored edits to file content.
  *
  * All anchors are validated against the original content before any
@@ -50,6 +101,10 @@ function stripHashlinePrefix(line: string): string {
  */
 export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResult {
   // ── Phase 1: Validate all anchors against original content ──
+  const originalLines = content.split("\n");
+  if (originalLines.length > 0 && originalLines[originalLines.length - 1] === "")
+    originalLines.pop();
+
   const parsedEdits: ParsedEdit[] = [];
 
   for (const edit of edits) {
@@ -70,7 +125,10 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
       }
     }
 
-    parsedEdits.push({ op, startLine, endLine, newLines: edit.lines.map(stripHashlinePrefix) });
+    const newLines = edit.lines.map(stripHashlinePrefix);
+    detectDuplication(op, edit.pos, edit.end, newLines, originalLines, startLine, endLine);
+
+    parsedEdits.push({ op, startLine, endLine, newLines });
   }
 
   // ── Phase 2: Sort bottom-up (stable sort preserves order for same position) ──
@@ -78,8 +136,7 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
   sorted.sort((a, b) => b.startLine - a.startLine || a.origIdx - b.origIdx);
 
   // ── Phase 3: Apply edits ──
-  const lines = content.split("\n");
-  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  const lines = [...originalLines];
 
   for (const edit of sorted) {
     if (edit.op === "replace") {

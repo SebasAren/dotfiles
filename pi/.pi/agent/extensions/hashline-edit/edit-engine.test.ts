@@ -137,6 +137,68 @@ describe("applyHashlineEdits", () => {
     });
   });
 
+  describe("duplication detection", () => {
+    it("rejects insert_after when lines[0] matches anchor content", () => {
+      const pos = anchor(content, 2);
+      expect(() =>
+        applyHashlineEdits(content, [{ op: "insert_after", pos, lines: ["line2", "new"] }]),
+      ).toThrow(/duplication.*insert_after/i);
+    });
+
+    it("rejects insert_before when lines[last] matches anchor content", () => {
+      const pos = anchor(content, 3);
+      expect(() =>
+        applyHashlineEdits(content, [{ op: "insert_before", pos, lines: ["new", "line3"] }]),
+      ).toThrow(/duplication.*insert_before/i);
+    });
+
+    it("rejects range replace when endpoints are duplicated in lines", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 4);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos, end, lines: ["line2", "NEW_MIDDLE", "line4"] },
+        ]),
+      ).toThrow(/duplication.*replace/i);
+    });
+
+    it("catches duplication even when model includes hashline prefix on the echoed line", () => {
+      const pos = anchor(content, 2);
+      // Model echoes the full tagged line from read output
+      const tagged = `2#${hashLine("line2", 2)}: line2`;
+      expect(() =>
+        applyHashlineEdits(content, [{ op: "insert_after", pos, lines: [tagged, "new"] }]),
+      ).toThrow(/duplication/i);
+    });
+
+    it("allows insert_after where lines[0] differs from anchor", () => {
+      const pos = anchor(content, 2);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: ["line2_extra", "new"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\nline2_extra\nnew\nline3\nline4\nline5");
+    });
+
+    it("allows single-line replace without end even if content happens to match (caught by no-op check)", () => {
+      // Single replace where lines[0] === anchor content would be a no-op,
+      // handled by the existing "No changes made" error.
+      const pos = anchor(content, 2);
+      expect(() =>
+        applyHashlineEdits(content, [{ op: "replace", pos, lines: ["line2"] }]),
+      ).toThrow(/No changes/);
+    });
+
+    it("allows range replace where only one endpoint appears in lines", () => {
+      const pos = anchor(content, 2);
+      const end = anchor(content, 4);
+      // Keeping just the start but replacing the rest is legitimate
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos, end, lines: ["line2", "NEW"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\nNEW\nline5");
+    });
+  });
+
   describe("hashline prefix stripping", () => {
     it("strips LINE#HASH prefix from replacement lines", () => {
       const pos = anchor(content, 2);
