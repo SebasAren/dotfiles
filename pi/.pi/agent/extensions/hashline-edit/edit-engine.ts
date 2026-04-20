@@ -5,7 +5,7 @@
  * edits bottom-up so that earlier edits don't shift later line numbers.
  */
 
-import { validateAnchor } from "./hash";
+import { hashLine, validateAnchor } from "./hash";
 import { generateDiff } from "./diff";
 
 export interface HashEdit {
@@ -20,6 +20,9 @@ export interface EditResult {
   diff: string;
   firstChangedLine?: number;
   stats: { applied: number; total: number };
+  /** Fresh LINE#HASH: content entries for lines this edit produced, so the
+   * model can chain further edits without re-reading. */
+  updatedAnchors: string[];
 }
 
 interface ParsedEdit {
@@ -28,6 +31,9 @@ interface ParsedEdit {
   endLine: number;
   newLines: string[];
 }
+
+const UPDATED_ANCHORS_PER_EDIT_CAP = 5;
+const UPDATED_ANCHORS_TOTAL_CAP = 20;
 
 /**
  * Strip hashline prefixes that models may accidentally include from read output.
@@ -93,6 +99,32 @@ function detectDuplication(
 }
 
 /**
+ * Compute the half-integer position range this edit claims. Lines map to even
+ * positions (line N → 2N), gaps between lines map to odd positions (gap after
+ * line N → 2N+1). A `replace [a, b]` claims [2a, 2b]; `insert_after a` claims
+ * a single gap position 2a+1; `insert_before a` claims 2a-1.
+ */
+function editClaim(edit: ParsedEdit): { start: number; end: number } {
+  if (edit.op === "replace") return { start: 2 * edit.startLine, end: 2 * edit.endLine };
+  if (edit.op === "insert_after") {
+    const p = 2 * edit.startLine + 1;
+    return { start: p, end: p };
+  }
+  // insert_before
+  const p = 2 * edit.startLine - 1;
+  return { start: p, end: p };
+}
+
+function describeEdit(edit: ParsedEdit): string {
+  if (edit.op === "replace") {
+    return edit.startLine === edit.endLine
+      ? `replace line ${edit.startLine}`
+      : `replace lines ${edit.startLine}..${edit.endLine}`;
+  }
+  return `${edit.op} line ${edit.startLine}`;
+}
+
+/**
  * Apply hash-anchored edits to file content.
  *
  * All anchors are validated against the original content before any
@@ -131,6 +163,21 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
     parsedEdits.push({ op, startLine, endLine, newLines });
   }
 
+  // ── Phase 1.5: Detect overlapping/adjacent edits ──
+  for (let i = 0; i < parsedEdits.length; i++) {
+    for (let j = i + 1; j < parsedEdits.length; j++) {
+      const a = editClaim(parsedEdits[i]);
+      const b = editClaim(parsedEdits[j]);
+      if (a.start <= b.end && b.start <= a.end) {
+        throw new Error(
+          `Overlapping edits: "${describeEdit(parsedEdits[i])}" and ` +
+            `"${describeEdit(parsedEdits[j])}" target the same lines or gap. ` +
+            `Combine them into a single edit, or choose non-overlapping anchors.`,
+        );
+      }
+    }
+  }
+
   // ── Phase 2: Sort bottom-up (stable sort preserves order for same position) ──
   const sorted = parsedEdits.map((e, i) => ({ ...e, origIdx: i }));
   sorted.sort((a, b) => b.startLine - a.startLine || a.origIdx - b.origIdx);
@@ -159,11 +206,58 @@ export function applyHashlineEdits(content: string, edits: HashEdit[]): EditResu
   }
 
   const { diff, firstChangedLine } = generateDiff(content, newContent);
+  const updatedAnchors = computeUpdatedAnchors(parsedEdits, lines);
 
   return {
     content: newContent,
     diff,
     firstChangedLine,
     stats: { applied: edits.length, total: edits.length },
+    updatedAnchors,
   };
+}
+
+/**
+ * Compute fresh LINE#HASH: content entries for the lines each edit produced in
+ * the final file. Walks edits in ascending original-startLine order while
+ * accumulating cumulative line delta, which gives each edit's final position.
+ */
+function computeUpdatedAnchors(parsedEdits: ParsedEdit[], finalLines: string[]): string[] {
+  const sorted = parsedEdits
+    .map((e, i) => ({ ...e, origIdx: i }))
+    .sort((a, b) => a.startLine - b.startLine || a.origIdx - b.origIdx);
+
+  const out: string[] = [];
+  let delta = 0;
+
+  for (const edit of sorted) {
+    const removedCount = edit.op === "replace" ? edit.endLine - edit.startLine + 1 : 0;
+    const addedCount = edit.newLines.length;
+
+    let newStartLine: number;
+    if (edit.op === "insert_after") {
+      newStartLine = edit.startLine + delta + 1;
+    } else {
+      // replace or insert_before: first inserted line lands at the anchor's shifted position
+      newStartLine = edit.startLine + delta;
+    }
+
+    if (addedCount > 0) {
+      const shown = Math.min(addedCount, UPDATED_ANCHORS_PER_EDIT_CAP);
+      for (let i = 0; i < shown && out.length < UPDATED_ANCHORS_TOTAL_CAP; i++) {
+        const lineNum = newStartLine + i;
+        const lineContent = finalLines[lineNum - 1] ?? "";
+        out.push(`${lineNum}#${hashLine(lineContent, lineNum)}: ${lineContent}`);
+      }
+      if (addedCount > shown && out.length < UPDATED_ANCHORS_TOTAL_CAP) {
+        out.push(`  (${addedCount - shown} more line(s) from this edit — re-read for full anchors)`);
+      }
+    }
+
+    delta += addedCount - removedCount;
+
+    if (out.length >= UPDATED_ANCHORS_TOTAL_CAP) break;
+  }
+
+  return out;
 }

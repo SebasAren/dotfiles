@@ -137,6 +137,143 @@ describe("applyHashlineEdits", () => {
     });
   });
 
+  describe("updatedAnchors", () => {
+    it("returns a fresh anchor for a single-line replace", () => {
+      const pos = anchor(content, 3);
+      const result = applyHashlineEdits(content, [{ op: "replace", pos, lines: ["NEW3"] }]);
+      expect(result.updatedAnchors).toHaveLength(1);
+      expect(result.updatedAnchors[0]).toMatch(/^3#[A-Z]{1,2}: NEW3$/);
+    });
+
+    it("returns anchors at the correct shifted line numbers for multiple edits", () => {
+      const pos1 = anchor(content, 2);
+      const pos2 = anchor(content, 4);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_before", pos: pos1, lines: ["A", "B"] }, // adds 2 lines before line 2
+        { op: "replace", pos: pos2, lines: ["FOUR"] }, // line 4 originally, now shifted to line 6
+      ]);
+      // New file: line1, A, B, line2, line3, FOUR, line5
+      // insert_before 2 produced lines at 2..3
+      // replace 4 produced FOUR at line 6 (after 2-line shift)
+      expect(result.updatedAnchors.length).toBe(3);
+      expect(result.updatedAnchors[0]).toMatch(/^2#[A-Z]{1,2}: A$/);
+      expect(result.updatedAnchors[1]).toMatch(/^3#[A-Z]{1,2}: B$/);
+      expect(result.updatedAnchors[2]).toMatch(/^6#[A-Z]{1,2}: FOUR$/);
+    });
+
+    it("returns anchor at the correct line for insert_after", () => {
+      const pos = anchor(content, 2);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: ["INSERTED"] },
+      ]);
+      // New file: line1, line2, INSERTED, line3, line4, line5
+      expect(result.updatedAnchors).toHaveLength(1);
+      expect(result.updatedAnchors[0]).toMatch(/^3#[A-Z]{1,2}: INSERTED$/);
+    });
+
+    it("returns no anchors for pure deletions", () => {
+      const pos = anchor(content, 3);
+      const result = applyHashlineEdits(content, [{ op: "replace", pos, lines: [] }]);
+      expect(result.updatedAnchors).toHaveLength(0);
+    });
+
+    it("caps anchors per edit and notes overflow", () => {
+      const pos = anchor(content, 2);
+      const manyLines = Array.from({ length: 10 }, (_, i) => `new${i}`);
+      const result = applyHashlineEdits(content, [
+        { op: "insert_after", pos, lines: manyLines },
+      ]);
+      // 10 new lines; per-edit cap is 5 + overflow note
+      const anchorCount = result.updatedAnchors.filter((a) => /^\d+#/.test(a)).length;
+      expect(anchorCount).toBe(5);
+      expect(result.updatedAnchors.some((a) => a.includes("more line"))).toBe(true);
+    });
+  });
+
+  describe("overlap detection", () => {
+    it("rejects two replaces on the same line", () => {
+      const pos = anchor(content, 3);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos, lines: ["A"] },
+          { op: "replace", pos, lines: ["B"] },
+        ]),
+      ).toThrow(/Overlapping edits/);
+    });
+
+    it("rejects replace ranges that overlap", () => {
+      const posA = anchor(content, 2);
+      const endA = anchor(content, 4);
+      const posB = anchor(content, 3);
+      const endB = anchor(content, 5);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos: posA, end: endA, lines: ["X"] },
+          { op: "replace", pos: posB, end: endB, lines: ["Y"] },
+        ]),
+      ).toThrow(/Overlapping edits/);
+    });
+
+    it("rejects insert inside a replace range", () => {
+      const posR = anchor(content, 2);
+      const endR = anchor(content, 4);
+      const posI = anchor(content, 3);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "replace", pos: posR, end: endR, lines: ["X"] },
+          { op: "insert_after", pos: posI, lines: ["Y"] },
+        ]),
+      ).toThrow(/Overlapping edits/);
+    });
+
+    it("rejects two inserts at the same gap (insert_after N vs insert_before N+1)", () => {
+      const posA = anchor(content, 3);
+      const posB = anchor(content, 4);
+      expect(() =>
+        applyHashlineEdits(content, [
+          { op: "insert_after", pos: posA, lines: ["A"] },
+          { op: "insert_before", pos: posB, lines: ["B"] },
+        ]),
+      ).toThrow(/Overlapping edits/);
+    });
+
+    it("allows insert_after at the last line of a replace range (append-after-replacement)", () => {
+      // replace [2, 3] + insert_after 3: the gap after line 3 is outside the
+      // replace range, so the insert just appends after the replacement.
+      const posR = anchor(content, 2);
+      const endR = anchor(content, 3);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos: posR, end: endR, lines: ["X"] },
+        { op: "insert_after", pos: endR, lines: ["Y"] },
+      ]);
+      expect(result.content).toBe("line1\nX\nY\nline4\nline5");
+    });
+
+    it("rejects insert_before at the first line of a replace range", () => {
+      // replace [2, 3] + insert_before 2: both touch the gap before line 2?
+      // No — insert_before 2 targets gap 2*2-1=3, replace [2, 3] claims [4, 6].
+      // Gap 3 is disjoint. This should be allowed.
+      const posR = anchor(content, 2);
+      const endR = anchor(content, 3);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos: posR, end: endR, lines: ["X"] },
+        { op: "insert_before", pos: posR, lines: ["Y"] },
+      ]);
+      expect(result.content).toBe("line1\nY\nX\nline4\nline5");
+    });
+
+    it("allows non-overlapping edits at adjacent but disjoint positions", () => {
+      // replace line 3 + insert_before line 5 — disjoint
+      const pos1 = anchor(content, 3);
+      const pos2 = anchor(content, 5);
+      const result = applyHashlineEdits(content, [
+        { op: "replace", pos: pos1, lines: ["THREE"] },
+        { op: "insert_before", pos: pos2, lines: ["BEFORE5"] },
+      ]);
+      expect(result.content).toBe("line1\nline2\nTHREE\nline4\nBEFORE5\nline5");
+    });
+  });
+
   describe("trailing newline", () => {
     it("preserves trailing newline so diff doesn't flag the last line", () => {
       const withNewline = "line1\nline2\nline3\n";

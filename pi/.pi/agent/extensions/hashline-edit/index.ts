@@ -22,7 +22,7 @@ import { Text } from "@mariozechner/pi-tui";
 import { readFile, writeFile, access, constants } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { hashLine } from "./hash";
+import { computeSnapshotId, hashLine } from "./hash";
 import { editSchema, readSchema, prepareArguments } from "./schema";
 import { applyHashlineEdits } from "./edit-engine";
 import type { HashEdit } from "./edit-engine";
@@ -53,6 +53,7 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
     promptGuidelines: [
       "Every line comes back tagged: `LINE#HASH: content` (e.g. `11#KT:   return 42;`).",
       'When editing, reference lines by anchor: `pos: "11#KT"` — no need to reproduce old text.',
+      "The read output ends with `[snapshot: XXXXXXXX]` — pass this `snapshotId` to the edit tool to catch out-of-band file changes.",
       "Use offset/limit for large files. When you need the full file, continue with offset until complete.",
     ],
     parameters: readSchema,
@@ -139,6 +140,8 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         text += `\n\n[Output truncated: lines ${startIdx + 1}–${shown} of ${lines.length}. Read more with offset=${nextOffset}.]`;
       }
 
+      text += `\n\n[snapshot: ${computeSnapshotId(content)}]`;
+
       return {
         content: [{ type: "text" as const, text }],
         details: undefined,
@@ -181,9 +184,11 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         return text;
       }
 
-      // Strip hash anchors (LINE#HASH: ) for display
+      // Strip hash anchors (LINE#HASH: ) and the [snapshot: ...] footer for display
       const raw = content.text;
-      const cleaned = raw.replace(/^\d+#[A-Z]{1,2}: /gm, "");
+      const cleaned = raw
+        .replace(/^\d+#[A-Z]{1,2}: /gm, "")
+        .replace(/\n*\[snapshot: [0-9a-f]{8}\]\s*$/, "");
 
       // Split content from trailing `[Output truncated: ...]` notice
       const allLines = cleaned.split("\n");
@@ -246,7 +251,9 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
       "Each edits[] entry is validated against the original file — do not emit overlapping or nested edits.",
       "Keep edits as small as possible. Use `pos` for single-line changes, `pos` + `end` for ranges.",
       'edits must be a JSON array: `"edits": [{"pos": "11#KT", "lines": ["new code"]}]`.',
-      "If a hash mismatch error occurs, re-read the file to get current anchors, then retry.",
+      "If a hash mismatch error occurs, the error includes fresh anchors around the failed line — retry with those instead of re-reading when possible.",
+      "The edit response returns fresh anchors for the lines you just edited — use them to chain follow-up edits without re-reading the file.",
+      "Pass the `snapshotId` from the most recent read's footer to detect out-of-band file changes before applying the edit.",
     ],
     parameters: editSchema,
     prepareArguments,
@@ -274,26 +281,32 @@ export default function hashlineEditExtension(pi: ExtensionAPI) {
         const rawContent = buffer.toString("utf-8");
         const content = rawContent.replace(/^\uFEFF/, "");
 
+        // Optional snapshot verification — catches out-of-band changes that
+        // still happen to leave the edit's anchors valid.
+        if (params.snapshotId) {
+          const currentSnapshot = computeSnapshotId(content);
+          if (currentSnapshot !== params.snapshotId) {
+            throw new Error(
+              `File has changed since snapshot ${params.snapshotId} (current snapshot: ${currentSnapshot}). ` +
+                `Re-read the file to get fresh anchors and a current snapshot ID.`,
+            );
+          }
+        }
+
         // Apply hashline edits
-        const result = applyHashlineEdits(
-          content,
-          edits.map((e: any) => ({
-            op: e.op || "replace",
-            pos: e.pos,
-            end: e.end,
-            lines: e.lines,
-          })) as HashEdit[],
-        );
+        const result = applyHashlineEdits(content, edits as HashEdit[]);
 
         await writeFile(absolutePath, result.content, "utf-8");
 
+        let responseText = `Applied ${result.stats.applied} hashline edit(s) in ${editPath}.`;
+        if (result.updatedAnchors.length > 0) {
+          responseText +=
+            `\n\nFresh anchors for the edited lines (use these for follow-up edits without re-reading):\n` +
+            result.updatedAnchors.join("\n");
+        }
+
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Applied ${result.stats.applied} hashline edit(s) in ${editPath}.`,
-            },
-          ],
+          content: [{ type: "text" as const, text: responseText }],
           details: {
             diff: result.diff,
             firstChangedLine: result.firstChangedLine,

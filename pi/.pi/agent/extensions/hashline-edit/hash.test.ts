@@ -1,6 +1,12 @@
 import { describe, it, expect } from "bun:test";
 
-import { hashLine, parseAnchor, validateAnchor, stripDisplayPrefix } from "./hash";
+import {
+  hashLine,
+  parseAnchor,
+  validateAnchor,
+  stripDisplayPrefix,
+  computeSnapshotId,
+} from "./hash";
 
 describe("hashLine", () => {
   it("returns a 2-character hash", () => {
@@ -36,6 +42,18 @@ describe("hashLine", () => {
   it("ignores trailing whitespace for hashing", () => {
     const h1 = hashLine("  return 42;", 1);
     const h2 = hashLine("  return 42;  ", 1);
+    expect(h1).toBe(h2);
+  });
+
+  it("normalizes CR so CRLF and LF files produce the same hash", () => {
+    const h1 = hashLine("  return 42;", 1);
+    const h2 = hashLine("  return 42;\r", 1); // CRLF remnant after split("\n")
+    expect(h1).toBe(h2);
+  });
+
+  it("normalizes embedded CR as if it were absent", () => {
+    const h1 = hashLine("abcdef", 1);
+    const h2 = hashLine("abc\rdef", 1);
     expect(h1).toBe(h2);
   });
 
@@ -95,6 +113,38 @@ describe("validateAnchor", () => {
     const result = validateAnchor(content, "1#XX");
     expect(typeof result).toBe("string");
     expect(result).toContain("Hash mismatch");
+  });
+
+  it("includes fresh anchors around the mismatch", () => {
+    const result = validateAnchor(content, "2#XX");
+    expect(typeof result).toBe("string");
+    // Should include the actual hash for line 2 so the model can retry
+    const realHash = hashLine("  return 42;", 2);
+    expect(result).toContain(`2#${realHash}`);
+    expect(result).toContain("return 42");
+  });
+
+  it("includes fresh anchors near end of file on out-of-range error", () => {
+    const result = validateAnchor(content, "999#XX");
+    expect(typeof result).toBe("string");
+    expect(result).toContain("out of range");
+    // Should show anchors from the end of the file
+    expect(result).toMatch(/\d+#[A-Z]{1,2}:/);
+  });
+});
+
+describe("computeSnapshotId", () => {
+  it("produces an 8-char hex snapshot", () => {
+    const id = computeSnapshotId("hello world\n");
+    expect(id).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("is deterministic for identical content", () => {
+    expect(computeSnapshotId("content")).toBe(computeSnapshotId("content"));
+  });
+
+  it("changes when content changes", () => {
+    expect(computeSnapshotId("a")).not.toBe(computeSnapshotId("b"));
   });
 });
 

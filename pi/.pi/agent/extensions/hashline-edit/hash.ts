@@ -23,9 +23,12 @@ export interface ParsedAnchor {
  * @param lineNum  1-based line number (used as seed for symbol-only lines)
  */
 export function hashLine(line: string, lineNum: number): string {
-  const hasAlnum = /[a-zA-Z0-9]/.test(line);
+  // Normalize: strip CR (handles CRLF files) and trailing whitespace. Keeps
+  // the hash stable across line-ending conventions and trailing-space noise.
+  const normalized = line.replace(/\r/g, "").replace(/\s+$/, "");
+  const hasAlnum = /[a-zA-Z0-9]/.test(normalized);
   // Symbol-only lines (e.g. `}`, `)`) get line-number seeding to avoid collisions
-  const key = hasAlnum ? line.replace(/\s+$/, "") : `${lineNum}:${line.replace(/\s+$/, "")}`;
+  const key = hasAlnum ? normalized : `${lineNum}:${normalized}`;
 
   // SHA-256 → first 4 hex chars (16 bits) → map to 2-char alphabet
   const hex = createHash("sha256").update(key, "utf-8").digest("hex").slice(0, 4);
@@ -44,6 +47,25 @@ export function parseAnchor(anchor: string): ParsedAnchor | null {
 }
 
 /**
+ * Format a window of fresh LINE#HASH: content anchors around a center line.
+ * Used in error messages so the model can retry without a re-read.
+ */
+export function formatAnchorWindow(
+  lines: string[],
+  centerLine: number,
+  window: number = 2,
+): string {
+  if (lines.length === 0) return "  (file is empty)";
+  const start = Math.max(1, centerLine - window);
+  const end = Math.min(lines.length, centerLine + window);
+  const out: string[] = [];
+  for (let n = start; n <= end; n++) {
+    out.push(`  ${n}#${hashLine(lines[n - 1], n)}: ${lines[n - 1]}`);
+  }
+  return out.join("\n");
+}
+
+/**
  * Validate that a hash anchor matches the actual file content at that line.
  *
  * @returns The validated line number on success, or an error message string.
@@ -59,14 +81,23 @@ export function validateAnchor(content: string, anchor: string): { line: number 
 
   if (parsed.line < 1) return `Line number must be >= 1, got ${parsed.line}`;
   if (parsed.line > lines.length) {
-    return `Line ${parsed.line} out of range (file has ${lines.length} lines). Re-read to get current anchors.`;
+    const tailAnchors = formatAnchorWindow(lines, lines.length, 2);
+    return (
+      `Line ${parsed.line} out of range (file has ${lines.length} lines).\n\n` +
+      `Current anchors near end of file:\n${tailAnchors}\n\n` +
+      `Retry with an anchor that exists in the current file.`
+    );
   }
 
   const actualHash = hashLine(lines[parsed.line - 1], parsed.line);
   if (actualHash !== parsed.hash) {
+    const windowAnchors = formatAnchorWindow(lines, parsed.line, 2);
     return (
       `Hash mismatch at line ${parsed.line}: expected "${parsed.hash}", got "${actualHash}". ` +
-      `File content changed since last read — re-read to get current anchors.`
+      `File content changed since last read.\n\n` +
+      `Current anchors near line ${parsed.line}:\n${windowAnchors}\n\n` +
+      `If the content at line ${parsed.line} is still what you intended, retry with the new anchor; ` +
+      `otherwise re-read the file.`
     );
   }
 
@@ -80,4 +111,12 @@ export function validateAnchor(content: string, anchor: string): { line: number 
 export function stripDisplayPrefix(text: string): string {
   const match = text.match(/^(\d+)#[A-Z]{1,2}/);
   return match ? match[0] : text;
+}
+
+/**
+ * Compute a short snapshot ID (8 hex chars) identifying file content at read
+ * time. Used to detect out-of-band file changes between read and edit.
+ */
+export function computeSnapshotId(content: string): string {
+  return createHash("sha256").update(content, "utf-8").digest("hex").slice(0, 8);
 }

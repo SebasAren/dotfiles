@@ -54,6 +54,12 @@ export const editSchema = Type.Object(
       description:
         "Hash-anchored edits. Each edit targets lines by their LINE#HASH anchors from the read output. Edits are applied bottom-up and must not overlap.",
     }),
+    snapshotId: Type.Optional(
+      Type.String({
+        description:
+          "Optional 8-char snapshot ID from the read tool's [snapshot: ...] footer. When provided, the edit is rejected if the file has changed since that snapshot.",
+      }),
+    ),
   },
   { additionalProperties: false },
 );
