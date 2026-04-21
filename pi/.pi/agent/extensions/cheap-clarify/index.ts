@@ -63,18 +63,29 @@ function parseCheapModel(): { provider: string; modelId: string } | undefined {
   return { provider: parts[0].trim(), modelId: parts[1].trim() };
 }
 
+function hasQuestionMarks(text: string): boolean {
+  return /\?/.test(text);
+}
+
 function buildExtractPrompt(assistantText: string): string {
   return [
-    "You are a question parser. Given an assistant message that contains questions for the user, extract them into a structured questionnaire format.",
+    "Extract the questions from this assistant message. For each question, output a block",
+    "using the exact format below. Output nothing else.",
+    "",
+    "Format per question:",
+    "  Q: <the question prompt>",
+    "  A: <option 1>",
+    "  A: <option 2>",
+    "  A: <option 3>",
+    "  ALLOW_OTHER: <true|false>",
+    "  ---",
     "",
     "Rules:",
-    "- Only extract actual questions the assistant is asking the user.",
-    "- For each question, create a concise prompt and 2–5 relevant answer options.",
-    "- If a question is open-ended, still provide sensible options and set allowOther to true.",
-    "- If the message contains no clear questions, return an empty questions array.",
-    "- Return ONLY a JSON object. No markdown fences, no extra text.",
-    "",
-    'JSON format: {"questions":[{"id":"q1","label":"Scope","prompt":"What do you want to focus on?","options":[{"value":"frontend","label":"Frontend"}],"allowOther":true}]}',
+    "- Only extract genuine questions asking the user for a decision or input.",
+    "- Do NOT extract rhetorical questions (e.g. 'Ready?', 'Sounds good?', 'Make sense?').",
+    "- Provide 2–5 sensible options per question.",
+    "- Always include ALLOW_OTHER: true so the user can type a custom answer.",
+    "- If no real questions exist, output: NO_QUESTIONS",
     "",
     "Assistant message:",
     "---",
@@ -84,23 +95,50 @@ function buildExtractPrompt(assistantText: string): string {
 }
 
 function parseQuestions(raw: string): Question[] | undefined {
-  let cleaned = raw.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+  const trimmed = raw.trim();
+  if (!trimmed || /^NO_QUESTIONS/i.test(trimmed)) return undefined;
+
+  const blocks = trimmed.split(/^\s*---\s*$/m).filter((b) => b.trim());
+  const questions: Question[] = [];
+
+  for (const block of blocks) {
+    const lines = block.trim().split("\n");
+    const questionLine = lines.find((l) => /^Q:\s/.test(l.trim()));
+    if (!questionLine) continue;
+
+    const prompt = questionLine.trim().replace(/^Q:\s*/, "");
+    if (!prompt) continue;
+
+    const options: QuestionOption[] = [];
+    let allowOther = true;
+
+    for (const line of lines) {
+      const t = line.trim();
+      if (/^A:\s/.test(t)) {
+        const value = t.replace(/^A:\s*/, "");
+        if (value) {
+          const _idx = options.length + 1;
+          options.push({ value: value.toLowerCase().replace(/\s+/g, "-"), label: value });
+        }
+      } else if (/^ALLOW_OTHER:\s*false/i.test(t)) {
+        allowOther = false;
+      }
+    }
+
+    // A question with zero options is noise (e.g. a stray 'Q:' line)
+    if (options.length === 0) continue;
+
+    const qi = questions.length + 1;
+    questions.push({
+      id: `q${qi}`,
+      label: `Q${qi}`,
+      prompt,
+      options,
+      allowOther,
+    });
   }
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (!Array.isArray(parsed.questions)) return undefined;
-    return (parsed.questions as any[]).map((q, i) => ({
-      id: q.id ?? `q${i + 1}`,
-      label: q.label ?? `Q${i + 1}`,
-      prompt: q.prompt ?? "Question",
-      options: Array.isArray(q.options) ? q.options : [],
-      allowOther: q.allowOther !== false,
-    }));
-  } catch {
-    return undefined;
-  }
+
+  return questions.length > 0 ? questions : undefined;
 }
 
 // ── Questionnaire UI ───────────────────────────────────────────────────────
@@ -420,9 +458,15 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
+      // 3. Regex gate: skip LLM call if there are no question marks
+      if (!hasQuestionMarks(lastText)) {
+        ctx.ui.notify("No questions found in the last assistant message.", "warning");
+        return;
+      }
+
       ctx.ui.notify("Parsing questions from assistant message...", "info");
 
-      // 3. Call cheap model to extract questions
+      // 4. Call cheap model to extract questions
       let questions: Question[] | undefined;
       try {
         const response = await complete(
