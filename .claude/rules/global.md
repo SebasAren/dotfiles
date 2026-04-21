@@ -24,3 +24,14 @@ description: Global project conventions — dotfiles, docs structure, and langua
 **Python** (4-space indent, ruff): `snake_case` funcs/vars, `PascalCase` classes. Use ruff for linting, black + isort for formatting.
 
 **Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames.
+
+## Stow Safety
+
+- Add a `.stowrc` at the repo root with `--target=<home-dir>` and `--ignore=` for non-stowable root files. Prevents accidental `stow */` from pointing to wrong targets.
+
+## Shellcheck in `.bashrc.d`
+
+These files intentionally omit `set -euo pipefail` (they are sourced interactively), but still fix these recurring warnings:
+- **SC2155**: `export VAR=$(cmd)` → `VAR=$(cmd); export VAR`
+- **SC2162**: `read env_key` → `read -r env_key`
+- **SC2054**: `FZF_OPTS=(a,b)` → `FZF_OPTS=(a b)` (arrays use spaces, not commas)

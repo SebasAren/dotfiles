@@ -48,7 +48,6 @@ return {
 			"b0o/schemastore.nvim",
 			"saghen/blink.cmp",
 		},
-		lazy = false,
 		config = function()
 			require("mason").setup()
 		end,

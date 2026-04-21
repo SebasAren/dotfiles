@@ -11,7 +11,13 @@ description: Neovim Lua conventions
 - Prefer `vim.keymap.set` over legacy `vim.api.nvim_set_keymap`
 - Use `pcall` for requiring optional modules
 
-## Terminal Key Gotchas
+## Neovim Version Gate
+
+- **`vim.lsp.config()` / `vim.lsp.enable()` require Neovim 0.11+**. If a config uses these APIs, document the minimum version in `nvim/AGENTS.md`.
+
+## Plugin Loading
+
+- **Mason.nvim does not need `lazy = false`**. Remove `lazy = false` from `mason.nvim` specs — it increases startup time without benefit.
 
 - `<C-CR>` (Ctrl+Enter) does **not** work in most terminals — they send the same escape sequence as plain `<CR>`, so Neovim cannot distinguish them. Use an alternative like `<C-s>`, `<C-m>` (same as Enter in most terms), or `<Esc><CR>` instead.
 

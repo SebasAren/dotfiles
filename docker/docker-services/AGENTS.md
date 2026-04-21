@@ -6,12 +6,12 @@ Manages 6 self-hosted services via docker-compose. Each service is standalone wi
 
 | Service | Compose | Image | Port | Network |
 |---------|---------|-------|------|---------|
-| jellyfin | `.yml` | jellyfin/jellyfin | 8096 | nginx (external) |
+| jellyfin | `.yaml` | jellyfin/jellyfin | 8096 | nginx (external) |
 | audiobookshelf | `.yaml` | ghcr.io/advplyr/audiobookshelf:latest | 13378 | nginx (external) |
 | nginx-proxy-manager | `.yaml` | jc21/nginx-proxy-manager:latest | 8000, 8100 (admin) | nginx (external) |
-| transmission | `.yml` | haugene/transmission-openvpn | 9091, 8118 (proxy) | bridge |
+| transmission | `.yaml` | haugene/transmission-openvpn | 9091, 8118 (proxy) | bridge |
 | wolf | `.yaml` | ghcr.io/games-on-whales/wolf:stable | 47984+ | bridge |
-| komga | `.yml` | gotson/komga:latest | 25600 | nginx (external) |
+| komga | `.yaml` | gotson/komga:latest | 25600 | nginx (external) |
 
 ## Volume Labels
 
@@ -53,7 +53,6 @@ docker logs <container>      # View logs
 
 ## Notes
 
-- Extension inconsistency: jellyfin and transmission use `.yml`, others `.yaml`. Don't normalize.
 - audiobookshelf volumes lack `:z` label — may fail on strict SELinux systems.
 - transmission hardcodes `PUID=1000 PGID=1000`.
 - wolf requires host device access (`/dev/`, `/run/udev`, docker.sock) — essentially privileged.

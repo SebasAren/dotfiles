@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# Self-check: validate our own hook scripts
+echo "=== Self-Check: Hook Scripts ==="
+mise exec -- shellcheck scripts/hooks/*.sh
+
 echo "=== Format Check: Staged Files ==="
 
 staged() { git diff --cached --name-only --diff-filter=ACM | grep -E "$1" || true; }

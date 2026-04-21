@@ -1,4 +1,5 @@
 #!/bin/bash
 eval "$(mise activate bash)"
 eval "$(fnox activate bash)"
-export FNOX_AGE_KEY=$(cat ~/.config/fnox/age.txt | grep "AGE-SECRET-KEY")
+FNOX_AGE_KEY=$(cat ~/.config/fnox/age.txt | grep "AGE-SECRET-KEY")
+export FNOX_AGE_KEY

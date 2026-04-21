@@ -45,7 +45,6 @@ Each tool directory has its own `AGENTS.md` with path-specific details.
 
 - **DO NOT** add qutebrowser config — it does not exist
 - **DO NOT** expect `install.sh` to install everything — it only runs `stow nvim`
-- **ACCEPT** YAML inconsistency: some Docker services use `.yml`, others `.yaml`
 
 ## Where to Look
 

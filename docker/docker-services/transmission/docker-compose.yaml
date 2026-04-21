@@ -22,6 +22,8 @@ services:
       - LOCAL_NETWORK
       - WEBPROXY_ENABLED=true
       - WEBPROXY_PORT=8118
+      # NOTE: PUID/PGID are required by this image's entrypoint for file ownership.
+      # Rootless podman maps host UID 1000 -> container UID 0, so this is safe here.
       - PUID=1000
       - PGID=1000
       - TRANSMISSION_PEER_PORT

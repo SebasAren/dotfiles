@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   wolf:
     image: ghcr.io/games-on-whales/wolf:stable
