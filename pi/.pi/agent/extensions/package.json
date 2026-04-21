@@ -17,7 +17,8 @@
     "tdd-tree",
     "cache-control",
     "qwen-reasoning-fix",
-    "worktree-scope"
+    "worktree-scope",
+    "cheap-clarify"
   ],
   "devDependencies": {
     "@eslint/js": "^9.0.0",
