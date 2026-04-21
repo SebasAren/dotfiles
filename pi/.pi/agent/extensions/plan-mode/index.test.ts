@@ -26,18 +26,12 @@ function createMockApi() {
   const shortcuts: RegisteredShortcut[] = [];
   const flags: { name: string; def: any }[] = [];
   let activeTools: string[] | undefined;
-  const entries: { customType: string; data?: any }[] = [];
-  const sentMessages: any[] = [];
-  const sentUserMessages: any[] = [];
 
   return {
     commands,
     shortcuts,
     flags,
     activeTools,
-    entries,
-    sentMessages,
-    sentUserMessages,
     api: {
       registerCommand: mock((name: string, def: any) => {
         commands.push({ name, def });
@@ -51,18 +45,8 @@ function createMockApi() {
       setActiveTools: mock((tools: string[]) => {
         activeTools = tools;
       }),
-      registerTool: mock(() => {}),
       on: mock(() => {}),
       getFlag: mock(() => false),
-      appendEntry: mock((customType: string, data?: any) => {
-        entries.push({ customType, data });
-      }),
-      sendMessage: mock((msg: any, opts?: any) => {
-        sentMessages.push({ msg, opts });
-      }),
-      sendUserMessage: mock((content: any, opts?: any) => {
-        sentUserMessages.push({ content, opts });
-      }),
     } as any,
   };
 }
@@ -77,28 +61,12 @@ describe("plan mode extension", () => {
     expect(() => planModeExtension(api)).not.toThrow();
   });
 
-  it("registers /plan command", () => {
+  it("registers /plan and /plan-execute commands", () => {
     const { api, commands } = createMockApi();
     planModeExtension(api);
-    const plan = commands.find((c) => c.name === "plan");
-    expect(plan).toBeDefined();
-    expect(plan!.def.description).toContain("Toggle plan mode");
-  });
-
-  it("registers /plan-progress command", () => {
-    const { api, commands } = createMockApi();
-    planModeExtension(api);
-    const progress = commands.find((c) => c.name === "plan-progress");
-    expect(progress).toBeDefined();
-    expect(progress!.def.description).toContain("progress");
-  });
-
-  it("registers /plan-exec-fresh command", () => {
-    const { api, commands } = createMockApi();
-    planModeExtension(api);
-    const freshExec = commands.find((c) => c.name === "plan-exec-fresh");
-    expect(freshExec).toBeDefined();
-    expect(freshExec!.def.description).toContain("fresh session");
+    expect(commands).toHaveLength(2);
+    expect(commands.some((c) => c.name === "plan")).toBe(true);
+    expect(commands.some((c) => c.name === "plan-execute")).toBe(true);
   });
 
   it("registers Ctrl+Alt+P shortcut", () => {
@@ -118,6 +86,15 @@ describe("plan mode extension", () => {
     expect(flags[0].def.default).toBe(false);
   });
 
+  it("registers before_agent_start and session_start event handlers", () => {
+    const { api } = createMockApi();
+    planModeExtension(api);
+    expect(api.on).toHaveBeenCalledTimes(2);
+    const eventNames = api.on.mock.calls.map((call: any[]) => call[0]);
+    expect(eventNames).toContain("before_agent_start");
+    expect(eventNames).toContain("session_start");
+  });
+
   describe("/plan command handler", () => {
     it("enables plan mode on first toggle", async () => {
       const { api, commands } = createMockApi();
@@ -128,10 +105,8 @@ describe("plan mode extension", () => {
         ui: {
           notify: mock(() => {}),
           setStatus: mock(() => {}),
-          setWidget: mock(() => {}),
-          theme: { fg: mock((_: string, t: string) => t), strikethrough: mock((t: string) => t) },
+          theme: { fg: mock((_: string, t: string) => t) },
         },
-        hasUI: true,
       };
 
       await planCmd.def.handler([], mockCtx);
@@ -157,10 +132,8 @@ describe("plan mode extension", () => {
         ui: {
           notify: mock(() => {}),
           setStatus: mock(() => {}),
-          setWidget: mock(() => {}),
-          theme: { fg: mock((_: string, t: string) => t), strikethrough: mock((t: string) => t) },
+          theme: { fg: mock((_: string, t: string) => t) },
         },
-        hasUI: true,
       };
 
       // Toggle on
@@ -172,40 +145,24 @@ describe("plan mode extension", () => {
     });
   });
 
-  describe("/plan-exec-fresh command handler", () => {
-    it("notifies error when no pending todos", async () => {
+  describe("/plan-execute command handler", () => {
+    it("disables plan mode and triggers compaction", async () => {
       const { api, commands } = createMockApi();
       planModeExtension(api);
 
-      const freshCmd = commands.find((c) => c.name === "plan-exec-fresh")!;
-      const notify = mock(() => {});
-      await freshCmd.def.handler([], {
-        ui: { notify },
-        sessionManager: { getSessionFile: () => "/test/session.jsonl" },
-      });
+      const execCmd = commands.find((c) => c.name === "plan-execute")!;
+      const mockCtx = {
+        ui: {
+          notify: mock(() => {}),
+          setStatus: mock(() => {}),
+        },
+        compact: mock(() => {}),
+      };
 
-      expect(notify).toHaveBeenCalledWith("No plan steps to execute.", "error");
-    });
-  });
+      await execCmd.def.handler([], mockCtx);
 
-  describe("event handler registration", () => {
-    it("registers 7 event handlers (tool_call, context, before_agent_start, turn_end, agent_end, session_start)", () => {
-      const { api } = createMockApi();
-      planModeExtension(api);
-      // pi.on is called for: tool_call, context, before_agent_start, turn_end, agent_end, session_start
-      expect(api.on).toHaveBeenCalledTimes(6);
-    });
-
-    it("registers events with event names", () => {
-      const { api } = createMockApi();
-      planModeExtension(api);
-      const eventNames = api.on.mock.calls.map((call: any[]) => call[0]);
-      expect(eventNames).toContain("tool_call");
-      expect(eventNames).toContain("context");
-      expect(eventNames).toContain("before_agent_start");
-      expect(eventNames).toContain("turn_end");
-      expect(eventNames).toContain("agent_end");
-      expect(eventNames).toContain("session_start");
+      expect(api.setActiveTools).toHaveBeenCalledWith(["read", "bash", "edit", "write"]);
+      expect(mockCtx.compact).toHaveBeenCalled();
     });
   });
 });
