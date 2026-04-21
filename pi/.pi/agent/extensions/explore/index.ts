@@ -18,6 +18,7 @@ import {
   createLsTool,
   createReadTool,
   DefaultResourceLoader,
+  getAgentDir,
   ModelRegistry,
   SessionManager,
   SettingsManager,
@@ -278,6 +279,7 @@ async function createExploreSession(
 
   const loader = new DefaultResourceLoader({
     cwd,
+    agentDir: getAgentDir(),
     systemPromptOverride: () => systemPrompt,
     // Skip extensions, skills, prompts — not needed for explore
     additionalExtensionPaths: [],

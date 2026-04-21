@@ -11,6 +11,7 @@ import {
   AuthStorage,
   createAgentSession,
   DefaultResourceLoader,
+  getAgentDir,
   ModelRegistry,
   SessionManager,
   SettingsManager,
@@ -70,6 +71,7 @@ async function createLibrarianSession(
   // web_search, web_fetch, context7_search, context7_docs from extensions.
   const loader = new DefaultResourceLoader({
     cwd,
+    agentDir: getAgentDir(),
     systemPromptOverride: () => systemPrompt,
     // No additionalExtensionPaths — let DefaultResourceLoader discover
     // extensions from ~/.pi/agent/extensions/ and .pi/extensions/ normally
