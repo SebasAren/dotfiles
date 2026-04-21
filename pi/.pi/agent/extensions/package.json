@@ -34,6 +34,6 @@
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
-    "@mariozechner/pi-agent-core": "^0.67.68"
+    "@mariozechner/pi-agent-core": "^0.68.0"
   }
 }

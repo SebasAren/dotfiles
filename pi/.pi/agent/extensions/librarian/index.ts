@@ -16,6 +16,7 @@ import {
   SessionManager,
   SettingsManager,
 } from "@mariozechner/pi-coding-agent";
+import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
@@ -80,7 +81,7 @@ async function createLibrarianSession(
 
   const model = resolveModel(modelName);
 
-  const opts: any = {
+  const opts: CreateAgentSessionOptions = {
     cwd,
     // No tools — we rely on extensions to provide web_search, context7, etc.
     // The librarian doesn't need filesystem tools.

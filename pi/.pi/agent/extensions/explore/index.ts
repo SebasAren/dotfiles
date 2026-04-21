@@ -12,17 +12,13 @@ import {
   type ExtensionAPI,
   AuthStorage,
   createAgentSession,
-  createBashTool,
-  createFindTool,
-  createGrepTool,
-  createLsTool,
-  createReadTool,
   DefaultResourceLoader,
   getAgentDir,
   ModelRegistry,
   SessionManager,
   SettingsManager,
 } from "@mariozechner/pi-coding-agent";
+import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
@@ -269,14 +265,6 @@ async function createExploreSession(
 ): Promise<AgentSession> {
   const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
 
-  const tools = [
-    createReadTool(cwd),
-    createGrepTool(cwd),
-    createFindTool(cwd),
-    createLsTool(cwd),
-    createBashTool(cwd),
-  ];
-
   const loader = new DefaultResourceLoader({
     cwd,
     agentDir: getAgentDir(),
@@ -288,9 +276,11 @@ async function createExploreSession(
 
   const model = resolveModel(modelName);
 
-  const opts: any = {
+  // pi-coding-agent 0.68: `tools` is an allowlist of built-in tool names (string[]),
+  // not an array of Tool objects. Only these built-ins are active and selectable.
+  const opts: CreateAgentSessionOptions = {
     cwd,
-    tools,
+    tools: ["read", "grep", "find", "ls", "bash"],
     authStorage,
     modelRegistry,
     sessionManager: SessionManager.inMemory(),
