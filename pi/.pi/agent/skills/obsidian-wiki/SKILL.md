@@ -10,9 +10,13 @@ Operate on Karpathy's LLM-wiki pattern — an LLM-maintained knowledge base in m
 ## Vault Layout
 
 ```
-~/Documents/Obsidian Vault/
+~/Documents/llm-wiki/
 ├── raw/                   # Immutable source documents (read only)
-│   └── <sources>          # Articles, papers, notes, data files
+│   ├── inbox/             # Staging area — drop files/URLs here, agent moves them
+│   ├── articles/          # Web articles, blog posts, news
+│   ├── notes/             # Markdown notes, text files
+│   ├── papers/            # Academic papers, PDFs
+│   └── <custom>/          # Add more categories as needed (videos/, podcasts/, etc.)
 ├── wiki/                  # LLM-maintained knowledge base
 │   ├── index.md           # Catalog of all wiki pages (updated every ingest)
 │   ├── log.md             # Chronological activity log (append-only)
@@ -37,7 +41,24 @@ Operate on Karpathy's LLM-wiki pattern — an LLM-maintained knowledge base in m
 
 ### Ingest a Source
 
-**Trigger:** `/skill:obsidian-wiki ingest <path-or-url>` or drop a file into `raw/` and ask pi to ingest it.
+**Trigger:** Say `ingest` (no path needed) — agent processes `raw/inbox/`.
+
+Alternatively: `/skill:obsidian-wiki ingest <path-or-url>` for explicit paths.
+
+#### Inbox Ingest Flow
+
+1. **Detect inbox contents** — check `raw/inbox/` for files and any URLs mentioned in context.
+2. **Classify and move** — assign each item to a category folder based on type:
+   - `.pdf` → `raw/papers/`
+   - `.md`, `.txt`, `.org` → `raw/notes/`
+   - `.html`, `.htm` → `raw/articles/`
+   - URLs, web content → `raw/articles/`
+   - images (`*.png`, `*.jpg`, `*.gif`) → inline in wiki (or `raw/media/` if large)
+   - Fallback: `raw/notes/` for unrecognized types
+3. **Ingest each source** (steps below).
+4. **Empty inbox** — inbox should be empty after ingest.
+
+#### Ingest Steps
 
 1. **Read the source.** For a local file, `read` it. For a URL, `web_fetch` it. For a PDF, extract text.
 2. **Discuss key takeaways** with the user briefly — what's notable, surprising, or contradictory.
@@ -50,6 +71,10 @@ Operate on Karpathy's LLM-wiki pattern — an LLM-maintained knowledge base in m
 9. **Report to the user** — number of pages created/updated, key insights, any contradictions found.
 
 A single source might touch 10-15 wiki pages. Stay involved with the user during ingest — discuss emphasis and what to prioritize.
+
+#### Tracking Ingested Sources
+
+Before ingesting, check whether `wiki/sources/<slug>.md` already exists. If it does, prompt the user: "Already ingested. Re-ingest to refresh (overwrites page)? Skip?"
 
 ### Query the Wiki
 
@@ -74,6 +99,7 @@ Perform these checks:
 | **Concepts without pages** | Important concepts mentioned on other pages but lacking their own dedicated page. |
 | **Data gaps** | Areas that could be filled with a quick web search. |
 | **Log/Index drift** | Entries in log.md not reflected in index.md or vice versa. |
+| **Inbox orphans** | Files sitting in `raw/inbox/` for more than a few days. Suggest ingesting or clearing them. |
 
 Report findings as a checklist. For each issue, suggest a fix. Ask the user which to apply, then apply them.
 
@@ -85,6 +111,7 @@ Report:
 - Total page count by category (concepts, entities, sources, synthesis, analysis)
 - Most recent ingest date from `log.md`
 - Last 5 log entries
+- Inbox contents (if any)
 - Any obvious issues (recent lint not run, growing number of orphans, etc.)
 
 ## Index Format
