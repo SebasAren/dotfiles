@@ -41,10 +41,23 @@ function formatRecentCall(toolName: string, args: Record<string, unknown> | unde
 }
 
 /** Default number of retries with the same model before giving up or switching to fallback. */
-const DEFAULT_MAX_RETRIES = 1;
+const DEFAULT_MAX_RETRIES = 3;
 
-/** Delay in ms before retrying with the same model. */
-const RETRY_DELAY_MS = 2_000;
+/**
+ * Base delay in ms before retrying with the same model.
+ * Uses exponential backoff: base * 2^attempt (with jitter ±500ms).
+ */
+const RETRY_BASE_DELAY_MS = 2_000;
+
+/** Maximum jitter added/subtracted from the delay to prevent thundering herd. */
+const RETRY_JITTER_MS = 500;
+
+/** Calculate retry delay with exponential backoff and random jitter. */
+function getRetryDelay(attempt: number): number {
+  const base = RETRY_BASE_DELAY_MS * 2 ** attempt;
+  const jitter = Math.random() * RETRY_JITTER_MS * 2 - RETRY_JITTER_MS;
+  return Math.max(RETRY_BASE_DELAY_MS, Math.round(base + jitter));
+}
 
 /** Options for {@link runSubagent}. */
 export interface RunSubagentOptions {
@@ -86,7 +99,8 @@ export interface RunSubagentOptions {
   fallbackModel?: string;
   /**
    * Maximum number of retries with the same model on transient failure
-   * before switching to the fallback model or giving up (default: 1).
+   * before switching to the fallback model or giving up (default: 3).
+   * Can also be overridden via SUBAGENT_MAX_RETRIES env var.
    * Set to 0 to disable same-model retries.
    */
   maxRetries?: number;
@@ -116,7 +130,10 @@ const DEFAULT_TIMEOUT_MS = 120_000;
 export async function runSubagent(options: RunSubagentOptions): Promise<SubagentResult> {
   const model = options.model || getModel();
   const fallbackModel = options.fallbackModel || getFallbackModel();
-  const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const envMaxRetries = process.env.SUBAGENT_MAX_RETRIES
+    ? Math.max(0, parseInt(process.env.SUBAGENT_MAX_RETRIES, 10))
+    : undefined;
+  const maxRetries = options.maxRetries ?? envMaxRetries ?? DEFAULT_MAX_RETRIES;
 
   const log = (msg: string) => {
     if (options.debugLabel) console.log(`[${options.debugLabel}] ${msg}`);
@@ -141,7 +158,7 @@ export async function runSubagent(options: RunSubagentOptions): Promise<Subagent
         text: `[Retrying (${attempt}/${maxRetries}) after transient error...]`,
       });
 
-    await delay(options._retryDelayMs ?? RETRY_DELAY_MS);
+    await delay(options._retryDelayMs ?? getRetryDelay(attempt - 1));
     result = await runSingleAttempt(options, session, false);
   }
 

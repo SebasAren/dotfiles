@@ -368,9 +368,11 @@ describe("runSubagent retry logic", () => {
     expect(updates.some((text) => text.includes("Retrying (1/1)"))).toBe(true);
   });
 
-  it("uses default maxRetries of 1 when not specified", async () => {
-    // Single session reused — prompt() fails first, succeeds on default retry
+  it("uses default maxRetries of 3 when not specified", async () => {
+    // Session reused across retries — fails first 2 times, succeeds on 3rd retry
+    // (attempt 0 + retries 1, 2, 3 → but succeeds at retry 2, which is within 3 max)
     const session = createMockSessionWithBehaviors([
+      { errorMessage: "429 Rate limit exceeded" },
       { errorMessage: "429 Rate limit exceeded" },
       { output: "ok after default retry" },
     ]);
@@ -380,6 +382,47 @@ describe("runSubagent retry logic", () => {
 
     expect(result.output).toBe("ok after default retry");
     expect(result.errorMessage).toBeUndefined();
+  });
+
+  it("SUBAGENT_MAX_RETRIES env var overrides the default maxRetries", async () => {
+    const original = process.env.SUBAGENT_MAX_RETRIES;
+    try {
+      process.env.SUBAGENT_MAX_RETRIES = "1";
+
+      const session = createMockSessionWithBehaviors([
+        { errorMessage: "429 Rate limit exceeded" },
+        { output: "ok after env retry" },
+      ]);
+      const createSession = async () => session;
+
+      const result = await runSubagent(baseOptions({ createSession }));
+
+      expect(result.output).toBe("ok after env retry");
+      expect(result.errorMessage).toBeUndefined();
+    } finally {
+      if (original !== undefined) process.env.SUBAGENT_MAX_RETRIES = original;
+      else delete process.env.SUBAGENT_MAX_RETRIES;
+    }
+  });
+
+  it("SUBAGENT_MAX_RETRIES env var is clamped to >= 0", async () => {
+    const original = process.env.SUBAGENT_MAX_RETRIES;
+    try {
+      process.env.SUBAGENT_MAX_RETRIES = "-5";
+
+      const createSession = createMockSessionFactory([
+        { errorMessage: "429 Rate limit exceeded" },
+        { output: "should not reach" },
+      ]);
+
+      const result = await runSubagent(baseOptions({ createSession }));
+
+      // Negative value clamped to 0 — no retry, returns failure
+      expect(result.errorMessage).toBe("429 Rate limit exceeded");
+    } finally {
+      if (original !== undefined) process.env.SUBAGENT_MAX_RETRIES = original;
+      else delete process.env.SUBAGENT_MAX_RETRIES;
+    }
   });
 
   it("reuses the same session across retries (createSession called once)", async () => {

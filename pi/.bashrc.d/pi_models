@@ -1,3 +1,4 @@
 #!/bin/bash
 export FALLBACK_MODEL="minimax/MiniMax-M2.7"
 export CHEAP_MODEL="mistral/mistral-small-latest"
+export SUBAGENT_MAX_RETRIES=3
