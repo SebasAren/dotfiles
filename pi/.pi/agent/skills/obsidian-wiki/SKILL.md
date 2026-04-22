@@ -16,7 +16,8 @@ Operate on Karpathy's LLM-wiki pattern — an LLM-maintained knowledge base in m
 │   ├── articles/          # Web articles, blog posts, news
 │   ├── notes/             # Markdown notes, text files
 │   ├── papers/            # Academic papers, PDFs
-│   └── <custom>/          # Add more categories as needed (videos/, podcasts/, etc.)
+│   ├── videos/            # YouTube videos (transcripts only, via yt-dlp)
+│   └── <custom>/          # Add more categories as needed (podcasts/, etc.)
 ├── wiki/                  # LLM-maintained knowledge base
 │   ├── index.md           # Catalog of all wiki pages (updated every ingest)
 │   ├── log.md             # Chronological activity log (append-only)
@@ -53,6 +54,8 @@ Alternatively: `/skill:obsidian-wiki ingest <path-or-url>` for explicit paths.
    - `.md`, `.txt`, `.org` → `raw/notes/`
    - `.html`, `.htm` → `raw/articles/`
    - URLs, web content → `raw/articles/`
+   - YouTube URLs (`youtube.com/watch?v=`, `youtu.be/`, `youtube.com/shorts/`) → `raw/videos/`
+   - `.mp4`, `.mkv`, `.webm` → `raw/videos/`
    - images (`*.png`, `*.jpg`, `*.gif`) → inline in wiki (or `raw/media/` if large)
    - Fallback: `raw/notes/` for unrecognized types
 3. **Ingest each source** (steps below).
@@ -60,7 +63,15 @@ Alternatively: `/skill:obsidian-wiki ingest <path-or-url>` for explicit paths.
 
 #### Ingest Steps
 
-1. **Read the source.** For a local file, `read` it. For a URL, `web_fetch` it. For a PDF, extract text.
+1. **Read the source.**
+   - **Local file:** `read` it directly.
+   - **URL (web):** `web_fetch` it.
+   - **URL (YouTube):** Use `yt-dlp` to fetch the transcript:
+     ```bash
+     yt-dlp --write-auto-sub --sub-format json3 --skip-download --output "{vault}/raw/videos/{id}.%(ext)s" {url}
+     ```
+     Then `read` the resulting `.json3` transcript file. If `--write-auto-sub` fails, try `--write-sub` (manual captions). If no captions exist, report to the user: "No captions available for this video."
+   - **PDF:** Extract text.
 2. **Discuss key takeaways** with the user briefly — what's notable, surprising, or contradictory.
 3. **Create a source summary** in `wiki/sources/<slug.md>` — filename from source title, lowercase-dashes.
 4. **Extract and update entities** — create or update pages in `wiki/entities/<name.md>` for people, organizations, tools mentioned.

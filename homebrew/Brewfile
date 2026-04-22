@@ -24,6 +24,7 @@ brew "tailscale"
 brew "television"
 brew "tree-sitter@0.25"
 brew "worktrunk"
+brew "yt-dlp"
 brew "zbar"
 
 # Fonts & GUI apps
