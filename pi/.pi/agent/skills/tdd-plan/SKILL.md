@@ -5,7 +5,7 @@ description: Plan and implement features using TDD (Red-Green-Refactor). Creates
 
 # TDD Plan & Implement
 
-Plan a feature using strict TDD discipline, then execute the plan step-by-step. Every step follows the Red-Green-Refactor cycle: write a failing test, make it pass with minimal code, then refactor.
+Plan a feature using strict TDD discipline, then execute the plan step-by-step. Every step follows the Red-Green-Refactor cycle: establish a failing condition (test, type error, compilation error, etc.), make it pass with minimal code, then refactor.
 
 ## Process
 
@@ -34,7 +34,7 @@ Plans are stored in `.pi/plans/<slug>.json`.
 
 ## Planning
 
-Create a structured implementation plan. The plan MUST follow strict TDD discipline: every step starts with a failing test, then minimal code to pass, then refactor.
+Create a structured implementation plan. The plan MUST follow strict TDD discipline: every step starts with a failing condition (failing test, type error, compilation error, etc.), then minimal code to pass, then refactor.
 
 ### Steps
 
@@ -168,7 +168,7 @@ tdd-plan create user-auth \
 
 ### Planning Rules
 
-1. **Tests first, always.** Never describe implementation without first describing the failing test that demands it.
+1. **RED first, always.** Never describe implementation without first describing the failing condition that demands it. This can be a failing test, a type error, a compilation error, or another automated validation failure when those are the primary mechanism for the codebase.
 2. **Small steps.** Each step should be completable in 5-10 minutes. Break large features into many small steps.
 3. **One concept per step.** Don't test two things in one step. Split concerns.
 4. **Minimal GREEN.** The "make it pass" section should be the simplest code that works. Save abstractions for refactor.
@@ -253,42 +253,41 @@ Starting fresh is especially useful when:
 
 For each step in the plan, execute these three phases **in strict order**:
 
-#### 🔴 RED — Write the failing test
+#### 🔴 RED — Establish the failing condition
 
 - **Update progress:** `tdd-plan phase <slug> <step> red start`
 - Read the step's RED description from `tdd-plan show <slug>`.
-- Write the test file or add the test case to the existing test file.
-- Run the test suite to **confirm the test fails** with the expected error.
-- If the test passes or fails with an unexpected error, stop and report the issue. Do not proceed to GREEN.
+- Write the test file, add the test case, or introduce the change that triggers a type/compilation error.
+- Run the validation command (test suite, typecheck, compilation, etc.) to **confirm it fails** with the expected error.
+- If the validation passes or fails with an unexpected error, stop and report the issue. Do not proceed to GREEN.
 - **Update progress:** `tdd-plan phase <slug> <step> red done`
-- Output the failing test output for the user to see.
+- Output the failing validation output for the user to see.
 
 #### 🟢 GREEN — Make it pass
 
 - **Update progress:** `tdd-plan phase <slug> <step> green start`
 - Read the step's GREEN description from `tdd-plan show <slug>`.
 - Write the **simplest code** that makes the test pass. No gold-plating, no speculative abstractions.
-- Run the test suite to **confirm the test passes**.
-- If the test still fails, iterate on the implementation — but stay minimal. Do not add extra features.
+- Run the validation command (test suite, typecheck, compilation, etc.) to **confirm it passes**.
+- If the validation still fails, iterate on the implementation — but stay minimal. Do not add extra features.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
-- Output the passing test output for the user to see.
+- Output the passing result for the user to see.
+- **Commit via `/skill:commit`** to checkpoint the minimal implementation and trigger commit hooks (lint, typecheck, etc.) before any refactoring.
 
 #### 🔵 REFACTOR — Clean up (if applicable)
 
 - Read the step's REFACTOR description from `tdd-plan show <slug>`. Skip this phase entirely if the description is empty.
 - **Update progress:** `tdd-plan phase <slug> <step> refactor start` (or `skip` if no refactoring needed)
-- Apply the described refactoring while keeping all tests green.
-- Run the **full** test suite (not just the current test) to confirm nothing broke.
-- If any test fails, revert the refactoring and try again.
+- Apply the described refactoring while keeping all validations green.
+- Run the **full** validation command (not just the current test) to confirm nothing broke.
+- If any validation fails, revert the refactoring and try again.
 - **Update progress:** `tdd-plan phase <slug> <step> refactor done` (or `skip` was already called)
-- Output the full test suite result.
+- Output the full validation result.
+- If refactoring produced significant changes, **commit again via `/skill:commit`** to preserve the refactored state.
 
 ### User Verification
 
-After completing each step (the full Red-Green-Refactor cycle), **commit using the commit skill** (`/skill:commit`) with a message like `feat(<scope>): <description> (step N/M)`.
-
-
-After committing, **mark the step complete**:
+After committing after GREEN (to trigger hooks on the minimal implementation) and completing the full Red-Green-Refactor cycle, **mark the step complete**:
 
 ```bash
 tdd-plan complete <slug> <step>
@@ -296,9 +295,9 @@ tdd-plan complete <slug> <step>
 
 Show:
 
-1. A brief summary of what was done (test written, implementation added, refactoring applied).
-2. The final test output.
-3. The commit that was made.
+1. A brief summary of what was done (validation established, implementation added, refactoring applied, commits made).
+2. The final validation output.
+3. The commit(s) that were made (after GREEN and/or after REFACTOR).
 
 
 **Then stop and ask the user what to do next.** The user will naturally say things like:
@@ -331,23 +330,23 @@ If **archive**, run `tdd-plan archive <slug>`.
 
 ## Rules
 
-1. **Never skip RED.** Do not write implementation before writing and confirming a failing test.
-2. **Never skip GREEN.** Do not move to the next step until the current test passes.
+1. **Never skip RED.** Do not write implementation before writing and confirming a failing validation (test, type error, compilation error, etc.).
+2. **Never skip GREEN.** Do not move to the next step until the current validation passes.
 3. **Minimal GREEN only.** The implementation should be the simplest code that passes. Resist the urge to add error handling, abstractions, or features not demanded by the test.
 4. **Real refactoring only.** Only refactor when the plan explicitly calls for it. Do not "improve" code that the plan doesn't flag.
-5. **Run tests after every phase.** RED → run tests → GREEN → run tests → REFACTOR → run full suite.
-6. **Stop on unexpected failure.** If a test fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
+5. **Run validation after every phase.** RED → run validation → GREEN → run validation → commit → REFACTOR → run full validation.
+6. **Stop on unexpected failure.** If a validation fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after each step using the commit skill.** After completing a full Red-Green-Refactor cycle, invoke `/skill:commit` with a descriptive message following conventional commits format.
+9. **Commit after GREEN and after the full step.** Commit via `/skill:commit` after GREEN to trigger hooks on the minimal implementation, then again after completing the full Red-Green-Refactor cycle (if REFACTOR produced meaningful changes).
 10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/tdd-go-kickoff <slug>` to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
 
 ## Error Handling
 
-- **Test framework not found:** Stop and ask the user to install or configure the test framework.
-- **Unexpected test pass in RED:** The test may not be asserting the right thing, or the feature may already exist. Report and ask.
-- **Cannot make GREEN pass after 3 attempts:** Stop and explain. Suggest simplifying the test or splitting the step.
-- **Refactoring breaks tests:** Revert immediately. Report and ask whether to skip the refactoring or take a different approach.
+- **Validation framework not found:** Stop and ask the user to install or configure the test framework, type checker, compiler, or other validation tool.
+- **Unexpected validation pass in RED:** The validation may not be asserting the right thing, or the feature may already exist. Report and ask.
+- **Cannot make GREEN pass after 3 attempts:** Stop and explain. Suggest simplifying the validation or splitting the step.
+- **Refactoring breaks validation:** Revert immediately. Report and ask whether to skip the refactoring or take a different approach.
 
 ## Usage
 

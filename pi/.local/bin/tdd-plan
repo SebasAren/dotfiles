@@ -684,7 +684,7 @@ Usage:
   tdd-plan archive <slug>
 
 Steps JSON format:
-  [{"name":"Step 1: ...","red":"Write failing test...","green":"Implement...","refactor":"Clean up..."}]
+  [{"name":"Step 1: ...","red":"Establish failing condition (test, typecheck, compilation)...","green":"Implement...","refactor":"Clean up..."}]
 
 Alternative: --steps-file for better multi-line support:
   tdd-plan create my-plan --title "My Plan" --steps-file steps.json
