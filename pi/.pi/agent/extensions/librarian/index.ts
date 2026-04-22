@@ -83,8 +83,10 @@ async function createLibrarianSession(
 
   const opts: CreateAgentSessionOptions = {
     cwd,
-    // No tools — we rely on extensions to provide web_search, context7, etc.
-    // The librarian doesn't need filesystem tools.
+    // Explicitly allowlist only the extension tools the librarian needs.
+    // This prevents the librarian subagent from calling itself (recursion)
+    // and disables built-in filesystem tools that don't belong here.
+    tools: ["web_search", "web_fetch", "context7_search", "context7_docs"],
     authStorage,
     modelRegistry,
     sessionManager: SessionManager.inMemory(),
