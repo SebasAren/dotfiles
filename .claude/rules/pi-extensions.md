@@ -70,3 +70,13 @@ globs:
 3. Implement the extension
 4. Add to workspace `package.json` `workspaces` array
 5. Verify tests pass and types check
+
+## Explore Pre-Search Architecture (post-2025-04 redesign)
+
+- **Don't send raw file content to rerankers** — first 500 chars are mostly imports. Build synthetic documents from `path | description | exports | symbols` (50–150 chars, semantic, import-free).
+- **Preserve compound identifiers** — `pre_search` must stay intact in entity extraction. Short components (`pre`, `search`) become `avoidTerms`, not search terms.
+- **Stem/plural matching is required** — `subagents` must match `runSubagent` (plural→singular, 6+ char prefix). A naive `.includes()` gates the right files out of the reranker candidate pool.
+- **Export symbols are noise** — Tree-sitter fallback captures whole export lines (`export interface SubagentResultDetails {`). Skip `kind === "export"` in symbol scoring.
+- **Synthetic reranker via OpenRouter** — `cohere/rerank-4-fast` at `openrouter.ai/api/v1/rerank`. Requires `OPENROUTER_API_KEY` (already set in pi env). Sends query + documents, returns `relevance_score` (0–1).
+- **Tier thresholds must be lenient** — With real reranker scores, use `≥0.60` (Highly), `≥0.30` (Probably), `≥0.10` (Mentioned). `≥0.75` creates empty top tiers for broad queries.
+- **Ripgrep fallback** — If index is empty or repo has <10 source files, fall back to `rg -l` with safe regex. Always run heuristics before reranking so the API sees ~30 candidates, not the whole repo.
