@@ -190,7 +190,7 @@ export class FileIndex {
           (sym) =>
             sym.name &&
             sym.kind !== "export" &&
-            (["function", "class", "interface"] as string[]).includes(sym.kind),
+            (["function", "class", "interface", "type_alias"] as string[]).includes(sym.kind),
         )
         .map((sym) => sym.name);
 
@@ -217,7 +217,11 @@ export class FileIndex {
     const reasons: string[] = [];
 
     // Grep term matches in symbols, path, and description
+    // Skip terms that overlap with entities — those are scored separately
+    // with higher weights in the entity loop below.
+    const entityLowers = new Set(plan.entities.map((e) => e.toLowerCase()));
     for (const term of plan.grepTerms) {
+      if (entityLowers.has(term.toLowerCase())) continue;
       const lower = term.toLowerCase();
       // Path match
       if (entry.path.toLowerCase().includes(lower)) {
@@ -462,7 +466,7 @@ function extractDescription(source: string): string {
   return "";
 }
 
-function extractImports(filePath: string, source: string): string[] {
+export function extractImports(filePath: string, source: string): string[] {
   const ext = path.extname(filePath);
   if (![".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)) {
     return [];
@@ -470,7 +474,7 @@ function extractImports(filePath: string, source: string): string[] {
 
   const imports: string[] = [];
   const importRegex =
-    /import\s+(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
+    /import\s+(?:type\s+)?(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
   let match;
   while ((match = importRegex.exec(source)) !== null) {
     imports.push(match[1]);

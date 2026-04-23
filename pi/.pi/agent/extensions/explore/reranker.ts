@@ -136,7 +136,7 @@ export async function rerankCandidates(
  * Map crude heuristic scores (0–40+) to a 0–1 range for display / tiering
  * when the reranker is not available.
  */
-function heuristicToRelevance(score: number): number {
+export function heuristicToRelevance(score: number): number {
   // sigmoid-ish: 0→0.00, 12→0.60, 20→0.80, 40→0.95
   return Math.min(1, score / (score + 8));
 }

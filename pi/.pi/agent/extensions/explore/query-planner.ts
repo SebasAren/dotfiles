@@ -50,7 +50,6 @@ const INTENT_ARCH_KEYWORDS = new Set([
   "overview",
   "flow",
   "design",
-  "how does",
   "fit together",
   "component",
   "module",
@@ -178,9 +177,9 @@ export function planQuery(rawQuery: string): QueryPlan {
 
 function detectIntent(text: string): QueryIntent {
   const lower = text.toLowerCase();
-  if (matchesAny(lower, INTENT_ARCH_KEYWORDS)) return "arch";
   if (matchesAny(lower, INTENT_CHANGE_KEYWORDS)) return "change";
   if (matchesAny(lower, INTENT_USE_KEYWORDS)) return "use";
+  if (matchesAny(lower, INTENT_ARCH_KEYWORDS)) return "arch";
   if (matchesAny(lower, INTENT_DEFINE_KEYWORDS)) return "define";
   return "define";
 }

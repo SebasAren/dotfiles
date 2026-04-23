@@ -7,12 +7,14 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { planQuery, type QueryPlan } from "./query-planner";
 import { FileIndex, type ScoredFile, type FileEntry } from "./file-index";
-import { rerankCandidates, type RerankedFile } from "./reranker";
+import { rerankCandidates, heuristicToRelevance, type RerankedFile } from "./reranker";
 
 const MAX_CACHE_SIZE = 5;
 
 // Module-level cache: repo cwd → FileIndex (LRU, max 5 entries)
 const indexCache = new Map<string, FileIndex>();
+// In-flight build promises — deduplicates concurrent preSearch calls on same cwd
+const buildPromises = new Map<string, Promise<boolean>>();
 
 export interface PreSearchStats {
   indexSize: number;
@@ -57,18 +59,27 @@ export async function preSearch(
   // 1. Query decomposition
   const plan = planQuery(rawQuery);
 
-  // 2. Build or reuse index (evict oldest if cache is full)
+  // 2. Build or reuse index (dedup concurrent builds, evict oldest if cache is full)
   let hitBuildCap = false;
   let index = indexCache.get(cwd);
+
   if (!index) {
-    if (indexCache.size >= MAX_CACHE_SIZE) {
-      // Evict oldest entry (first key in Map insertion order)
-      const oldest = indexCache.keys().next().value;
-      if (oldest !== undefined) indexCache.delete(oldest);
+    let buildPromise = buildPromises.get(cwd);
+    if (!buildPromise) {
+      if (indexCache.size >= MAX_CACHE_SIZE) {
+        const oldest = indexCache.keys().next().value;
+        if (oldest !== undefined) indexCache.delete(oldest);
+      }
+      const idx = new FileIndex(cwd);
+      buildPromise = idx.build().then((hbc) => {
+        indexCache.set(cwd, idx);
+        buildPromises.delete(cwd);
+        return hbc;
+      });
+      buildPromises.set(cwd, buildPromise);
     }
-    index = new FileIndex(cwd);
-    hitBuildCap = await index.build();
-    indexCache.set(cwd, index);
+    hitBuildCap = await buildPromise;
+    index = indexCache.get(cwd)!;
   }
 
   // 3. Heuristic search (fast)
@@ -110,7 +121,7 @@ export async function preSearch(
   }
 
   // 6. Format results
-  const text = formatResults(plan, reranked);
+  const text = formatResults(plan, reranked, hitBuildCap);
 
   return {
     text,
@@ -125,17 +136,12 @@ export async function preSearch(
   };
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────
-
-function heuristicToRelevance(score: number): number {
-  return Math.min(1, score / (score + 8));
-}
-
 // ── Formatting ────────────────────────────────────────────────────────────
 
 function formatResults(
   plan: QueryPlan,
   scored: RerankedFile[],
+  hitBuildCap: boolean,
 ): string {
   if (scored.length === 0) return "";
 
@@ -148,6 +154,10 @@ function formatResults(
     "\n\n[PRE-SEARCH RESULTS]",
     `Query analysis: ${plan.intent} | entities: ${plan.entities.join(", ") || "none"} | scope: ${plan.scopeHints.join(", ") || "none"}`,
   );
+
+  if (hitBuildCap) {
+    lines.push("[⚠ Index build was truncated at 5s — results may be incomplete for large repos.]");
+  }
 
   let fileNum = 1;
 

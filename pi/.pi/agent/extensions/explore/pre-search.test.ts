@@ -466,6 +466,61 @@ describe("second-order proximity boost", () => {
   });
 });
 
+describe("import type extraction", () => {
+  it("extracts import type statements alongside regular imports", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("test.ts", [
+      `import type { Foo } from "./foo";`,
+      `import { Bar } from "./bar";`,
+      `import type Baz from "./baz";`,
+    ].join("\n"));
+    expect(imports).toContain("./foo");
+    expect(imports).toContain("./bar");
+    expect(imports).toContain("./baz");
+    expect(imports.length).toBe(3);
+  });
+});
+
+describe("intent precedence for 'how does'", () => {
+  it("classifies 'how does X work' as use-intent, not arch", () => {
+    const plan = planQuery("How does the auth module work?");
+    expect(plan.intent).toBe("use");
+  });
+});
+
+describe("entity scoring not double-counted", () => {
+  it("does not score entities in both grepTerm and entity loops", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("presets.ts", {
+      path: "presets.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "presets", line: 1 }],
+      description: "",
+      imports: [],
+      exports: ["presets"],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const results = idx.search({
+      intent: "define",
+      entities: ["presets"],
+      grepTerms: ["presets", "otherTerm"],
+      filePatterns: ["*.ts"],
+      scopeHints: [],
+      avoidTerms: [],
+    });
+
+    // presets entity match: +12 (exact entity) + +6 (path entity) = 18
+    // No extra +8/+2 from grepTerms for the same term
+    expect(results[0].path).toBe("presets.ts");
+    const reasons = results[0].reasons.join(", ");
+    // Should NOT have both "symbol match: presets" AND "exact entity: presets"
+    expect(reasons).toContain("exact entity: presets");
+    expect(reasons).not.toContain("symbol match: presets");
+  });
+});
+
 describe("use-intent caller weighting", () => {
   it("gives larger proximity boost for use-intent than define-intent", () => {
     const idx = new FileIndex("/fake");
