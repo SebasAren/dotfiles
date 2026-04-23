@@ -23,9 +23,7 @@ If the index didn't surface the right pages, search page content:
 wiki-search "<keywords>"
 ```
 
-This searches all wiki pages with `rg` and shows matching files plus context lines.
-
-For manual control:
+This searches all wiki pages with `rg` and shows matching files plus context lines. It uses ripgrep under the hood, so if unavailable, use:
 ```bash
 rg -il "<keyword>" ~/Documents/wiki/wiki/          # list matching files
 rg -i -C 2 "<phrase>" ~/Documents/wiki/wiki/       # context around matches

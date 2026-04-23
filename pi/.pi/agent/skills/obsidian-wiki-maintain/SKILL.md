@@ -27,7 +27,7 @@ Run these checks:
 
 | Check | How |
 |-------|-----|
-| **Orphan pages** | Pages with no inbound `[[links]]` from other wiki pages. Run `wiki-search "<page title>"` via bash to check for mentions, or fall back to `rg -l 'pagename' wiki/`. |
+| **Orphan pages** | Pages with no inbound `[[links]]` from other wiki pages. Run `wiki-search "<page title>"` via bash (or fall back to `rg -l 'pagename' ~/Documents/wiki/wiki/`) to check for mentions. |
 | **Missing cross-refs** | Pages that mention concepts/entities without `[[linking]]` them. |
 | **Concepts without pages** | Terms mentioned in `[[links]]` where the target file doesn't exist. `rg -o '\[\[([^\]]+)\]\]' wiki/ | sort -u` then check each. |
 | **Contradictions** | Claims on different pages that conflict. Flag with `> ⚠️ Contradicts [[page]]: ...` |

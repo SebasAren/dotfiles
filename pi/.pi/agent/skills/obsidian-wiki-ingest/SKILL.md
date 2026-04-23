@@ -129,8 +129,15 @@ A single source may touch 10-15 pages. Stay involved with the user during ingest
 
 ## Duplicate Check
 
-Before ingesting, search for existing coverage of the source's topics using the `wiki-search` CLI via the `bash` tool:
+Before ingesting, search for existing coverage of the source's topics. Run via the `bash` tool:
 
+```bash
+# Search wiki pages for existing coverage (ripgrep)
+rg -il "<keyword>" ~/Documents/wiki/wiki/          # list matching files
+rg -i -C 2 "<phrase>" ~/Documents/wiki/wiki/       # context around matches
+```
+
+Or use the convenience wrapper (equivalent but reranks with Cohere):
 ```bash
 wiki-search "<topic/keywords>"
 ```
