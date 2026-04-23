@@ -450,7 +450,19 @@ describe("second-order proximity boost", () => {
       entities: ["target"],
       grepTerms: ["target"],
       filePatterns: ["*.ts"],
-      scopeHints: ["filler0", "filler1", "filler2", "filler3", "filler4", "filler5", "filler6", "filler7", "filler8", "filler9", "filler10"],
+      scopeHints: [
+        "filler0",
+        "filler1",
+        "filler2",
+        "filler3",
+        "filler4",
+        "filler5",
+        "filler6",
+        "filler7",
+        "filler8",
+        "filler9",
+        "filler10",
+      ],
       avoidTerms: [],
     });
 
@@ -469,11 +481,14 @@ describe("second-order proximity boost", () => {
 describe("import type extraction", () => {
   it("extracts import type statements alongside regular imports", () => {
     const { extractImports } = require("./file-index");
-    const imports = extractImports("test.ts", [
-      `import type { Foo } from "./foo";`,
-      `import { Bar } from "./bar";`,
-      `import type Baz from "./baz";`,
-    ].join("\n"));
+    const imports = extractImports(
+      "test.ts",
+      [
+        `import type { Foo } from "./foo";`,
+        `import { Bar } from "./bar";`,
+        `import type Baz from "./baz";`,
+      ].join("\n"),
+    );
     expect(imports).toContain("./foo");
     expect(imports).toContain("./bar");
     expect(imports).toContain("./baz");
@@ -573,10 +588,12 @@ describe("use-intent caller weighting", () => {
 describe("Python import extraction", () => {
   it("extracts from-import statements", () => {
     const { extractImports } = require("./file-index");
-    const imports = extractImports("app.py", [
-      `from mypackage.submodule import do_thing`,
-      `from another.module import Foo, Bar`,
-    ].join("\n"));
+    const imports = extractImports(
+      "app.py",
+      [`from mypackage.submodule import do_thing`, `from another.module import Foo, Bar`].join(
+        "\n",
+      ),
+    );
     expect(imports).toContain("mypackage.submodule");
     expect(imports).toContain("another.module");
     expect(imports.length).toBe(2);
@@ -584,11 +601,10 @@ describe("Python import extraction", () => {
 
   it("extracts plain import statements", () => {
     const { extractImports } = require("./file-index");
-    const imports = extractImports("app.py", [
-      `import os`,
-      `import json`,
-      `import mypackage.utils`,
-    ].join("\n"));
+    const imports = extractImports(
+      "app.py",
+      [`import os`, `import json`, `import mypackage.utils`].join("\n"),
+    );
     expect(imports).toContain("os");
     expect(imports).toContain("json");
     expect(imports).toContain("mypackage.utils");
@@ -599,10 +615,10 @@ describe("Python import extraction", () => {
 describe("Lua require extraction", () => {
   it("extracts require() calls with double quotes", () => {
     const { extractImports } = require("./file-index");
-    const imports = extractImports("main.lua", [
-      `local foo = require("foo")`,
-      `require("bar.baz")`,
-    ].join("\n"));
+    const imports = extractImports(
+      "main.lua",
+      [`local foo = require("foo")`, `require("bar.baz")`].join("\n"),
+    );
     expect(imports).toContain("foo");
     expect(imports).toContain("bar.baz");
     expect(imports.length).toBe(2);
@@ -657,10 +673,7 @@ describe("barrel import resolution", () => {
       mtimeMs: 0,
     });
 
-    const resolved = (idx as any).resolveImport(
-      "consumer.ts",
-      "@pi-ext/shared/test-mocks",
-    );
+    const resolved = (idx as any).resolveImport("consumer.ts", "@pi-ext/shared/test-mocks");
     expect(resolved).toBe("shared/src/test-mocks.ts");
   });
 

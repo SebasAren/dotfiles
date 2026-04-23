@@ -247,9 +247,7 @@ function extractEntities(text: string): string[] {
 
 function extractScopeHints(text: string): string[] {
   const hints: string[] = [];
-  for (const m of text.matchAll(
-    /(?:\.\.?\/|[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)+)/g,
-  )) {
+  for (const m of text.matchAll(/(?:\.\.?\/|[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)+)/g)) {
     const hint = m[0];
     if (!hint.startsWith(".") && !hint.includes("=") && hint.length >= 2) {
       hints.push(hint);
@@ -265,17 +263,7 @@ function inferFilePatterns(text: string): string[] {
     if (lower.includes(keyword)) patterns.push(...exts);
   }
   if (patterns.length === 0) {
-    patterns.push(
-      "*.ts",
-      "*.tsx",
-      "*.js",
-      "*.jsx",
-      "*.py",
-      "*.go",
-      "*.rs",
-      "*.vue",
-      "*.svelte",
-    );
+    patterns.push("*.ts", "*.tsx", "*.js", "*.jsx", "*.py", "*.go", "*.rs", "*.vue", "*.svelte");
   }
   return [...new Set(patterns)];
 }

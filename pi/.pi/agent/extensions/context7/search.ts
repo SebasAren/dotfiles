@@ -2,7 +2,7 @@
  * Context7 search tool — schema, execute logic, and types.
  */
 
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 import { Context7, Context7Error, type Library } from "@upstash/context7-sdk";
 
 // ── Types ──────────────────────────────────────────────────────────────────

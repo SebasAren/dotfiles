@@ -2,7 +2,7 @@
  * Context7 docs tool — schema, execute logic, and types.
  */
 
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
 import { Context7, Context7Error, type Documentation } from "@upstash/context7-sdk";
 

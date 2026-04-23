@@ -3,7 +3,7 @@
  * Matches the built-in edit tool schema for compatibility.
  */
 
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 
 export const replaceEditSchema = Type.Object(
   {

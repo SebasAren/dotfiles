@@ -1,8 +1,8 @@
 /**
  * Cohere Reranker via OpenRouter — semantic ranking for pre-search candidates.
  *
- * Builds synthetic documents from FileIndex metadata (description, exports, 
- * top symbols) and calls OpenRouter's rerank endpoint. No raw file content 
+ * Builds synthetic documents from FileIndex metadata (description, exports,
+ * top symbols) and calls OpenRouter's rerank endpoint. No raw file content
  * is sent — avoids import-noise contamination.
  */
 
@@ -60,7 +60,7 @@ interface CohereRerankResult {
  * @param rawQuery - The original user query (not decomposed plan terms)
  * @param candidates - Heuristic-scored candidates (pre-cut to top ~30)
  * @param entries - Full file entries for building synthetic documents
- * @returns Reranked candidates with `relevanceScore` populated, or 
+ * @returns Reranked candidates with `relevanceScore` populated, or
  *          the original candidates if the API is unavailable.
  */
 export async function rerankCandidates(
@@ -83,8 +83,9 @@ export async function rerankCandidates(
     indexedCandidates.push({ scored: c, entry: entries.get(c.path) });
   }
 
-  const documents = indexedCandidates
-    .map((d, i) => d.entry ? buildDocument(d.entry) : `File: ${d.scored.path}`);
+  const documents = indexedCandidates.map((d) =>
+    d.entry ? buildDocument(d.entry) : `File: ${d.scored.path}`,
+  );
 
   try {
     const res = await fetch(RERANK_URL, {

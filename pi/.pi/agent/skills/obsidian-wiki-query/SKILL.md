@@ -19,11 +19,17 @@ Read `~/Documents/wiki/wiki/index.md`. Check for exact or close matches in the C
 
 If the index didn't surface the right pages, search page content:
 
-```bash
-wiki-search "<keywords>"
+```
+wiki_search:0 {"query": "<keywords>", "top": 5}
 ```
 
-This searches all wiki pages with `rg` and shows matching files plus context lines. It uses ripgrep under the hood, so if unavailable, use:
+The tool returns:
+- `content[0].text` — preview snippets (ripgrep context around keyword matches). BM25 results show surrounding lines; semantic results may have sparse or empty context.
+- `details.paths` — full file paths like `/home/<user>/Documents/wiki/wiki/entities/humanlayer.md`.
+
+**Use snippets to triage, then read full files.** The snippets are match context, not document summaries. Semantic hits especially may lack useful preview text. `read` the files at `details.paths` for complete content.
+
+For manual control via `bash`:
 ```bash
 rg -il "<keyword>" ~/Documents/wiki/wiki/          # list matching files
 rg -i -C 2 "<phrase>" ~/Documents/wiki/wiki/       # context around matches
@@ -52,6 +58,6 @@ Synthesize the answer with `[[wiki links]]` citations. If the answer is valuable
 ## Tips
 
 - Start with the index. It's a catalog of every page with one-line summaries.
-- Use `wiki-search` (via the `bash` tool) for topical searches when you don't know the exact page name.
+- Use `wiki_search` for topical searches when you don't know the exact page name.
 - The synthesis pages (`wiki/synthesis/`) are the broadest — check them for overviews.
 - If you find nothing relevant, say so. Don't fabricate wiki content.

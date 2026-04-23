@@ -18,7 +18,7 @@ import {
   SettingsManager,
 } from "@mariozechner/pi-coding-agent";
 import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
@@ -215,7 +215,13 @@ export default function (pi: ExtensionAPI) {
         const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
         return {
           content: [{ type: "text" as const, text: `Explore failed: ${errorMsg}` }],
-          details: { model: getModel(), query, usage: result.usage, success: false, preSearchStats: preSearchResult.stats },
+          details: {
+            model: getModel(),
+            query,
+            usage: result.usage,
+            success: false,
+            preSearchStats: preSearchResult.stats,
+          },
         } as any;
       }
 

@@ -9,7 +9,7 @@
 import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, Theme } from "@mariozechner/pi-coding-agent";
 import { matchesKey, Text, truncateToWidth } from "@mariozechner/pi-tui";
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 
 interface Todo {
   id: number;

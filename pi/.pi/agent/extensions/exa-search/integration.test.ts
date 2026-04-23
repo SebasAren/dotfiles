@@ -6,7 +6,7 @@ mock.module("exa-js", () => ({}));
 
 mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
 
-mock.module("typebox", typeboxMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 mock.module("@mariozechner/pi-ai", () => ({
   StringEnum: (values: any, options: any) => ({ type: "string", enum: values, ...options }),

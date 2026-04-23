@@ -4,7 +4,7 @@ import { piCodingAgentMock, piTuiMock, typeboxMock } from "@pi-ext/shared/test-m
 // Mock external dependencies with shared mock factories
 mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
 mock.module("@mariozechner/pi-tui", piTuiMock);
-mock.module("typebox", typeboxMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 // Now import the extension after mocks are set up
 import librarianExtension from "./index";

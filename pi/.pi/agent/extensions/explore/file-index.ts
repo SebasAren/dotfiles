@@ -135,17 +135,34 @@ export class FileIndex {
 
   private enumerateFiles(): string[] {
     const exts = [
-      "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs",
-      "*.py", "*.go", "*.rs", "*.vue", "*.svelte",
-      "*.rb", "*.java", "*.kt", "*.swift",
-      "*.c", "*.cpp", "*.h", "*.hpp",
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx",
+      "*.mjs",
+      "*.cjs",
+      "*.py",
+      "*.go",
+      "*.rs",
+      "*.vue",
+      "*.svelte",
+      "*.rb",
+      "*.java",
+      "*.kt",
+      "*.swift",
+      "*.c",
+      "*.cpp",
+      "*.h",
+      "*.hpp",
       "*.lua",
     ];
 
     // Try git ls-files first (works in git repos)
-    const gitResult = spawnSync("git", [
-      "ls-files", "--", ...exts,
-    ], { cwd: this.cwd, timeout: 5000, encoding: "utf-8" });
+    const gitResult = spawnSync("git", ["ls-files", "--", ...exts], {
+      cwd: this.cwd,
+      timeout: 5000,
+      encoding: "utf-8",
+    });
 
     if (gitResult.status === 0 && gitResult.stdout.trim()) {
       return gitResult.stdout
@@ -162,11 +179,27 @@ export class FileIndex {
       if (i > 0) findArgs.push("-o");
       findArgs.push("-name", exts[i]);
     }
-    findArgs.push(")", "!", "-path", "./node_modules/*", "!", "-path", "./.*",
-      "!", "-path", "./dist/*", "!", "-path", "./build/*");
+    findArgs.push(
+      ")",
+      "!",
+      "-path",
+      "./node_modules/*",
+      "!",
+      "-path",
+      "./.*",
+      "!",
+      "-path",
+      "./dist/*",
+      "!",
+      "-path",
+      "./build/*",
+    );
 
-    const findResult = spawnSync("find", findArgs,
-      { cwd: this.cwd, timeout: 5000, encoding: "utf-8" });
+    const findResult = spawnSync("find", findArgs, {
+      cwd: this.cwd,
+      timeout: 5000,
+      encoding: "utf-8",
+    });
 
     if (findResult.status === 0 && findResult.stdout.trim()) {
       return findResult.stdout
@@ -256,9 +289,7 @@ export class FileIndex {
         reasons.push(`path entity: ${entity}`);
       }
       const exactSym = entry.symbols.find(
-        (s) =>
-          s.kind !== "export" &&
-          (isRelated(s.name.toLowerCase(), lower)),
+        (s) => s.kind !== "export" && isRelated(s.name.toLowerCase(), lower),
       );
       if (exactSym) {
         score += 12;
@@ -276,9 +307,7 @@ export class FileIndex {
     if (
       plan.intent === "define" &&
       entry.symbols.some((s) =>
-        (["function", "class", "interface", "type_alias", "method"] as string[]).includes(
-          s.kind,
-        ),
+        (["function", "class", "interface", "type_alias", "method"] as string[]).includes(s.kind),
       )
     ) {
       score += 4;
@@ -304,8 +333,7 @@ export class FileIndex {
     const hasPreferredExt = plan.filePatterns.some((p) => {
       if (p.startsWith("*.")) return ext === p.slice(1);
       return (
-        entry.path.toLowerCase().includes(p.toLowerCase().replace(/\*/g, "")) &&
-        !p.startsWith("*.")
+        entry.path.toLowerCase().includes(p.toLowerCase().replace(/\*/g, "")) && !p.startsWith("*.")
       );
     });
     if (hasPreferredExt) {
@@ -377,9 +405,7 @@ export class FileIndex {
    * Maps package name → directory path (e.g. "@pi-ext/shared" → "shared/src/").
    */
   private async buildPackageNameMap(indexed: string[]): Promise<void> {
-    const pkgFiles = indexed.filter(
-      (f) => f.endsWith("/package.json") || f === "package.json",
-    );
+    const pkgFiles = indexed.filter((f) => f.endsWith("/package.json") || f === "package.json");
     for (const pkgFile of pkgFiles) {
       try {
         const fullPath = path.resolve(this.cwd, pkgFile);
@@ -387,10 +413,7 @@ export class FileIndex {
         const pkg = JSON.parse(content);
         if (pkg.name && typeof pkg.name === "string") {
           const dir = path.dirname(pkgFile);
-          this.packageNameMap.set(
-            pkg.name,
-            dir === "." ? "" : dir.replace(/\\/g, "/"),
-          );
+          this.packageNameMap.set(pkg.name, dir === "." ? "" : dir.replace(/\\/g, "/"));
         }
       } catch {
         // skip unparseable package.json
@@ -466,10 +489,7 @@ export class FileIndex {
     // ── Python module paths (e.g. "mypackage.mymodule") ────────────────
     if (importPath.includes(".")) {
       const asPath = importPath.replace(/\./g, "/");
-      const candidates = [
-        asPath + ".py",
-        asPath + "/__init__.py",
-      ];
+      const candidates = [asPath + ".py", asPath + "/__init__.py"];
       for (const c of candidates) {
         if (this.files.has(c)) return c;
       }
@@ -478,10 +498,7 @@ export class FileIndex {
     // ── Lua module paths (e.g. "mymodule.submodule") ───────────────────
     if (importPath.includes(".")) {
       const asPath = importPath.replace(/\./g, "/");
-      const candidates = [
-        asPath + ".lua",
-        asPath + "/init.lua",
-      ];
+      const candidates = [asPath + ".lua", asPath + "/init.lua"];
       for (const c of candidates) {
         if (this.files.has(c)) return c;
       }
@@ -586,9 +603,7 @@ export function extractImports(filePath: string, source: string): string[] {
   let match;
 
   // ── TypeScript / JavaScript ──────────────────────────────────────────────
-  if (
-    [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)
-  ) {
+  if ([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)) {
     const importRegex =
       /import\s+(?:type\s+)?(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
     while ((match = importRegex.exec(source)) !== null) {
@@ -604,14 +619,12 @@ export function extractImports(filePath: string, source: string): string[] {
   // ── Python ───────────────────────────────────────────────────────────────
   if (ext === ".py") {
     // from X import Y
-    const fromImport =
-      /^from\s+([\w.]+)\s+import\s+/gm;
+    const fromImport = /^from\s+([\w.]+)\s+import\s+/gm;
     while ((match = fromImport.exec(source)) !== null) {
       imports.push(match[1]);
     }
     // import X [, Y]
-    const plainImport =
-      /^import\s+([\w.]+)(?:\s*,\s*[\w.]+)*/gm;
+    const plainImport = /^import\s+([\w.]+)(?:\s*,\s*[\w.]+)*/gm;
     while ((match = plainImport.exec(source)) !== null) {
       imports.push(match[1]);
     }
@@ -620,8 +633,7 @@ export function extractImports(filePath: string, source: string): string[] {
   // ── Lua ──────────────────────────────────────────────────────────────────
   if (ext === ".lua") {
     // require("X") or require 'X'
-    const luaRequire =
-      /require\s*[(]?\s*['"]([^'"]+)['"]/g;
+    const luaRequire = /require\s*[(]?\s*['"]([^'"]+)['"]/g;
     while ((match = luaRequire.exec(source)) !== null) {
       imports.push(match[1]);
     }

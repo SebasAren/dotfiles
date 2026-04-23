@@ -9,3 +9,7 @@ bun test
 
 echo "=== Bun Tests (tdd-plan) ==="
 bun test "$REPO_ROOT/pi/.local/bin/tdd-plan.test.ts"
+
+echo "=== Bun Tests (wiki-search) ==="
+cd "$REPO_ROOT/obsidian/.local/lib/wiki-search"
+bun test

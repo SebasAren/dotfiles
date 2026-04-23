@@ -12,7 +12,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { type Component, Text } from "@mariozechner/pi-tui";
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 import { reuseOrCreateText } from "@pi-ext/shared";
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -129,20 +129,14 @@ A single source may touch 10-15 pages. Stay involved with the user during ingest
 
 ## Duplicate Check
 
-Before ingesting, search for existing coverage of the source's topics. Run via the `bash` tool:
+Before ingesting, search for existing coverage of the source's topics using the `wiki_search` tool:
 
-```bash
-# Search wiki pages for existing coverage (ripgrep)
-rg -il "<keyword>" ~/Documents/wiki/wiki/          # list matching files
-rg -i -C 2 "<phrase>" ~/Documents/wiki/wiki/       # context around matches
+```
+wiki_search:0 {"query": "<topic/keywords>", "top": 5}
+
 ```
 
-Or use the convenience wrapper (equivalent but reranks with Cohere):
-```bash
-wiki-search "<topic/keywords>"
-```
-
-If a matching source already exists: "Already ingested. Re-ingest to refresh (overwrites)? Skip?"
+The tool returns match-context snippets in `content[0].text` and full paths in `details.paths`. Snippets may be sparse for semantic hits. Read the files at `details.paths` to verify whether this source was already ingested. If a matching source already exists: "Already ingested. Re-ingest to refresh (overwrites)? Skip?"
 
 For direct file lookup by slug, check if `wiki/sources/<slug>.md` exists.
 

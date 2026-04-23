@@ -1,155 +1,23 @@
 #!/usr/bin/env bun
-// Search the LLM wiki and rerank results with Cohere Rerank via OpenRouter.
-// Usage: wiki-search <query> [--context N] [--top N] [--no-rerank]
+// Hybrid BM25 + vector search for the LLM wiki, with Cohere Rerank via OpenRouter.
+// Usage: wiki-search <query> [--context N] [--top N] [--no-rerank] [--rebuild] [--alpha N] [--semantic]
 
-import { parseArgs } from "node:util";
-import { readFileSync } from "node:fs";
-import { relative } from "node:path";
-import { spawnSync } from "node:child_process";
+import { main } from "../lib/wiki-search/cli.ts";
 
-const WIKI_DIR = `${process.env.HOME}/Documents/wiki/wiki`;
-const RERANK_MODEL = "cohere/rerank-4-fast";
-const RERANK_URL = "https://openrouter.ai/api/v1/rerank";
-const MAX_CONTENT_CHARS = 500;
+const result = await main(
+  process.argv.slice(2),
+  process.env as Record<string, string | undefined>,
+);
 
-// ── ripgrep wrapper ──
-
-export function rg(args: string[]): string {
-  const { stdout, status } = spawnSync("rg", args, {
-    encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
-    timeout: 10_000,
-  });
-  // rg exits 1 on no matches — that's fine, return empty
-  return status === 0 ? stdout : "";
-}
-
-// ── Step 1: find candidate pages ──
-
-export function findCandidates(query: string, wikiDir: string): string[] {
-  const out = rg(["-il", query, wikiDir]);
-  return out
-    .trim()
-    .split("\n")
-    .filter(Boolean)
-    .sort();
-}
-
-// ── Context display ──
-
-export function showContext(query: string, file: string, context: number): string {
-  return rg(["-i", "-C", String(context), "--max-count", "3", query, file]);
-}
-
-// ── Step 2: rerank via Cohere ──
-
-export async function rerank(
-  query: string,
-  files: string[],
-  topN: number,
-  wikiDir: string,
-): Promise<number[]> {
-  const documents = files.map((f) => {
-    const rel = relative(wikiDir, f);
-    const content = readFileSync(f, "utf-8").slice(0, MAX_CONTENT_CHARS);
-    return `${rel}: ${content}`;
-  });
-
-  const res = await fetch(RERANK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: RERANK_MODEL,
-      query,
-      documents,
-      top_n: topN,
-    }),
-  });
-
-  if (!res.ok) {
-    console.error(`Rerank API error: ${res.status} ${res.statusText}`);
-    return files.map((_, i) => i);
-  }
-
-  const data = (await res.json()) as { results: { index: number; relevance_score: number }[] };
-  return data.results.map((r) => r.index);
-}
-
-// ── Main ──
-
-export async function main(args: string[], env: Record<string, string | undefined>): Promise<string> {
-  const { positionals, values } = parseArgs({
-    args,
-    allowPositionals: true,
-    options: {
-      context: { type: "string", default: "3" },
-      top: { type: "string", default: "5" },
-      "no-rerank": { type: "boolean", default: false },
-      help: { type: "boolean", short: "h" },
-    },
-  });
-
-  if (values.help || positionals.length === 0) {
-    return `wiki-search - Search the LLM wiki with semantic reranking
-
-Usage: wiki-search <query> [--context N] [--top N] [--no-rerank]
-
-Options:
-  --context N    lines of context around each match (default: 3)
-  --top N        number of reranked results to return (default: 5)
-  --no-rerank    skip reranking, use ripgrep order only
-
-Requires OPENROUTER_API_KEY for reranking. Falls back to rg-only if unset.`;
-  }
-
-  const query = positionals.join(" ");
-  const contextLines = parseInt(values.context!, 10);
-  const topN = parseInt(values.top!, 10);
-  const shouldRerank = !values["no-rerank"];
-  const wikiDir = env.WIKI_DIR ?? WIKI_DIR;
-
-  const candidates = findCandidates(query, wikiDir);
-
-  if (candidates.length === 0) {
-    return `No matching pages found for: ${query}`;
-  }
-
-  const lines: string[] = [];
-  lines.push(`=== ${candidates.length} matching page(s) ===`);
-
-  let ordered = candidates;
-
-  if (shouldRerank && env.OPENROUTER_API_KEY) {
-    try {
-      const indices = await rerank(query, candidates, topN, wikiDir);
-      ordered = indices.map((i) => candidates[i]);
-      lines.push(`=== Reranked by relevance (${RERANK_MODEL}) ===`);
-    } catch (err) {
-      lines.push(`=== Rerank failed, using rg order ===`);
-    }
-  }
-
-  lines.push("");
-  for (const f of ordered) {
-    const rel = relative(wikiDir, f);
-    lines.push(`─── ${rel} ───`);
-    lines.push(showContext(query, f, contextLines));
-  }
-
-  return lines.join("\n");
-}
-
-// ── Run when invoked directly ──
-
-const isMain = process.argv[1]?.endsWith("wiki-search");
-if (isMain) {
-  const result = await main(process.argv.slice(2), process.env as Record<string, string | undefined>);
-  if (result.startsWith("No matching pages")) {
-    console.error(result);
-  } else {
-    console.log(result);
-  }
+if (result.startsWith("No matching pages") || result.startsWith("Error:")) {
+  console.error(result);
+  process.exit(1);
+} else if (
+  result.startsWith("No search index found") ||
+  result.startsWith("Search index is stale")
+) {
+  console.error(result);
+  process.exit(1);
+} else {
+  console.log(result);
 }

@@ -7,7 +7,7 @@ mock.module("@upstash/context7-sdk", () => ({
   Context7Error: class Context7Error extends Error {},
 }));
 
-mock.module("typebox", typeboxMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 mock.module("@mariozechner/pi-ai", () => ({
   StringEnum: (values: any, options: any) => ({ type: "string", enum: values, ...options }),

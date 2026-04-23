@@ -16,7 +16,7 @@ Report:
 - Most recent ingest date from `grep "^## \[" wiki/log.md | tail -1`
 - Last 5 log entries: `grep "^## \[" wiki/log.md | tail -5`
 - Inbox contents: `ls raw/inbox/`
-- Topical coverage overview: run `wiki-search "<topic>"` via bash to spot-check coverage on key topics
+- Topical coverage overview: run `wiki_search` with key topics to spot-check coverage
 - Any obvious issues
 
 ## Lint the Wiki
@@ -27,7 +27,7 @@ Run these checks:
 
 | Check | How |
 |-------|-----|
-| **Orphan pages** | Pages with no inbound `[[links]]` from other wiki pages. Run `wiki-search "<page title>"` via bash (or fall back to `rg -l 'pagename' ~/Documents/wiki/wiki/`) to check for mentions. |
+| **Orphan pages** | Pages with no inbound `[[links]]` from other wiki pages. Run `wiki_search` with the page title; `details.paths` contains full paths of files that mention it. Preview snippets in the result may be sparse — read the files to verify cross-references, or fall back to `rg -l 'pagename' wiki/`. |
 | **Missing cross-refs** | Pages that mention concepts/entities without `[[linking]]` them. |
 | **Concepts without pages** | Terms mentioned in `[[links]]` where the target file doesn't exist. `rg -o '\[\[([^\]]+)\]\]' wiki/ | sort -u` then check each. |
 | **Contradictions** | Claims on different pages that conflict. Flag with `> ⚠️ Contradicts [[page]]: ...` |

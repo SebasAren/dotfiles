@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { piCodingAgentMock, typeboxMock } from "../shared/src/test-mocks";
 
 mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("typebox", typeboxMock);
+mock.module("@sinclair/typebox", typeboxMock);
 
 import cacheControlExtension from "./index";
 import { addCacheControl } from "./index";

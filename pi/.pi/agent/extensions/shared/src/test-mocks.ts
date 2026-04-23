@@ -16,7 +16,7 @@
  *
  *   mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
  *   mock.module("@mariozechner/pi-tui", piTuiMock);
- *   mock.module("typebox", typeboxMock);
+ *   mock.module("@sinclair/typebox", typeboxMock);
  *
  *   import myExtension from "./index";
  */

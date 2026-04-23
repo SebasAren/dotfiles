@@ -32,8 +32,7 @@ export interface PreSearchResult {
 
 /** Invalidate a file path in every cached index that contains it. */
 export function invalidateFilePath(filePath: string, sessionCwd: string): void {
-  const absPath =
-    filePath.startsWith("/") ? filePath : join(sessionCwd, filePath);
+  const absPath = filePath.startsWith("/") ? filePath : join(sessionCwd, filePath);
   for (const [cwd, index] of indexCache.entries()) {
     if (absPath.startsWith(cwd + "/")) {
       const rel = absPath.slice(cwd.length + 1);
@@ -50,10 +49,7 @@ export function invalidateFilePath(filePath: string, sessionCwd: string): void {
  * 3. Ranks files by multi-signal relevance.
  * 4. Returns a structured, tiered list with evidence.
  */
-export async function preSearch(
-  cwd: string,
-  rawQuery: string,
-): Promise<PreSearchResult> {
+export async function preSearch(cwd: string, rawQuery: string): Promise<PreSearchResult> {
   const startTime = Date.now();
 
   // 1. Query decomposition
@@ -108,11 +104,7 @@ export async function preSearch(
         if (entry) candidateMap.set(c.path, entry);
       }
       if (candidateMap.size > 0) {
-        reranked = await rerankCandidates(
-          rawQuery,
-          scored.slice(0, 30),
-          candidateMap,
-        );
+        reranked = await rerankCandidates(rawQuery, scored.slice(0, 30), candidateMap);
         rerankUsed = true;
       }
     } catch {
@@ -138,16 +130,12 @@ export async function preSearch(
 
 // ── Formatting ────────────────────────────────────────────────────────────
 
-function formatResults(
-  plan: QueryPlan,
-  scored: RerankedFile[],
-  hitBuildCap: boolean,
-): string {
+function formatResults(plan: QueryPlan, scored: RerankedFile[], hitBuildCap: boolean): string {
   if (scored.length === 0) return "";
 
-  const highly = scored.filter((s) => s.relevanceScore >= 0.60);
-  const probably = scored.filter((s) => s.relevanceScore >= 0.30 && s.relevanceScore < 0.60);
-  const mentioned = scored.filter((s) => s.relevanceScore >= 0.10 && s.relevanceScore < 0.30);
+  const highly = scored.filter((s) => s.relevanceScore >= 0.6);
+  const probably = scored.filter((s) => s.relevanceScore >= 0.3 && s.relevanceScore < 0.6);
+  const mentioned = scored.filter((s) => s.relevanceScore >= 0.1 && s.relevanceScore < 0.3);
 
   const lines: string[] = [];
   lines.push(
@@ -165,7 +153,9 @@ function formatResults(
     lines.push(`\n## Highly Relevant (read these first)`);
     for (const s of highly.slice(0, 7)) {
       const reasonStr = s.reasons.slice(0, 2).join(", ");
-      lines.push(`${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`);
+      lines.push(
+        `${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`,
+      );
       fileNum++;
     }
   }
@@ -174,7 +164,9 @@ function formatResults(
     lines.push(`\n## Probably Relevant`);
     for (const s of probably.slice(0, 5)) {
       const reasonStr = s.reasons.slice(0, 2).join(", ");
-      lines.push(`${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`);
+      lines.push(
+        `${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`,
+      );
       fileNum++;
     }
   }
@@ -203,10 +195,8 @@ function formatResults(
   } else if (plan.entities.length > 0 || plan.grepTerms.length > 0) {
     // No highly relevant files — warn about likely missing terms
     const topTerms = [...new Set([...plan.entities, ...plan.grepTerms])].slice(0, 5);
-    const missing = topTerms.filter((t) =>
-      !scored.some((s) =>
-        s.reasons.some((r) => r.toLowerCase().includes(t.toLowerCase())),
-      ),
+    const missing = topTerms.filter(
+      (t) => !scored.some((s) => s.reasons.some((r) => r.toLowerCase().includes(t.toLowerCase()))),
     );
     if (missing.length > 0) {
       lines.push(
@@ -221,30 +211,57 @@ function formatResults(
 // ── Fallback ──────────────────────────────────────────────────────────────
 
 const RG_GLOBS = [
-  "-g", "*.ts", "-g", "*.tsx", "-g", "*.js", "-g", "*.jsx",
-  "-g", "*.vue", "-g", "*.svelte", "-g", "*.py", "-g", "*.go",
-  "-g", "*.rs", "-g", "*.rb", "-g", "*.java", "-g", "*.kt",
-  "-g", "*.swift", "-g", "*.c", "-g", "*.cpp", "-g", "*.h", "-g", "*.hpp",
+  "-g",
+  "*.ts",
+  "-g",
+  "*.tsx",
+  "-g",
+  "*.js",
+  "-g",
+  "*.jsx",
+  "-g",
+  "*.vue",
+  "-g",
+  "*.svelte",
+  "-g",
+  "*.py",
+  "-g",
+  "*.go",
+  "-g",
+  "*.rs",
+  "-g",
+  "*.rb",
+  "-g",
+  "*.java",
+  "-g",
+  "*.kt",
+  "-g",
+  "*.swift",
+  "-g",
+  "*.c",
+  "-g",
+  "*.cpp",
+  "-g",
+  "*.h",
+  "-g",
+  "*.hpp",
 ];
 
-function fallbackRipgrep(
-  cwd: string,
-  plan: QueryPlan,
-): ScoredFile[] {
+function fallbackRipgrep(cwd: string, plan: QueryPlan): ScoredFile[] {
   if (plan.grepTerms.length === 0) return [];
 
   const seen = new Set<string>();
   const results: ScoredFile[] = [];
 
   for (const term of plan.grepTerms.slice(0, 3)) {
-    const result = spawnSync("rg", [
-      "-l", "--hidden", ...RG_GLOBS, "--", term, ".",
-    ], { cwd, timeout: 5000, encoding: "utf-8" });
+    const result = spawnSync("rg", ["-l", "--hidden", ...RG_GLOBS, "--", term, "."], {
+      cwd,
+      timeout: 5000,
+      encoding: "utf-8",
+    });
     const out = result.stdout?.trim() ?? "";
     if (!out) continue;
-    const files = out
-      .split("\n")
-      .filter((f) => f && !seen.has(f));
+    const files = out.split("\n").filter((f) => f && !seen.has(f));
     files.forEach((f) => seen.add(f));
     for (const f of files) {
       results.push({ path: f, score: 1, reasons: ["rg match"] });

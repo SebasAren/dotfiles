@@ -26,7 +26,7 @@ export interface WebSearchDetails {
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 
-import { Type } from "typebox";
+import { Type } from "@sinclair/typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
 
 export const WebSearchParams = Type.Object({
