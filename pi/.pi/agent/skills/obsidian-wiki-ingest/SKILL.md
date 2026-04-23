@@ -18,8 +18,6 @@ Process sources into the persistent wiki at `~/Documents/wiki/`.
 │   ├── papers/            # Academic papers, PDFs
 │   ├── videos/            # YouTube videos (transcripts only, via yt-dlp)
 ├── wiki/                  # LLM-maintained knowledge base
-│   ├── index.md           # Catalog of all wiki pages
-│   ├── log.md             # Chronological activity log (append-only)
 │   ├── concepts/          # Concept & topic pages
 │   ├── entities/          # Entity pages (people, places, things)
 │   ├── sources/           # Source summaries
@@ -34,7 +32,7 @@ Process sources into the persistent wiki at `~/Documents/wiki/`.
 2. **The wiki is LLM-owned** — create, update, link, and maintain all pages
 3. **Cross-reference aggressively** — use `[[wiki links]]` for all references
 4. **File valuable outputs back** — save analyses as wiki pages, not in chat history
-5. **Keep index.md and log.md current** — update on every operation
+5. **Discovery is search-based** — `wiki_search` replaces manual index maintenance
 
 ## Inbox Ingest Flow
 
@@ -108,22 +106,7 @@ Not all sources deserve equal trust. Apply critical thinking based on source typ
 5. **Extract and update entities** in `wiki/entities/<name>.md`.
 6. **Extract and update concepts** in `wiki/concepts/<name>.md`.
 7. **Update synthesis pages** if the source shifts high-level understanding.
-8. **Update index.md and log.md** — do these **together** in one pass, immediately after creating pages. Do NOT defer index updates.
-   - **index.md**: Add every new page with a one-line summary under the correct section (`## Concepts`, `## Entities`, etc.).
-   - **log.md**: Append:
-     ```markdown
-     ## [YYYY-MM-DD] ingest | Source Title
-     - Created [[source-title]] from raw/category/file.md
-     - Created concepts: [[concept-a]], [[concept-b]]
-     - Created entities: [[entity-a]], [[entity-b]]
-     - Updated [[existing-page]]
-     - Key insight: ...
-     ```
-   - **Verify**: After updating, confirm every new page appears in index.md:
-     ```bash
-     for slug in <new-pages>; do grep -q "[[$slug]]" wiki/index.md || echo "MISSING: $slug"; done
-     ```
-9. **Report** — pages created/updated, key insights, contradictions. Include any credibility warnings for low-tier sources.
+8. **Report** — pages created/updated, key insights, contradictions. Include any credibility warnings for low-tier sources.
 
 A single source may touch 10-15 pages. Stay involved with the user during ingest.
 

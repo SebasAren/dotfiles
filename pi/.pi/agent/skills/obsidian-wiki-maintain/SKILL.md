@@ -13,8 +13,6 @@ Health checks and maintenance for the wiki at `~/Documents/wiki/`.
 
 Report:
 - Page count by category (`find wiki/concepts/ -name '*.md' | wc -l`, etc.)
-- Most recent ingest date from `grep "^## \[" wiki/log.md | tail -1`
-- Last 5 log entries: `grep "^## \[" wiki/log.md | tail -5`
 - Inbox contents: `ls raw/inbox/`
 - Topical coverage overview: run `wiki_search` with key topics to spot-check coverage
 - Any obvious issues
@@ -32,7 +30,6 @@ Run these checks:
 | **Concepts without pages** | Terms mentioned in `[[links]]` where the target file doesn't exist. `rg -o '\[\[([^\]]+)\]\]' wiki/ | sort -u` then check each. |
 | **Contradictions** | Claims on different pages that conflict. Flag with `> ⚠️ Contradicts [[page]]: ...` |
 | **Stale claims** | Older pages superseded by newer sources. |
-| **Log/Index drift** | Pages in log.md not in index.md or vice versa. |
 | **Inbox orphans** | Files in `raw/inbox/` older than a few days. |
 
 Report findings as a checklist. For each issue, suggest a fix. Ask which to apply, then apply them.
@@ -42,4 +39,3 @@ Report findings as a checklist. For each issue, suggest a fix. Ask which to appl
 - `[[wiki links]]` for all cross-references
 - Filenames: `lowercase-with-dashes`
 - Mark contradictions: `> ⚠️ Contradicts [[page]]: description`
-- Update `index.md` and `log.md` after any structural changes
