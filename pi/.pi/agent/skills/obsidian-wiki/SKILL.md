@@ -37,6 +37,7 @@ Operate on Karpathy's LLM-wiki pattern — an LLM-maintained knowledge base in m
 3. **Cross-reference aggressively** — use `[[wiki links]]` for all cross-references. Every page should link to related concepts, entities, and sources.
 4. **File valuable outputs back** — comparisons, analyses, discoveries should be saved as wiki pages, not left in chat history.
 5. **Keep index.md and log.md current** — update them on every operation.
+6. **Videos must be watched** — YouTube videos and video files in the inbox must always be transcribed and fully ingested. Never treat a metadata clip, excerpt, or auto-sub file as sufficient. The transcript must be downloaded (if needed), read, and processed into the wiki just like any other source.
 
 ## Operations
 
@@ -66,11 +67,14 @@ Alternatively: `/skill:obsidian-wiki ingest <path-or-url>` for explicit paths.
 1. **Read the source.**
    - **Local file:** `read` it directly.
    - **URL (web):** `web_fetch` it.
-   - **URL (YouTube):** Use `yt-dlp` to fetch the transcript:
+   - **URL (YouTube):** Use `yt-dlp` to fetch the transcript. This is mandatory — the video must be "watched" via its transcript:
      ```bash
      yt-dlp --write-auto-sub --sub-format json3 --skip-download --output "{vault}/raw/videos/{id}.%(ext)s" {url}
      ```
-     Then `read` the resulting `.json3` transcript file. If `--write-auto-sub` fails, try `--write-sub` (manual captions). If no captions exist, report to the user: "No captions available for this video."
+     Then `read` the resulting `.json3` transcript file and process it through the full ingest pipeline (discuss, create source summary, extract entities/concepts, etc.).
+     - If `--write-auto-sub` fails, try `--write-sub` (manual captions).
+     - If no captions of any kind exist, report to the user: "No captions available for this video."
+     - Do NOT skip ingest because the video was "already clipped" or because metadata exists. The transcript is the source of truth.
    - **PDF:** Extract text.
 2. **Discuss key takeaways** with the user briefly — what's notable, surprising, or contradictory.
 3. **Create a source summary** in `wiki/sources/<slug.md>` — filename from source title, lowercase-dashes.
