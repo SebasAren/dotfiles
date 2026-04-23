@@ -15,6 +15,7 @@ describe("explore extension", () => {
     const mockApi = {
       registerTool: mock(() => {}),
       registerCommand: mock(() => {}),
+      on: mock(() => {}),
     };
     // Should not throw
     expect(() => exploreExtension(mockApi as any)).not.toThrow();
@@ -27,6 +28,7 @@ describe("explore extension", () => {
         registeredTools.push(tool);
       },
       registerCommand: mock(() => {}),
+      on: mock(() => {}),
     };
     exploreExtension(mockApi as any);
     expect(registeredTools).toHaveLength(1);
@@ -40,6 +42,7 @@ describe("explore extension", () => {
       registerCommand: (name: string, command: any) => {
         registeredCommands.push({ name, command });
       },
+      on: mock(() => {}),
     };
     exploreExtension(mockApi as any);
     expect(registeredCommands).toHaveLength(1);

@@ -1,151 +1,295 @@
 /**
- * Pre-search module — extracts search terms from queries, runs ripgrep,
- * and optionally boosts results with tree-sitter symbol outlines.
+ * Pre-search module — orchestrates query planning, in-memory index search,
+ * and structured result formatting for the explore subagent.
  */
 
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { extractSymbols, type SymbolOutline } from "@pi-ext/shared";
+import { planQuery, type QueryPlan } from "./query-planner";
+import { FileIndex, type ScoredFile, type FileEntry } from "./file-index";
+import { rerankCandidates, type RerankedFile } from "./reranker";
 
-/** Common English stop words to exclude from search terms. */
-export const STOP_WORDS = new Set([
-  "the",
-  "and",
-  "for",
-  "with",
-  "from",
-  "that",
-  "this",
-  "find",
-  "look",
-  "explore",
-  "related",
-  "about",
-  "into",
-  "what",
-  "where",
-  "which",
-  "how",
-  "all",
-  "any",
-  "some",
-  "will",
-  "also",
-  "just",
-  "than",
-  "then",
-  "there",
-  "their",
-  "them",
-  "they",
-  "these",
-  "those",
-  "other",
-  "more",
-  "most",
-  "very",
-  "much",
-  "many",
-  "such",
-  "does",
-  "dont",
-  "should",
-  "could",
-  "would",
-  "only",
-  "even",
-  "still",
-  "already",
-  "not",
-  "but",
-  "can",
-  "are",
-  "was",
-  "were",
-  "been",
-  "being",
-  "did",
-  "has",
-  "had",
-  "its",
-  "you",
-  "your",
-  "our",
-  "use",
-  "used",
-  "using",
-  "need",
-  "like",
-  "want",
-  "get",
-  "got",
-  "over",
-  "under",
-]);
+// Module-level cache: repo cwd → FileIndex
+const indexCache = new Map<string, FileIndex>();
 
-/** Extract 2-5 search terms from a natural language query. */
-export function extractSearchTerms(query: string): string[] {
-  // Use text before any injected markers
-  const text = query.split("\n[")[0];
+export interface PreSearchStats {
+  indexSize: number;
+  queryTimeMs: number;
+  filesSurfaced: number;
+  snippetsInjected: number;
+  fallbackToRipgrep: boolean;
+  rerankUsed: boolean;
+}
 
-  // Extract quoted strings first (highest priority)
-  const quoted: string[] = [];
-  for (const m of text.matchAll(/["']([^"']{2,40})["']/g)) {
-    quoted.push(m[1]);
-  }
+export interface PreSearchResult {
+  text: string;
+  stats: PreSearchStats;
+}
 
-  // Extract distinctive words >= 3 chars
-  const words = text
-    .replace(/[^a-zA-Z0-9\s_-]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w.toLowerCase()));
-
-  // Combine: quoted phrases first, then unique words
-  const seen = new Set(quoted.map((q) => q.toLowerCase()));
-  const result = [...quoted];
-  for (const w of words) {
-    if (!seen.has(w.toLowerCase())) {
-      seen.add(w.toLowerCase());
-      result.push(w);
+/** Invalidate a file path in every cached index that contains it. */
+export function invalidateFilePath(filePath: string, sessionCwd: string): void {
+  const absPath =
+    filePath.startsWith("/") ? filePath : join(sessionCwd, filePath);
+  for (const [cwd, index] of indexCache.entries()) {
+    if (absPath.startsWith(cwd + "/")) {
+      const rel = absPath.slice(cwd.length + 1);
+      index.invalidate(rel);
     }
   }
-  return result.slice(0, 5);
 }
 
-/** Glob patterns for pre-search (ripgrep -g flags). */
-export const RG_GLOBS = [
-  "*.ts",
-  "*.tsx",
-  "*.js",
-  "*.jsx",
-  "*.vue",
-  "*.svelte",
-  "*.py",
-  "*.go",
-  "*.rs",
-  "*.rb",
-  "*.java",
-  "*.kt",
-  "*.swift",
-  "*.c",
-  "*.cpp",
-  "*.h",
-  "*.hpp",
-]
-  .map((e) => `-g '${e}'`)
-  .join(" ");
+/**
+ * Run intelligent pre-search before spawning the subagent.
+ *
+ * 1. Decomposes the query into a structured plan.
+ * 2. Builds or reuses an in-memory file index of the repo.
+ * 3. Ranks files by multi-signal relevance.
+ * 4. Returns a structured, tiered list with evidence and optional snippets.
+ */
+export async function preSearch(
+  cwd: string,
+  rawQuery: string,
+  opts: { symbolBoost?: boolean } = {},
+): Promise<PreSearchResult> {
+  const startTime = Date.now();
 
-/** A single file result with optional symbol outline. */
-export interface PreSearchFile {
-  path: string;
-  outline?: SymbolOutline;
-  /** Relevance boost score from symbol matching */
-  boost?: number;
+  // 1. Query decomposition
+  const plan = planQuery(rawQuery);
+
+  // 2. Build or reuse index
+  let index = indexCache.get(cwd);
+  if (!index) {
+    index = new FileIndex(cwd);
+    await index.build();
+    indexCache.set(cwd, index);
+  }
+
+  // 3. Heuristic search (fast)
+  let scored = index.search(plan);
+
+  // 4. Fall back to ripgrep if index returned nothing (empty repo or parsing issues)
+  let fallback = false;
+  if (scored.length === 0 && index.size < 10) {
+    const rgResults = await fallbackRipgrep(cwd, plan);
+    scored = rgResults;
+    fallback = true;
+  }
+
+  // 5. Semantic reranking (cheap API call, big quality boost)
+  let reranked: RerankedFile[] = scored.map((c) => ({
+    ...c,
+    relevanceScore: heuristicToRelevance(c.score),
+  }));
+  let rerankUsed = false;
+  if (!fallback) {
+    try {
+      // Gather entries for the top ~30 heuristic candidates
+      const candidateMap = new Map<string, FileEntry>();
+      for (const c of scored.slice(0, 30)) {
+        const entry = index.getEntry(c.path);
+        if (entry) candidateMap.set(c.path, entry);
+      }
+      if (candidateMap.size > 0) {
+        reranked = await rerankCandidates(
+          rawQuery,
+          scored.slice(0, 30),
+          candidateMap,
+        );
+        rerankUsed = true;
+      }
+    } catch {
+      // Graceful fallback — keep heuristic scores already set above
+    }
+  }
+
+  // 6. Snippet injection for top semantic matches
+  let snippetsInjected = 0;
+  let snippetText = "";
+  if (opts.symbolBoost !== false && reranked.length > 0) {
+    const topFiles = reranked.slice(0, 3);
+    const snippetParts: string[] = [];
+    for (const sf of topFiles) {
+      try {
+        const source = await readFile(join(cwd, sf.path), "utf-8");
+        const lines = source.split("\n").slice(0, 50);
+        snippetParts.push(
+          `\n## Snippet: ./${sf.path} (lines 1-${Math.min(50, lines.length)})\n` +
+          "```\n" +
+          lines.join("\n") +
+          "\n```",
+        );
+        snippetsInjected++;
+      } catch {
+        // Skip unreadable files gracefully
+      }
+    }
+    snippetText = snippetParts.join("");
+  }
+
+  // 7. Format results
+  const text = formatResults(plan, reranked, snippetText);
+
+  return {
+    text,
+    stats: {
+      indexSize: index.size,
+      queryTimeMs: Date.now() - startTime,
+      filesSurfaced: reranked.length,
+      snippetsInjected,
+      fallbackToRipgrep: fallback,
+      rerankUsed,
+    },
+  };
 }
 
-/** Run a shell command with a timeout, returning stdout. */
-function runCmd(cwd: string, cmd: string, args: string[], timeoutMs = 5000): Promise<string> {
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+function heuristicToRelevance(score: number): number {
+  return Math.min(1, score / (score + 8));
+}
+
+// ── Formatting ────────────────────────────────────────────────────────────
+
+function formatResults(
+  plan: QueryPlan,
+  scored: RerankedFile[],
+  snippets: string,
+): string {
+  if (scored.length === 0) return "";
+
+  const highly = scored.filter((s) => s.relevanceScore >= 0.60);
+  const probably = scored.filter((s) => s.relevanceScore >= 0.30 && s.relevanceScore < 0.60);
+  const mentioned = scored.filter((s) => s.relevanceScore >= 0.10 && s.relevanceScore < 0.30);
+
+  const lines: string[] = [];
+  lines.push(
+    "\n\n[PRE-SEARCH RESULTS]",
+    `Query analysis: ${plan.intent} | entities: ${plan.entities.join(", ") || "none"} | scope: ${plan.scopeHints.join(", ") || "none"}`,
+  );
+
+  let fileNum = 1;
+
+  if (highly.length > 0) {
+    lines.push(`\n## Highly Relevant (read these first)`);
+    for (const s of highly.slice(0, 7)) {
+      const reasonStr = s.reasons.slice(0, 2).join(", ");
+      lines.push(`${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`);
+      fileNum++;
+    }
+  }
+
+  if (probably.length > 0) {
+    lines.push(`\n## Probably Relevant`);
+    for (const s of probably.slice(0, 5)) {
+      const reasonStr = s.reasons.slice(0, 2).join(", ");
+      lines.push(`${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%${reasonStr ? ` — ${reasonStr}` : ""}`);
+      fileNum++;
+    }
+  }
+
+  if (mentioned.length > 0) {
+    lines.push(`\n## Mentioned in code`);
+    for (const s of mentioned.slice(0, 5)) {
+      lines.push(`${fileNum}. \`./${s.path}\` — score ${Math.round(s.relevanceScore * 100)}%`);
+      fileNum++;
+    }
+  }
+
+  // Strategy hint
+  if (highly.length > 0) {
+    let hint = "";
+    if (plan.intent === "define") {
+      hint = "Start with file #1 (definitions), then follow import links.";
+    } else if (plan.intent === "use") {
+      hint = "Start with file #1 (primary usage), then check files that import it.";
+    } else if (plan.intent === "arch") {
+      hint = "Start with file #1 (entry point), then follow outward to dependencies.";
+    } else if (plan.intent === "change") {
+      hint = "Start with file #1 (main location), then check tests and related files.";
+    }
+    if (hint) lines.push(`\n[STRATEGY HINT: ${hint}]`);
+  } else if (plan.entities.length > 0 || plan.grepTerms.length > 0) {
+    // No highly relevant files — warn about likely missing terms
+    const topTerms = [...new Set([...plan.entities, ...plan.grepTerms])].slice(0, 5);
+    const missing = topTerms.filter((t) =>
+      !scored.some((s) =>
+        s.reasons.some((r) => r.toLowerCase().includes(t.toLowerCase())),
+      ),
+    );
+    if (missing.length > 0) {
+      lines.push(
+        `\n[⚠ No strong matches found for: ${missing.join(", ")} — these may be in external dependencies or use different terminology.]`,
+      );
+    }
+  }
+
+  lines.push(snippets);
+
+  return lines.join("\n");
+}
+
+// ── Fallback ──────────────────────────────────────────────────────────────
+
+async function fallbackRipgrep(
+  cwd: string,
+  plan: QueryPlan,
+): Promise<ScoredFile[]> {
+  if (plan.grepTerms.length === 0) return [];
+
+  const seen = new Set<string>();
+  const results: ScoredFile[] = [];
+
+  for (const term of plan.grepTerms.slice(0, 3)) {
+    const escaped = term.replace(/'/g, "'\\''");
+    const out = await runCmd(cwd, "sh", [
+      "-c",
+      `rg -l --hidden ${rgGlobs()} '${escaped}' . 2>/dev/null | head -20`,
+    ]);
+    if (!out.trim()) continue;
+    const files = out
+      .trim()
+      .split("\n")
+      .filter((f) => !seen.has(f));
+    files.forEach((f) => seen.add(f));
+    for (const f of files) {
+      results.push({ path: f, score: 1, reasons: ["rg match"] });
+    }
+  }
+
+  return results;
+}
+
+function rgGlobs(): string {
+  return [
+    "*.ts",
+    "*.tsx",
+    "*.js",
+    "*.jsx",
+    "*.vue",
+    "*.svelte",
+    "*.py",
+    "*.go",
+    "*.rs",
+    "*.rb",
+    "*.java",
+    "*.kt",
+    "*.swift",
+    "*.c",
+    "*.cpp",
+    "*.h",
+    "*.hpp",
+  ]
+    .map((e) => `-g '${e}'`)
+    .join(" ");
+}
+
+function runCmd(
+  cwd: string,
+  cmd: string,
+  args: string[],
+  timeoutMs = 5000,
+): Promise<string> {
   return new Promise((resolve) => {
     const proc = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
     proc.stdin.end();
@@ -175,118 +319,4 @@ function runCmd(cwd: string, cmd: string, args: string[], timeoutMs = 5000): Pro
       resolveOnce("");
     });
   });
-}
-
-/**
- * Run grep before spawning subagent to give it a head start on file discovery.
- *
- * When `symbolBoost` is enabled, reads up to 50 candidate files and runs
- * tree-sitter symbol extraction. Files whose symbols match the search terms
- * get a relevance boost and their top symbols are included in the output.
- */
-export async function preSearch(
-  cwd: string,
-  rawQuery: string,
-  opts: { symbolBoost?: boolean } = {},
-): Promise<string> {
-  const terms = extractSearchTerms(rawQuery);
-  if (terms.length === 0) return "";
-
-  const seen = new Set<string>();
-
-  // Run greps for top 3 terms in parallel
-  const searches = terms.slice(0, 3).map(async (term) => {
-    const escaped = term.replace(/'/g, "'\\''");
-    const out = await runCmd(cwd, "sh", [
-      "-c",
-      `rg -l --hidden ${RG_GLOBS} '${escaped}' . 2>/dev/null | head -20`,
-    ]);
-    if (!out.trim()) return null;
-    const files = out
-      .trim()
-      .split("\n")
-      .filter((f) => !seen.has(f));
-    files.forEach((f) => seen.add(f));
-    return { term, files };
-  });
-
-  const grepResults = (await Promise.all(searches)).filter(
-    (r): r is { term: string; files: string[] } => r !== null,
-  );
-
-  if (grepResults.length === 0) return "";
-
-  // Optional symbol-outline boost phase
-  let boostedFiles: Map<string, PreSearchFile> | undefined;
-  if (opts.symbolBoost) {
-    const candidates = grepResults.flatMap((r) => r.files).slice(0, 50);
-    boostedFiles = await boostWithSymbols(cwd, candidates, terms);
-  }
-
-  // Format results: include symbol outline hints when available
-  const results = grepResults.map(({ term, files }) => {
-    const fileLines = files.map((f) => {
-      const info = boostedFiles?.get(f);
-      if (info?.outline && info.boost && info.boost > 0) {
-        const topSymbols = info.outline.symbols
-          .filter((s) => s.name)
-          .slice(0, 3)
-          .map((s) => `${s.name}(${s.kind})`)
-          .join(", ");
-        return `${f} [${topSymbols}]`;
-      }
-      return f;
-    });
-    return `"${term}": ${fileLines.join(", ")}`;
-  });
-
-  return (
-    `\n\n[PRE-SEARCH RESULTS — grep already found these potentially relevant files. ` +
-    `Skim the list and read only the ones likely related to your query. ` +
-    `You do NOT need to re-search for these terms.]\n${results.join("\n")}`
-  );
-}
-
-/** Read candidate files and boost those whose symbols match search terms. */
-async function boostWithSymbols(
-  cwd: string,
-  files: string[],
-  terms: string[],
-): Promise<Map<string, PreSearchFile>> {
-  const map = new Map<string, PreSearchFile>();
-  const lowerTerms = terms.map((t) => t.toLowerCase());
-
-  const start = Date.now();
-  const MAX_SYMBOL_TIME_MS = 2000;
-  const MAX_FILE_SIZE = 50_000;
-
-  for (const file of files) {
-    if (Date.now() - start > MAX_SYMBOL_TIME_MS) break;
-
-    try {
-      const fullPath = join(cwd, file);
-      // stat + read in one shot using readFile; if it's huge the promise rejects or we check after
-      const source = await readFile(fullPath, "utf-8");
-      if (source.length > MAX_FILE_SIZE) continue;
-
-      const outline = await extractSymbols(file, source);
-      if (!outline || outline.symbols.length === 0) continue;
-
-      let boost = 0;
-      for (const sym of outline.symbols) {
-        const nameLower = sym.name.toLowerCase();
-        for (const term of lowerTerms) {
-          if (nameLower.includes(term)) {
-            boost += term.length >= 5 ? 3 : 2; // longer terms = stronger signal
-          }
-        }
-      }
-
-      map.set(file, { path: file, outline, boost });
-    } catch {
-      // Ignore unreadable files
-    }
-  }
-
-  return map;
 }

@@ -60,25 +60,40 @@ Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
    - **URL (web):** `web_fetch` it.
    - **URL (YouTube):** Fetch transcript with `yt-dlp`:
      ```bash
-     yt-dlp --write-auto-sub --sub-format json3 --skip-download \
+     yt-dlp --write-auto-sub --sub-format vtt --convert-subs srt --skip-download \
        --output "$HOME/Documents/llm-wiki/raw/videos/{id}.%(ext)s" {url}
      ```
-     Then `read` the `.json3` transcript. If `--write-auto-sub` fails, try `--write-sub`. If no captions exist, tell the user.
+     Then convert to clean markdown:
+     ```bash
+     # Strip timestamps and formatting, save as .md
+     sed '/^[0-9]/d; /^$/d; /-->/d' "raw/videos/{id}.en.srt" \
+       | sed 's/<[^>]*>//g' | uniq > "raw/videos/{slug}.md"
+     # Remove the intermediate .srt file
+     rm raw/videos/{id}.en.srt
+     ```
+     Then `read` the resulting `.md`. If `--write-auto-sub` fails, try `--write-sub`. If no captions exist, tell the user.
    - **PDF:** Extract text.
 2. **Discuss key takeaways** with the user.
 3. **Create source summary** in `wiki/sources/<slug>.md`.
 4. **Extract and update entities** in `wiki/entities/<name>.md`.
 5. **Extract and update concepts** in `wiki/concepts/<name>.md`.
 6. **Update synthesis pages** if the source shifts high-level understanding.
-7. **Update index.md** — add new pages with one-line summaries.
-8. **Append to log.md:**
-   ```markdown
-   ## [YYYY-MM-DD] ingest | Source Title
-   - Created [[source-title]] from raw/category/file.md
-   - Updated [[concept-name]], [[entity-name]]
-   - Key insight: ...
-   ```
-9. **Report** — pages created/updated, key insights, contradictions.
+7. **Update index.md and log.md** — do these **together** in one pass, immediately after creating pages. Do NOT defer index updates.
+   - **index.md**: Add every new page with a one-line summary under the correct section (`## Concepts`, `## Entities`, etc.).
+   - **log.md**: Append:
+     ```markdown
+     ## [YYYY-MM-DD] ingest | Source Title
+     - Created [[source-title]] from raw/category/file.md
+     - Created concepts: [[concept-a]], [[concept-b]]
+     - Created entities: [[entity-a]], [[entity-b]]
+     - Updated [[existing-page]]
+     - Key insight: ...
+     ```
+   - **Verify**: After updating, confirm every new page appears in index.md:
+     ```bash
+     for slug in <new-pages>; do grep -q "[[$slug]]" wiki/index.md || echo "MISSING: $slug"; done
+     ```
+8. **Report** — pages created/updated, key insights, contradictions.
 
 A single source may touch 10-15 pages. Stay involved with the user during ingest.
 

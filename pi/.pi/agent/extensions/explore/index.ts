@@ -24,7 +24,7 @@ import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
 import { EXPLORE_SYSTEM_PROMPT } from "./constants";
 import { renderCall, renderResult } from "./render";
-import { preSearch } from "./pre-search";
+import { preSearch, invalidateFilePath } from "./pre-search";
 
 /** Shared auth/model infrastructure (created once, reused across subagent runs). */
 let authStorage: AuthStorage | undefined;
@@ -175,11 +175,11 @@ export default function (pi: ExtensionAPI) {
       const defaultTimeout = thoroughness === "thorough" ? 600_000 : 300_000;
       const timeoutMs = params.timeoutMs ?? defaultTimeout;
 
-      // Pre-search: run grep before spawning the subagent to give it a head start
-      const preSearchResults = await preSearch(cwd, params.query, { symbolBoost: true });
+      // Pre-search: run intelligent pre-search before spawning the subagent
+      const preSearchResult = await preSearch(cwd, params.query, { symbolBoost: true });
 
       // Build query with constraints and optional focus files
-      let query = params.query + preSearchResults;
+      let query = params.query + preSearchResult.text;
       const summaryThreshold = Math.floor(maxToolCalls * 0.75);
       query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${maxToolCalls} tool calls]`;
       query +=
@@ -223,7 +223,7 @@ export default function (pi: ExtensionAPI) {
         const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
         return {
           content: [{ type: "text" as const, text: `Explore failed: ${errorMsg}` }],
-          details: { model: getModel(), query, usage: result.usage, success: false },
+          details: { model: getModel(), query, usage: result.usage, success: false, preSearchStats: preSearchResult.stats },
         } as any;
       }
 
@@ -235,6 +235,7 @@ export default function (pi: ExtensionAPI) {
           query,
           usage: result.usage,
           success: true,
+          preSearchStats: preSearchResult.stats,
         },
       };
     },
@@ -247,6 +248,19 @@ export default function (pi: ExtensionAPI) {
       return renderResult(result as any, state, theme, context);
     },
   });
+
+  // Real-time invalidation: when Pi edits a file, drop it from the index
+  // so the next explore call sees fresh data.
+  if ((pi as any).on) {
+    (pi as any).on("tool_call", async (event: any, toolCtx: any) => {
+      if (event.toolName === "edit" || event.toolName === "write") {
+        const filePath = event.input?.path;
+        if (typeof filePath === "string") {
+          invalidateFilePath(filePath, toolCtx?.cwd || "");
+        }
+      }
+    });
+  }
 
   // Register /explore command for interactive use
   pi.registerCommand("explore", {
