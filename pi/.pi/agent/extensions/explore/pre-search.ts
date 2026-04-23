@@ -199,7 +199,7 @@ export async function preSearch(
     const escaped = term.replace(/'/g, "'\\''");
     const out = await runCmd(cwd, "sh", [
       "-c",
-      `rg -l ${RG_GLOBS} '${escaped}' . 2>/dev/null | head -20`,
+      `rg -l --hidden ${RG_GLOBS} '${escaped}' . 2>/dev/null | head -20`,
     ]);
     if (!out.trim()) return null;
     const files = out
