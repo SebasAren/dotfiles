@@ -4,7 +4,6 @@
  */
 
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { planQuery, type QueryPlan } from "./query-planner";
 import { FileIndex, type ScoredFile, type FileEntry } from "./file-index";
@@ -103,32 +102,8 @@ export async function preSearch(
     }
   }
 
-  // 6. Snippet injection for top semantic matches
-  let snippetsInjected = 0;
-  let snippetText = "";
-  if (opts.symbolBoost !== false && reranked.length > 0) {
-    const topFiles = reranked.slice(0, 3);
-    const snippetParts: string[] = [];
-    for (const sf of topFiles) {
-      try {
-        const source = await readFile(join(cwd, sf.path), "utf-8");
-        const lines = source.split("\n").slice(0, 50);
-        snippetParts.push(
-          `\n## Snippet: ./${sf.path} (lines 1-${Math.min(50, lines.length)})\n` +
-          "```\n" +
-          lines.join("\n") +
-          "\n```",
-        );
-        snippetsInjected++;
-      } catch {
-        // Skip unreadable files gracefully
-      }
-    }
-    snippetText = snippetParts.join("");
-  }
-
-  // 7. Format results
-  const text = formatResults(plan, reranked, snippetText);
+  // 6. Format results
+  const text = formatResults(plan, reranked);
 
   return {
     text,
@@ -136,7 +111,7 @@ export async function preSearch(
       indexSize: index.size,
       queryTimeMs: Date.now() - startTime,
       filesSurfaced: reranked.length,
-      snippetsInjected,
+      snippetsInjected: 0,
       fallbackToRipgrep: fallback,
       rerankUsed,
     },
@@ -154,7 +129,6 @@ function heuristicToRelevance(score: number): number {
 function formatResults(
   plan: QueryPlan,
   scored: RerankedFile[],
-  snippets: string,
 ): string {
   if (scored.length === 0) return "";
 
@@ -223,8 +197,6 @@ function formatResults(
       );
     }
   }
-
-  lines.push(snippets);
 
   return lines.join("\n");
 }

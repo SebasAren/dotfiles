@@ -89,7 +89,7 @@ export class FileIndex {
     }
 
     scored.sort((a, b) => b.score - a.score);
-    this.applyProximityBoost(scored);
+    this.applyProximityBoost(scored, plan.intent);
     scored.sort((a, b) => b.score - a.score);
 
     return scored;
@@ -249,6 +249,12 @@ export class FileIndex {
         score += 12;
         reasons.push(`exact entity: ${exactSym.name}`);
       }
+      // Description mentions entity — lifts files whose JSDoc names the concept
+      // even when no symbol matches (e.g. "In-process subagent runner")
+      if (entry.description.toLowerCase().includes(lower)) {
+        score += 4;
+        reasons.push(`description mentions: ${entity}`);
+      }
     }
 
     // Intent boosting
@@ -298,19 +304,29 @@ export class FileIndex {
     };
   }
 
-  private applyProximityBoost(scored: ScoredFile[]): void {
+  private applyProximityBoost(scored: ScoredFile[], intent?: QueryIntent): void {
     const topPaths = new Set(scored.slice(0, 10).map((s) => s.path));
     const boostMap = new Map<string, number>();
+    const secondOrderBoostMap = new Map<string, number>();
 
     for (const file of topPaths) {
-      // Files that import top files
+      // Files that import top files (direct callers)
       const importers = this.importedBy.get(file);
       if (importers) {
         for (const importer of importers) {
           boostMap.set(importer, (boostMap.get(importer) || 0) + 2);
+          // Second-order: files that import the importers
+          const secondOrder = this.importedBy.get(importer);
+          if (secondOrder) {
+            for (const so of secondOrder) {
+              if (!topPaths.has(so)) {
+                secondOrderBoostMap.set(so, (secondOrderBoostMap.get(so) || 0) + 1);
+              }
+            }
+          }
         }
       }
-      // Files that top files import
+      // Files that top files import (dependencies)
       const entry = this.files.get(file);
       if (entry) {
         for (const imp of entry.imports) {
@@ -322,13 +338,21 @@ export class FileIndex {
       }
     }
 
+    // Use-intent: weight callers of matched symbols higher
+    const callerBoost = intent === "use" ? 4 : 2;
+
     for (const s of scored) {
       // Only boost files that already have direct relevance.
       if (s.score === 0) continue;
       const boost = boostMap.get(s.path);
       if (boost) {
-        s.score += boost;
+        s.score += intent === "use" ? callerBoost : boost;
         s.reasons.push("import proximity");
+      }
+      const secondOrder = secondOrderBoostMap.get(s.path);
+      if (secondOrder) {
+        s.score += secondOrder;
+        s.reasons.push("second-order proximity");
       }
     }
   }
@@ -359,11 +383,24 @@ export class FileIndex {
 
 /**
  * Check if two lowercase strings are related (stem/plural overlap).
- * Returns true if either is a prefix of the other with ≥6 shared chars,
- * or if one contains the other.
+ * Returns true if they are equal, or if one is a prefix of the other
+ * at a word boundary (next char is non-alphanumeric or end-of-string),
+ * or if they share ≥6 leading chars (stem/plural overlap).
  */
 function isRelated(a: string, b: string): boolean {
-  if (a.includes(b) || b.includes(a)) return true;
+  if (a === b) return true;
+
+  // Containment check with word-boundary enforcement:
+  // the shorter string must end at a word boundary in the longer string.
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  const idx = longer.indexOf(shorter);
+  if (idx >= 0) {
+    const afterIdx = idx + shorter.length;
+    if (afterIdx === longer.length) return true; // shorter is suffix
+    const nextChar = longer[afterIdx];
+    if (!/[a-z0-9]/.test(nextChar)) return true; // boundary after match
+  }
+
   // Plural / stem overlap: compute longest common prefix
   let shared = 0;
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
@@ -371,12 +408,14 @@ function isRelated(a: string, b: string): boolean {
     else break;
   }
   if (shared >= 6) return true;
+
   // De-pluralised containment (subagents ↔ subagent)
   const aStem = a.replace(/s$/, "");
   const bStem = b.replace(/s$/, "");
   if (aStem !== a || bStem !== b) {
-    return aStem.includes(bStem) || bStem.includes(aStem);
+    return isRelated(aStem, bStem);
   }
+
   return false;
 }
 

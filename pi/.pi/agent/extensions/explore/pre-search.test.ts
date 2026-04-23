@@ -89,7 +89,8 @@ describe("planQuery", () => {
   it("extracts snake_case entities as whole terms", () => {
     const plan = planQuery("How does pre_search work?");
     expect(plan.entities).toContain("pre_search");
-    expect(plan.avoidTerms).toContain("pre");
+    // avoidTerms only flags parts ≤2 chars, so "pre" (3 chars) is NOT flagged
+    expect(plan.avoidTerms).not.toContain("pre");
   });
 
   it("infers file patterns from context", () => {
@@ -101,6 +102,25 @@ describe("planQuery", () => {
   it("extracts scope hints from paths", () => {
     const plan = planQuery("Find the auth logic in agent/extensions/explore");
     expect(plan.scopeHints).toContain("agent/extensions/explore");
+  });
+
+  it("extracts kebab-case tokens as entities", () => {
+    const plan = planQuery("file-index and query-planner in the explore extension");
+    expect(plan.entities).toContain("file-index");
+    expect(plan.entities).toContain("query-planner");
+  });
+
+  it("extracts kebab-case identifiers via regex", () => {
+    const plan = planQuery("How does pre-search work?");
+    expect(plan.entities).toContain("pre-search");
+  });
+
+  it("flags 1-2 char kebab parts as avoidTerms but not 3-char parts", () => {
+    const plan = planQuery("How does wt-config relate to api-gateway?");
+    expect(plan.entities).toContain("wt-config");
+    expect(plan.entities).toContain("api-gateway");
+    expect(plan.avoidTerms).toContain("wt"); // 2 chars → avoid
+    expect(plan.avoidTerms).not.toContain("api"); // 3 chars → keep
   });
 });
 
@@ -181,6 +201,9 @@ describe("FileIndex scoring", () => {
     expect(aIdx).toBe(0);
     expect(bIdx).toBeGreaterThanOrEqual(0);
     expect(results[bIdx].reasons).toContain("import proximity");
+    // use-intent: callers get +4 boost instead of +2
+    const bResult = results[bIdx];
+    expect(bResult.reasons).toContain("import proximity");
   });
 
   it("applies scope hint boost", () => {
@@ -278,4 +301,216 @@ describe("FileIndex scoring with stemming", () => {
 
 describe("preSearch result stats", () => {
   it.todo("returns stats alongside text results");
+});
+
+// isRelated is not exported, but we can test its behavior indirectly via scoring
+describe("isRelated word-boundary enforcement", () => {
+  it("does not match tmux against tmuxedfoo", () => {
+    // tmux is contained in tmuxedfoo, but not at a word boundary
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("tmuxedfoo.ts", {
+      path: "tmuxedfoo.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "tmuxedFoo", line: 1 }],
+      description: "",
+      imports: [],
+      exports: ["tmuxedFoo"],
+      size: 100,
+      mtimeMs: 0,
+    });
+    (idx as any).files.set("tmux.ts", {
+      path: "tmux.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "tmux", line: 1 }],
+      description: "",
+      imports: [],
+      exports: ["tmux"],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const results = idx.search({
+      intent: "define",
+      entities: ["tmux"],
+      grepTerms: ["tmux"],
+      filePatterns: ["*.ts"],
+      scopeHints: [],
+      avoidTerms: [],
+    });
+
+    // tmux.ts should rank higher than tmuxedfoo.ts
+    const tmuxIdx = results.findIndex((r) => r.path === "tmux.ts");
+    const tmuxedIdx = results.findIndex((r) => r.path === "tmuxedfoo.ts");
+    expect(tmuxIdx).toBeGreaterThanOrEqual(0);
+    expect(tmuxedIdx).toBeGreaterThanOrEqual(0);
+    expect(tmuxIdx).toBeLessThan(tmuxedIdx);
+  });
+});
+
+describe("entity description boost", () => {
+  it("boosts files whose description mentions an entity even with no symbol match", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("consumer.ts", {
+      path: "consumer.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "createExplore", line: 1 }],
+      description: "In-process subagent runner for codebase exploration",
+      imports: [],
+      exports: ["createExplore"],
+      size: 100,
+      mtimeMs: 0,
+    });
+    (idx as any).files.set("unrelated.ts", {
+      path: "unrelated.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "other", line: 1 }],
+      description: "Handles caching logic",
+      imports: [],
+      exports: ["other"],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const results = idx.search({
+      intent: "use",
+      entities: ["subagent"],
+      grepTerms: ["subagent"],
+      filePatterns: ["*.ts"],
+      scopeHints: [],
+      avoidTerms: [],
+    });
+
+    const consumerIdx = results.findIndex((r) => r.path === "consumer.ts");
+    const unrelatedIdx = results.findIndex((r) => r.path === "unrelated.ts");
+    expect(consumerIdx).toBeGreaterThanOrEqual(0);
+    expect(results[consumerIdx].reasons).toContain("description mentions: subagent");
+    // consumer should rank above unrelated (which only has grepTerm path match at best)
+    if (unrelatedIdx >= 0) {
+      expect(consumerIdx).toBeLessThan(unrelatedIdx);
+    }
+  });
+});
+
+describe("second-order proximity boost", () => {
+  it("boosts files two hops from top matches when intermediate is outside top-10", () => {
+    const idx = new FileIndex("/fake");
+    // core.ts (defines "target") ← middle.ts (imports core, low score) ← consumer.ts (imports middle)
+    // Add 10+ filler files with higher scores than middle.ts so it falls outside topPaths
+    (idx as any).files.set("core.ts", {
+      path: "core.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "target", line: 1 }],
+      description: "",
+      imports: [],
+      exports: ["target"],
+      size: 100,
+      mtimeMs: 0,
+    });
+    // middle.ts has no symbol match, only file-pattern (+1)
+    (idx as any).files.set("middle.ts", {
+      path: "middle.ts",
+      language: ".ts",
+      symbols: [],
+      description: "",
+      imports: ["./core"],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+    // consumer.ts has a symbol giving it base relevance
+    (idx as any).files.set("consumer.ts", {
+      path: "consumer.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "wrapper", line: 1 }],
+      description: "",
+      imports: ["./middle"],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+    // Add 10 filler files with scope hints to give them score > 1, pushing middle.ts out of top 10
+    for (let i = 0; i < 11; i++) {
+      (idx as any).files.set(`filler${i}/target.ts`, {
+        path: `filler${i}/target.ts`,
+        language: ".ts",
+        symbols: [],
+        description: "",
+        imports: [],
+        exports: [],
+        size: 100,
+        mtimeMs: 0,
+      });
+    }
+    // Build reverse graph
+    (idx as any).importedBy.set("core.ts", new Set(["middle.ts"]));
+    (idx as any).importedBy.set("middle.ts", new Set(["consumer.ts"]));
+
+    const results = idx.search({
+      intent: "use",
+      entities: ["target"],
+      grepTerms: ["target"],
+      filePatterns: ["*.ts"],
+      scopeHints: ["filler0", "filler1", "filler2", "filler3", "filler4", "filler5", "filler6", "filler7", "filler8", "filler9", "filler10"],
+      avoidTerms: [],
+    });
+
+    // core.ts should be #1 with entity match
+    expect(results[0].path).toBe("core.ts");
+    // middle.ts should be outside top 10 (only file-pattern +1, fillers have +3 scope)
+    const middleIdx = results.findIndex((r) => r.path === "middle.ts");
+    expect(middleIdx).toBeGreaterThan(9);
+    // consumer.ts should get second-order proximity (middle → consumer)
+    const consumerIdx = results.findIndex((r) => r.path === "consumer.ts");
+    expect(consumerIdx).toBeGreaterThanOrEqual(0);
+    expect(results[consumerIdx].reasons).toContain("second-order proximity");
+  });
+});
+
+describe("use-intent caller weighting", () => {
+  it("gives larger proximity boost for use-intent than define-intent", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("core.ts", {
+      path: "core.ts",
+      language: ".ts",
+      symbols: [{ kind: "function", name: "target", line: 1 }],
+      description: "",
+      imports: [],
+      exports: ["target"],
+      size: 100,
+      mtimeMs: 0,
+    });
+    (idx as any).files.set("caller.ts", {
+      path: "caller.ts",
+      language: ".ts",
+      symbols: [],
+      description: "target usage",
+      imports: ["./core"],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+    (idx as any).importedBy.set("core.ts", new Set(["caller.ts"]));
+
+    const useResults = idx.search({
+      intent: "use",
+      entities: ["target"],
+      grepTerms: ["target"],
+      filePatterns: ["*.ts"],
+      scopeHints: [],
+      avoidTerms: [],
+    });
+    const defineResults = idx.search({
+      intent: "define",
+      entities: ["target"],
+      grepTerms: ["target"],
+      filePatterns: ["*.ts"],
+      scopeHints: [],
+      avoidTerms: [],
+    });
+
+    const useCallerScore = useResults.find((r) => r.path === "caller.ts")!.score;
+    const defineCallerScore = defineResults.find((r) => r.path === "caller.ts")!.score;
+    // use-intent should give callers a larger boost than define-intent
+    expect(useCallerScore).toBeGreaterThan(defineCallerScore);
+  });
 });

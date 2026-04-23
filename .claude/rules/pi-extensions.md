@@ -74,9 +74,16 @@ globs:
 ## Explore Pre-Search Architecture (post-2025-04 redesign)
 
 - **Don't send raw file content to rerankers** — first 500 chars are mostly imports. Build synthetic documents from `path | description | exports | symbols` (50–150 chars, semantic, import-free).
-- **Preserve compound identifiers** — `pre_search` must stay intact in entity extraction. Short components (`pre`, `search`) become `avoidTerms`, not search terms.
-- **Stem/plural matching is required** — `subagents` must match `runSubagent` (plural→singular, 6+ char prefix). A naive `.includes()` gates the right files out of the reranker candidate pool.
+- **No snippet injection** — was removed because first 50 lines of TS/JS files are almost always import blocks, adding noise and biasing the subagent toward wrong initial guesses. The reranker-ordered tier list is sufficient signal.
+- **Preserve compound identifiers** — `pre_search` must stay intact in entity extraction. Short components ≤2 chars (`pi`, `wt`) become `avoidTerms`; 3-char parts (`api`, `cli`) are kept as they're usually meaningful domain abbreviations.
+- **Kebab-case is a recognized entity shape** — `file-index`, `query-planner`, `pre-search` are extracted as entities (plain-word filter allows `-`, identifier regex has a kebab branch). This is critical for TS module naming conventions.
+- **Stem/plural matching requires word boundaries** — `subagents` must match `runSubagent`, but `tmux` must NOT match `tmuxedFoo`. `isRelated` enforces word-boundary containment (next char must be non-alphanumeric or end-of-string).
+- **Description-entity boost** (+4) — Files whose JSDoc mentions an entity get credit even without symbol matches. Bridges the naming gap (e.g. "subagent" in description when symbols are `createExplore`).
+- **Second-order proximity** — Files two hops from top matches in the `importedBy` graph get +1. Helps surface consumer-of-consumer files. Files need base score >0 to qualify.
+- **Use-intent caller weighting** — When intent is `"use"`, direct callers get +4 (not +2). For "how is X used?" queries, callers ARE the answer.
+- **Barrel imports are invisible to proximity** — `resolveImport` only handles `.` relative imports; `@pi-ext/shared` imports don't build edges. Description-entity boost partially compensates.
 - **Export symbols are noise** — Tree-sitter fallback captures whole export lines (`export interface SubagentResultDetails {`). Skip `kind === "export"` in symbol scoring.
 - **Synthetic reranker via OpenRouter** — `cohere/rerank-4-fast` at `openrouter.ai/api/v1/rerank`. Requires `OPENROUTER_API_KEY` (already set in pi env). Sends query + documents, returns `relevance_score` (0–1).
 - **Tier thresholds must be lenient** — With real reranker scores, use `≥0.60` (Highly), `≥0.30` (Probably), `≥0.10` (Mentioned). `≥0.75` creates empty top tiers for broad queries.
 - **Ripgrep fallback** — If index is empty or repo has <10 source files, fall back to `rg -l` with safe regex. Always run heuristics before reranking so the API sees ~30 candidates, not the whole repo.
+- **Prompt is stated once** — Output format (Files Retrieved / Key Code / Summary) appears only in the OUTPUT FORMAT section of the system prompt. No BUDGET RULE or CRITICAL injections in the query. Repetition was fighting the model rather than structurally solving the problem.

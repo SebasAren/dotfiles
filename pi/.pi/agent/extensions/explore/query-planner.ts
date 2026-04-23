@@ -221,19 +221,20 @@ function extractEntities(text: string): string[] {
   }
 
   // Plain distinctive nouns (all-lowercase, ≥4 chars, not stop words)
+  // Also allows kebab-case tokens (e.g. file-index, query-planner)
   const plainWords = text
     .replace(/[^a-zA-Z0-9\s_-]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length >= 4 && /^[a-z]+$/.test(w) && !STOP_WORDS.has(w));
+    .filter((w) => w.length >= 4 && /^[a-z][a-z-]*[a-z]$/.test(w) && !STOP_WORDS.has(w));
   for (const w of plainWords) {
     if (!seen.has(w)) {
       seen.add(w);
       entities.push(w);
     }
   }
-  // Snake_case, camelCase, PascalCase identifiers
+  // Snake_case, camelCase, PascalCase, kebab-case identifiers
   const idPattern =
-    /\b[a-zA-Z][a-zA-Z0-9]*(?:_[a-zA-Z0-9]+)+\b|\b[a-z]+[A-Z][a-zA-Z0-9]*\b|\b[A-Z][a-z]+[A-Z][a-zA-Z0-9]*\b/g;
+    /\b[a-zA-Z][a-zA-Z0-9]*(?:_[a-zA-Z0-9]+)+\b|\b[a-z]+(?:-[a-z]+)+\b|\b[a-z]+[A-Z][a-zA-Z0-9]*\b|\b[A-Z][a-z]+[A-Z][a-zA-Z0-9]*\b/g;
   for (const m of text.matchAll(idPattern)) {
     const e = m[0];
     if (!seen.has(e.toLowerCase()) && e.length >= 3) {
@@ -296,10 +297,12 @@ function deriveSearchTerms(
       grepTerms.push(e);
     }
 
-    // Flag short components of snake_case as avoidTerms
-    if (e.includes("_")) {
-      for (const part of e.split("_")) {
-        if (part.length <= 3 && !seen.has(part.toLowerCase())) {
+    // Flag short components of snake_case / kebab-case as avoidTerms
+    // Only flag parts ≤2 chars (e.g. "pi", "wt") to preserve 3-char domain terms ("api", "cli")
+    const splitChars = e.includes("_") ? "_" : e.includes("-") ? "-" : null;
+    if (splitChars) {
+      for (const part of e.split(splitChars)) {
+        if (part.length <= 2 && !seen.has(part.toLowerCase())) {
           seen.add(part.toLowerCase());
           avoidTerms.push(part.toLowerCase());
         }

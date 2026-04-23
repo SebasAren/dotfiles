@@ -180,12 +180,7 @@ export default function (pi: ExtensionAPI) {
 
       // Build query with constraints and optional focus files
       let query = params.query + preSearchResult.text;
-      const summaryThreshold = Math.floor(maxToolCalls * 0.75);
       query += `\n\n[Constraints: thoroughness=${thoroughness}, max ${maxToolCalls} tool calls]`;
-      query +=
-        `\n[BUDGET RULE: You MUST start writing your summary by call #${summaryThreshold}. ` +
-        `After ${summaryThreshold} calls, STOP calling tools and write the summary. ` +
-        `You may use up to ${maxToolCalls} calls total, but the LAST ${maxToolCalls - summaryThreshold} must be your summary text.]`;
       if (params.directory) {
         query += `\n[Scope: only look in ${params.directory}]`;
       }
@@ -193,11 +188,6 @@ export default function (pi: ExtensionAPI) {
         query += `\n[Focus files: start by reading these known-relevant files, then explore outward if needed]`;
         query += `\n${params.files.map((f) => `- ${f}`).join("\n")}`;
       }
-      query +=
-        `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
-        `## Files Retrieved, ## Key Code, and ## Summary sections. ` +
-        `A final turn with only tool calls is a FAILED response. ` +
-        `Write the summary NOW if you have ANY relevant information, even if incomplete.]`;
 
       const result = await runSubagent({
         cwd,
