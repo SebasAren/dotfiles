@@ -86,7 +86,7 @@ async function createLibrarianSession(
     // Explicitly allowlist only the extension tools the librarian needs.
     // This prevents the librarian subagent from calling itself (recursion)
     // and disables built-in filesystem tools that don't belong here.
-    tools: ["web_search", "web_fetch", "context7_search", "context7_docs"],
+    tools: ["web_search", "web_fetch", "context7_search", "context7_docs", "wiki_search", "wiki_read"],
     authStorage,
     modelRegistry,
     sessionManager: SessionManager.inMemory(),
@@ -145,17 +145,19 @@ export default function (pi: ExtensionAPI) {
     name: "librarian",
     label: "Librarian",
     description: [
-      "Delegate documentation research to a subagent with access to web search (Exa) and library documentation (Context7).",
-      "Useful for looking up APIs, finding examples, checking best practices, and reading external docs.",
-      "The librarian agent can search the web and fetch up-to-date library documentation.",
+      "Delegate documentation research to a subagent with access to web search (Exa), library docs (Context7), and your personal wiki.",
+      "Useful for looking up APIs, finding examples, checking best practices, reading external docs, and consulting your curated wiki knowledge.",
+      "The librarian agent can search the web, fetch library documentation, and search/read pages from your personal wiki.",
       "You may call librarian up to 4 times in parallel to research different topics simultaneously.",
     ].join(" "),
     promptSnippet: "Research external documentation using web search and Context7",
     promptGuidelines: [
       "Use librarian when you need up-to-date documentation, API references, or examples from external sources.",
+      "When relevant, the librarian can also search your personal wiki (wiki_search) and read curated pages (wiki_read).",
       "Prefer librarian over web_search directly when you need the agent to synthesize findings from multiple sources.",
       "Call librarian up to 4 times in parallel when researching multiple independent topics or libraries.",
       "Requires EXA_API_KEY and/or CONTEXT7_API_KEY environment variables to be set.",
+      "Uses wiki at ~/Documents/wiki/ automatically if tools are available — no extra config needed.",
     ],
     parameters: LibrarianParams,
 

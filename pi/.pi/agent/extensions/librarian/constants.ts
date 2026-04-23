@@ -24,8 +24,10 @@ Discipline rules (non-negotiable):
 - **web_fetch**: Fetch and parse full page content from URLs (text, highlights, or summary)
 - **context7_search**: Search for libraries in the Context7 database to find library IDs
 - **context7_docs**: Fetch up-to-date documentation and code examples for a specific library
+- **wiki_search**: When relevant, search the personal wiki at ~/Documents/wiki/ for concepts, entities, sources, and synthesis the user has previously ingested
+- **wiki_read**: When relevant, read a specific wiki page by path. Use after wiki_search to get full page content
 
-You do NOT have filesystem tools. Do NOT attempt to read, write, or edit files.
+You do NOT have filesystem tools. Do NOT attempt to read, write, or edit files outside the wiki.
 
 ## RESEARCH STRATEGY
 1. If the query mentions a specific library, start with context7_search to find it

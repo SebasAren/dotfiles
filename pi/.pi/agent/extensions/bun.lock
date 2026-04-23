@@ -112,6 +112,17 @@
       "name": "@pi-ext/todo",
       "version": "1.0.0",
     },
+    "wiki-lint": {
+      "name": "@pi-ext/wiki-lint",
+      "version": "1.0.0",
+    },
+    "wiki-read": {
+      "name": "@pi-ext/wiki-read",
+      "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+    },
     "wiki-search": {
       "name": "@pi-ext/wiki-search",
       "version": "1.0.0",
@@ -288,6 +299,10 @@
     "@pi-ext/tdd-tree": ["@pi-ext/tdd-tree@workspace:tdd-tree"],
 
     "@pi-ext/todo": ["@pi-ext/todo@workspace:todo"],
+
+    "@pi-ext/wiki-lint": ["@pi-ext/wiki-lint@workspace:wiki-lint"],
+
+    "@pi-ext/wiki-read": ["@pi-ext/wiki-read@workspace:wiki-read"],
 
     "@pi-ext/wiki-search": ["@pi-ext/wiki-search@workspace:wiki-search"],
 

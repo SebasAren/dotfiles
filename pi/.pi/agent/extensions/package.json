@@ -20,6 +20,7 @@
     "worktree-scope",
     "cheap-clarify",
     "wiki-search",
+"wiki-read",
 "wiki-lint",
     "wiki-stash"
   ],
