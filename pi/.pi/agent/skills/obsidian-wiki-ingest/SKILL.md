@@ -129,7 +129,13 @@ A single source may touch 10-15 pages. Stay involved with the user during ingest
 
 ## Duplicate Check
 
-Before ingesting, use `wiki-search "<topic/keywords>"` to search for existing coverage of the source's topics. If a matching source already exists: "Already ingested. Re-ingest to refresh (overwrites)? Skip?"
+Before ingesting, search for existing coverage of the source's topics using the `wiki-search` CLI via the `bash` tool:
+
+```bash
+wiki-search "<topic/keywords>"
+```
+
+If a matching source already exists: "Already ingested. Re-ingest to refresh (overwrites)? Skip?"
 
 For direct file lookup by slug, check if `wiki/sources/<slug>.md` exists.
 

@@ -62,6 +62,7 @@ globs:
 
 - **Split skills by concern** — monolithic skills waste context because the full SKILL.md loads on every invocation. Split into focused skills (e.g., `obsidian-wiki-query`, `obsidian-wiki-ingest`, `obsidian-wiki-maintain`) so each loads only what it needs.
 - **Skills vs extensions** — Skills are procedural guides (how to ingest, how to lint). For always-available operations like querying/searching, prefer a CLI tool (`~/.local/bin/wiki-search`) over a skill invocation.
+- **CLI tools in skills must be framed as bash commands** — Agents interpret bare tool names (e.g., `use wiki-search "..."`) as native tools they don't have access to and skip them. Always wrap CLI invocations in bash code blocks or explicitly say "via the `bash` tool".
 
 ## New Extension Checklist
 

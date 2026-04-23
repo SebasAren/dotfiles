@@ -54,6 +54,6 @@ Synthesize the answer with `[[wiki links]]` citations. If the answer is valuable
 ## Tips
 
 - Start with the index. It's a catalog of every page with one-line summaries.
-- Use `wiki-search` for topical searches when you don't know the exact page name.
+- Use `wiki-search` (via the `bash` tool) for topical searches when you don't know the exact page name.
 - The synthesis pages (`wiki/synthesis/`) are the broadest — check them for overviews.
 - If you find nothing relevant, say so. Don't fabricate wiki content.
