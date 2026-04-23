@@ -21,16 +21,19 @@ Report:
 
 **Trigger:** `/skill:obsidian-wiki-maintain lint`
 
-Run these checks:
+Run the `wiki_lint` tool to detect structural issues automatically:
+
+```
+wiki_lint:0 {"checks": ["broken-links", "orphans", "missing-h1", "filename", "empty-pages", "inbox-orphans"]}
+```
+
+The tool returns a report with all findings. Then manually check for:
 
 | Check | How |
 |-------|-----|
-| **Orphan pages** | Pages with no inbound `[[links]]` from other wiki pages. Run `wiki_search` with the page title; `details.paths` contains full paths of files that mention it. Preview snippets in the result may be sparse — read the files to verify cross-references, or fall back to `rg -l 'pagename' wiki/`. |
 | **Missing cross-refs** | Pages that mention concepts/entities without `[[linking]]` them. |
-| **Concepts without pages** | Terms mentioned in `[[links]]` where the target file doesn't exist. `rg -o '\[\[([^\]]+)\]\]' wiki/ | sort -u` then check each. |
 | **Contradictions** | Claims on different pages that conflict. Flag with `> ⚠️ Contradicts [[page]]: ...` |
 | **Stale claims** | Older pages superseded by newer sources. |
-| **Inbox orphans** | Files in `raw/inbox/` older than a few days. |
 
 Report findings as a checklist. For each issue, suggest a fix. Ask which to apply, then apply them.
 
