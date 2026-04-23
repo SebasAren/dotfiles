@@ -6,110 +6,7 @@ mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
 mock.module("@mariozechner/pi-tui", piTuiMock);
 mock.module("@sinclair/typebox", typeboxMock);
 
-// We need to extract the functions from the module — they're not exported directly,
-// so we test them by importing the module and checking its behavior indirectly.
-// Instead, let's define extractSearchTerms inline to match the implementation.
-
-/** Replicate of STOP_WORDS from index.ts for direct testing. */
-const STOP_WORDS = new Set([
-  "the",
-  "and",
-  "for",
-  "with",
-  "from",
-  "that",
-  "this",
-  "find",
-  "look",
-  "explore",
-  "related",
-  "about",
-  "into",
-  "what",
-  "where",
-  "which",
-  "how",
-  "all",
-  "any",
-  "some",
-  "will",
-  "also",
-  "just",
-  "than",
-  "then",
-  "there",
-  "their",
-  "them",
-  "they",
-  "these",
-  "those",
-  "other",
-  "more",
-  "most",
-  "very",
-  "much",
-  "many",
-  "such",
-  "does",
-  "dont",
-  "should",
-  "could",
-  "would",
-  "only",
-  "even",
-  "still",
-  "already",
-  "not",
-  "but",
-  "can",
-  "are",
-  "was",
-  "were",
-  "been",
-  "being",
-  "did",
-  "has",
-  "had",
-  "its",
-  "you",
-  "your",
-  "our",
-  "use",
-  "used",
-  "using",
-  "need",
-  "like",
-  "want",
-  "get",
-  "got",
-  "over",
-  "under",
-]);
-
-/** Replicate of extractSearchTerms from index.ts. */
-function extractSearchTerms(query: string): string[] {
-  const text = query.split("\n[")[0];
-
-  const quoted: string[] = [];
-  for (const m of text.matchAll(/["']([^"']{2,40})["']/g)) {
-    quoted.push(m[1]);
-  }
-
-  const words = text
-    .replace(/[^a-zA-Z0-9\s_-]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w.toLowerCase()));
-
-  const seen = new Set(quoted.map((q) => q.toLowerCase()));
-  const result = [...quoted];
-  for (const w of words) {
-    if (!seen.has(w.toLowerCase())) {
-      seen.add(w.toLowerCase());
-      result.push(w);
-    }
-  }
-  return result.slice(0, 5);
-}
+import { extractSearchTerms, STOP_WORDS } from "./pre-search";
 
 describe("extractSearchTerms", () => {
   it("extracts quoted strings as high-priority terms", () => {
@@ -176,5 +73,13 @@ describe("extractSearchTerms", () => {
     expect(result[0]).toBe("delivery tracker");
     expect(result).toContain("tracking");
     expect(result).toContain("status");
+  });
+});
+
+describe("STOP_WORDS", () => {
+  it("is exported as a Set", () => {
+    expect(STOP_WORDS).toBeInstanceOf(Set);
+    expect(STOP_WORDS.has("the")).toBe(true);
+    expect(STOP_WORDS.has("explore")).toBe(true);
   });
 });

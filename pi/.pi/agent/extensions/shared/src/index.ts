@@ -17,3 +17,5 @@ export type { RunSubagentOptions } from "./subagent";
 export { splitIntoSentences, formatAsBulletList } from "./sentences";
 export type { SentenceFragment } from "./sentences";
 export type { SubagentResult, UsageStats } from "./types";
+export { initTreeSitter, getParser, extractSymbols } from "./treesitter";
+export type { SymbolKind, CodeSymbol, SymbolOutline } from "./treesitter";
