@@ -25,6 +25,8 @@ description: Global project conventions — dotfiles, docs structure, and langua
 
 **Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames.
 
+**TypeScript/Bun**: Use `spawnSync` with array args (no shell escaping needed). Do not use `Bun.escapeShellArg` (undefined in Bun 1.3.x) or `Bun.makeTempDir` (doesn't exist) — use `mkdtempSync` from `node:fs` instead.
+
 ## Stow Safety
 
 - Add a `.stowrc` at the repo root with `--target=<home-dir>` and `--ignore=` for non-stowable root files. Prevents accidental `stow */` from pointing to wrong targets.

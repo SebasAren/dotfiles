@@ -58,6 +58,11 @@ globs:
 - **Auto-discovery runner removed**: No longer using `__tests__/all-extensions.test.ts` — it spawned subprocesses with no timeout and caused cross-workspace resolution issues. Run `bun test` from `pi/.pi/agent/extensions/` instead.
 - **Mock pattern**: `mock.module()` from `bun:test` before importing the module under test.
 
+## Pi Skill Design
+
+- **Split skills by concern** — monolithic skills waste context because the full SKILL.md loads on every invocation. Split into focused skills (e.g., `obsidian-wiki-query`, `obsidian-wiki-ingest`, `obsidian-wiki-maintain`) so each loads only what it needs.
+- **Skills vs extensions** — Skills are procedural guides (how to ingest, how to lint). For always-available operations like querying/searching, prefer a CLI tool (`~/.local/bin/wiki-search`) over a skill invocation.
+
 ## New Extension Checklist
 
 1. Create directory with `index.ts`, `package.json`, `tsconfig.json`
