@@ -29,13 +29,15 @@ export interface ScoredFile {
 }
 
 const MAX_INDEXED_FILES = 1500;
-const MAX_BUILD_TIME_MS = 5000;
+const MAX_BUILD_TIME_MS = 20_000;
 const MAX_FILE_SIZE = 50_000;
 
 export class FileIndex {
   private cwd: string;
   private files = new Map<string, FileEntry>();
   private importedBy = new Map<string, Set<string>>();
+  /** Maps package name (from package.json `name` field) to directory path */
+  private packageNameMap = new Map<string, string>();
 
   constructor(cwd: string) {
     this.cwd = cwd;
@@ -65,6 +67,9 @@ export class FileIndex {
       const success = await this.indexFile(relPath);
       if (success) indexed.push(relPath);
     }
+
+    // Populate package name map from package.json files
+    await this.buildPackageNameMap(indexed);
 
     // Second pass: resolve imports and build reverse graph
     for (const relPath of indexed) {
@@ -134,6 +139,7 @@ export class FileIndex {
       "*.py", "*.go", "*.rs", "*.vue", "*.svelte",
       "*.rb", "*.java", "*.kt", "*.swift",
       "*.c", "*.cpp", "*.h", "*.hpp",
+      "*.lua",
     ];
 
     // Try git ls-files first (works in git repos)
@@ -366,26 +372,121 @@ export class FileIndex {
     }
   }
 
-  private resolveImport(fromRelPath: string, importPath: string): string | null {
-    // Only handle relative imports for now
-    if (!importPath.startsWith(".")) return null;
-    const fromDir = path.dirname(fromRelPath);
-    const base = path.join(fromDir, importPath);
-    const candidates = [
-      base,
-      base + ".ts",
-      base + ".tsx",
-      base + ".js",
-      base + ".jsx",
-      base + "/index.ts",
-      base + "/index.js",
-    ];
-    for (const c of candidates) {
-      const normalized = c.replace(/^\.\//, "").replace(/\\/g, "/");
-      if (this.files.has(normalized)) {
-        return normalized;
+  /**
+   * Read package.json files from the index and populate packageNameMap.
+   * Maps package name → directory path (e.g. "@pi-ext/shared" → "shared/src/").
+   */
+  private async buildPackageNameMap(indexed: string[]): Promise<void> {
+    const pkgFiles = indexed.filter(
+      (f) => f.endsWith("/package.json") || f === "package.json",
+    );
+    for (const pkgFile of pkgFiles) {
+      try {
+        const fullPath = path.resolve(this.cwd, pkgFile);
+        const content = await readFile(fullPath, "utf-8");
+        const pkg = JSON.parse(content);
+        if (pkg.name && typeof pkg.name === "string") {
+          const dir = path.dirname(pkgFile);
+          this.packageNameMap.set(
+            pkg.name,
+            dir === "." ? "" : dir.replace(/\\/g, "/"),
+          );
+        }
+      } catch {
+        // skip unparseable package.json
       }
     }
+  }
+
+  private resolveImport(fromRelPath: string, importPath: string): string | null {
+    const fromDir = path.dirname(fromRelPath);
+    let base: string;
+
+    // ── Relative imports ────────────────────────────────────────────────
+    if (importPath.startsWith(".")) {
+      base = path.join(fromDir, importPath);
+      const candidates = [
+        base,
+        base + ".ts",
+        base + ".tsx",
+        base + ".js",
+        base + ".jsx",
+        base + ".mjs",
+        base + ".cjs",
+        base + ".py",
+        base + ".lua",
+        base + "/index.ts",
+        base + "/index.js",
+        base + "/__init__.py",
+        base + "/init.lua",
+      ];
+      for (const c of candidates) {
+        const normalized = c.replace(/^\.\//, "").replace(/\\/g, "/");
+        if (this.files.has(normalized)) return normalized;
+      }
+      return null;
+    }
+
+    // ── Barrel / package imports (non-relative) ─────────────────────────
+    // Try package name map first (e.g. "@pi-ext/shared" → "shared/src/")
+    for (const [pkgName, pkgDir] of this.packageNameMap) {
+      if (importPath === pkgName) {
+        // Exact package match: look for index files in the package root
+        const indexCandidates = [
+          pkgDir + "/index.ts",
+          pkgDir + "/index.js",
+          pkgDir + "/src/index.ts",
+          pkgDir + "/src/index.js",
+          pkgDir + "/__init__.py",
+          pkgDir + "/init.lua",
+        ].filter(Boolean);
+        for (const c of indexCandidates) {
+          if (this.files.has(c)) return c;
+        }
+      } else if (importPath.startsWith(pkgName + "/")) {
+        // Subpath import (e.g. "@pi-ext/shared/test-mocks" → "shared/src/test-mocks.ts")
+        const subpath = importPath.slice(pkgName.length + 1);
+        const candidates = [
+          pkgDir + "/" + subpath + ".ts",
+          pkgDir + "/" + subpath + ".js",
+          pkgDir + "/src/" + subpath + ".ts",
+          pkgDir + "/src/" + subpath + ".js",
+          pkgDir + "/" + subpath + "/index.ts",
+          pkgDir + "/" + subpath + "/index.js",
+          pkgDir + "/" + subpath + ".py",
+          pkgDir + "/" + subpath + ".lua",
+        ].filter(Boolean);
+        for (const c of candidates) {
+          const normalized = c.replace(/^\.\//, "").replace(/\\/g, "/");
+          if (this.files.has(normalized)) return normalized;
+        }
+      }
+    }
+
+    // ── Python module paths (e.g. "mypackage.mymodule") ────────────────
+    if (importPath.includes(".")) {
+      const asPath = importPath.replace(/\./g, "/");
+      const candidates = [
+        asPath + ".py",
+        asPath + "/__init__.py",
+      ];
+      for (const c of candidates) {
+        if (this.files.has(c)) return c;
+      }
+    }
+
+    // ── Lua module paths (e.g. "mymodule.submodule") ───────────────────
+    if (importPath.includes(".")) {
+      const asPath = importPath.replace(/\./g, "/");
+      const candidates = [
+        asPath + ".lua",
+        asPath + "/init.lua",
+      ];
+      for (const c of candidates) {
+        if (this.files.has(c)) return c;
+      }
+    }
+
     return null;
   }
 }
@@ -429,6 +530,17 @@ function isRelated(a: string, b: string): boolean {
 }
 
 function extractDescription(source: string): string {
+  // Lua multi-line comment (--[[ ... ]])
+  const luaMultiline = source.match(/--\[\[[\s\S]*?\]\]/);
+  if (luaMultiline) {
+    return luaMultiline[0]
+      .replace(/^--\[\[\s*/, "")
+      .replace(/\s*\]\]$/, "")
+      .replace(/\s*\n\s*/g, " ")
+      .trim()
+      .slice(0, 200);
+  }
+
   // JSDoc block
   const jsdoc = source.match(/\/\*\*[\s\S]*?\*\//);
   if (jsdoc) {
@@ -439,13 +551,15 @@ function extractDescription(source: string): string {
       .slice(0, 200);
   }
 
-  // Leading single-line comments
+  // Leading single-line comments (// or --)
   const lines = source.split("\n");
   const comments: string[] = [];
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("//")) {
       comments.push(trimmed.replace(/^\/\/\s*/, ""));
+    } else if (trimmed.startsWith("--") && !trimmed.startsWith("--[[")) {
+      comments.push(trimmed.replace(/^--\s*/, ""));
     } else if (trimmed === "" || trimmed.startsWith("import ") || trimmed.startsWith("export ")) {
       continue;
     } else {
@@ -468,21 +582,49 @@ function extractDescription(source: string): string {
 
 export function extractImports(filePath: string, source: string): string[] {
   const ext = path.extname(filePath);
-  if (![".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)) {
-    return [];
-  }
-
   const imports: string[] = [];
-  const importRegex =
-    /import\s+(?:type\s+)?(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
   let match;
-  while ((match = importRegex.exec(source)) !== null) {
-    imports.push(match[1]);
+
+  // ── TypeScript / JavaScript ──────────────────────────────────────────────
+  if (
+    [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].includes(ext)
+  ) {
+    const importRegex =
+      /import\s+(?:type\s+)?(?:{[^}]+}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g;
+    while ((match = importRegex.exec(source)) !== null) {
+      imports.push(match[1]);
+    }
+
+    const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+    while ((match = requireRegex.exec(source)) !== null) {
+      imports.push(match[1]);
+    }
   }
 
-  const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
-  while ((match = requireRegex.exec(source)) !== null) {
-    imports.push(match[1]);
+  // ── Python ───────────────────────────────────────────────────────────────
+  if (ext === ".py") {
+    // from X import Y
+    const fromImport =
+      /^from\s+([\w.]+)\s+import\s+/gm;
+    while ((match = fromImport.exec(source)) !== null) {
+      imports.push(match[1]);
+    }
+    // import X [, Y]
+    const plainImport =
+      /^import\s+([\w.]+)(?:\s*,\s*[\w.]+)*/gm;
+    while ((match = plainImport.exec(source)) !== null) {
+      imports.push(match[1]);
+    }
+  }
+
+  // ── Lua ──────────────────────────────────────────────────────────────────
+  if (ext === ".lua") {
+    // require("X") or require 'X'
+    const luaRequire =
+      /require\s*[(]?\s*['"]([^'"]+)['"]/g;
+    while ((match = luaRequire.exec(source)) !== null) {
+      imports.push(match[1]);
+    }
   }
 
   return imports;

@@ -1,16 +1,16 @@
 ---
 name: obsidian-wiki-ingest
-description: Ingest sources into the local LLM wiki at ~/Documents/llm-wiki/. Use when the user wants to add articles, videos, papers, notes, or URLs to the wiki. Invoke with /skill:obsidian-wiki-ingest or /skill:obsidian-wiki-ingest <path-or-url>.
+description: Ingest sources into the personal wiki at ~/Documents/wiki/. Use when the user wants to add articles, videos, papers, notes, or URLs to the wiki. Invoke with /skill:obsidian-wiki-ingest or /skill:obsidian-wiki-ingest <path-or-url>.
 ---
 
-# Ingest Sources into the LLM Wiki
+# Ingest Sources into the Wiki
 
-Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
+Process sources into the persistent wiki at `~/Documents/wiki/`.
 
 ## Vault Layout
 
 ```
-~/Documents/llm-wiki/
+~/Documents/wiki/
 ├── raw/                   # Immutable source documents (read only)
 │   ├── inbox/             # Staging area — drop files/URLs here, agent moves them
 │   ├── articles/          # Web articles, blog posts, news
@@ -53,6 +53,35 @@ Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
 3. **Ingest each source** (steps below).
 4. **Empty inbox** when done.
 
+## Source Skepticism — Critical Evaluation During Ingest
+
+Not all sources deserve equal trust. Apply critical thinking based on source type:
+
+### Source Credibility Tiers
+
+| Tier | Examples | Default Stance |
+|------|----------|---------------|
+| **High** | Peer-reviewed papers, official docs, established publications | Trust claims unless contradicted by other sources |
+| **Medium** | Blog posts from known authors, conference talks, technical books | Verify surprising claims; note author credentials |
+| **Low** | Reddit/HN/forum posts, social media, random blogs, anonymous sources | **Demand evidence** — flag unsupported claims explicitly |
+
+### Rules for Low-Credibility Sources
+
+1. **Flag unbacked strong claims.** If a Reddit post says "X is definitely the cause of Y" without citing evidence, record the claim but mark it:
+   ```markdown
+   > ⚠️ **Unverified claim** from low-credibility source: "X causes Y" — no evidence provided. See [[related-concept]] for established understanding.
+   ```
+2. **Ask the user before promoting speculation to wiki pages.** If a source makes a surprising or controversial claim, call it out during the discussion step: _"This post claims X without evidence. Should I record this as an unverified claim, or skip it?"_
+3. **Separate observation from interpretation.** A forum post describing a personal experience is a valid data point. The poster's theory about _why_ it happened is not.
+4. **Check for confounding factors.** Forum advice often omits context (environment, versions, prerequisites). Note these gaps.
+5. **Bias awareness.** Reddit/HN threads have selection bias (only people with strong opinions post). A thread full of agreement doesn't make something true.
+
+### When In Doubt
+
+- **Record the claim with a qualifier** ("claimed", "reported", "alleged") rather than as fact
+- **Link to higher-tier sources** that address the same topic, if they exist in the wiki
+- **Never silently drop claims** — the user chose to ingest this source for a reason, so surface the controversy
+
 ## Ingest Steps
 
 1. **Read the source:**
@@ -61,7 +90,7 @@ Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
    - **URL (YouTube):** Fetch transcript with `yt-dlp`:
      ```bash
      yt-dlp --write-auto-sub --sub-format vtt --convert-subs srt --skip-download \
-       --output "$HOME/Documents/llm-wiki/raw/videos/{id}.%(ext)s" {url}
+       --output "$HOME/Documents/wiki/raw/videos/{id}.%(ext)s" {url}
      ```
      Then convert to clean markdown:
      ```bash
@@ -73,12 +102,13 @@ Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
      ```
      Then `read` the resulting `.md`. If `--write-auto-sub` fails, try `--write-sub`. If no captions exist, tell the user.
    - **PDF:** Extract text.
-2. **Discuss key takeaways** with the user.
-3. **Create source summary** in `wiki/sources/<slug>.md`.
-4. **Extract and update entities** in `wiki/entities/<name>.md`.
-5. **Extract and update concepts** in `wiki/concepts/<name>.md`.
-6. **Update synthesis pages** if the source shifts high-level understanding.
-7. **Update index.md and log.md** — do these **together** in one pass, immediately after creating pages. Do NOT defer index updates.
+2. **Evaluate claim strength** — identify the source's credibility tier (see Source Skepticism above). Flag unsupported strong claims and controversial assertions.
+3. **Discuss key takeaways** with the user — surface any flagged claims for their review before writing to the wiki.
+4. **Create source summary** in `wiki/sources/<slug>.md`.
+5. **Extract and update entities** in `wiki/entities/<name>.md`.
+6. **Extract and update concepts** in `wiki/concepts/<name>.md`.
+7. **Update synthesis pages** if the source shifts high-level understanding.
+8. **Update index.md and log.md** — do these **together** in one pass, immediately after creating pages. Do NOT defer index updates.
    - **index.md**: Add every new page with a one-line summary under the correct section (`## Concepts`, `## Entities`, etc.).
    - **log.md**: Append:
      ```markdown
@@ -93,7 +123,7 @@ Process sources into the persistent wiki at `~/Documents/llm-wiki/`.
      ```bash
      for slug in <new-pages>; do grep -q "[[$slug]]" wiki/index.md || echo "MISSING: $slug"; done
      ```
-8. **Report** — pages created/updated, key insights, contradictions.
+9. **Report** — pages created/updated, key insights, contradictions. Include any credibility warnings for low-tier sources.
 
 A single source may touch 10-15 pages. Stay involved with the user during ingest.
 
@@ -109,3 +139,4 @@ For direct file lookup by slug, check if `wiki/sources/<slug>.md` exists.
 - Filenames: `lowercase-with-dashes`
 - Each page: title (H1), summary line, content, related links section
 - Mark contradictions: `> ⚠️ Contradicts [[page]]: description`
+- Mark unverified claims: `> ⚠️ **Unverified claim** from [source-type]: description — no evidence provided.`

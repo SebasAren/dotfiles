@@ -1,11 +1,11 @@
 ---
 name: obsidian-wiki-maintain
-description: Maintain the health of the local LLM wiki at ~/Documents/llm-wiki/. Use for lint checks (contradictions, orphans, stale claims), wiki status reports, and structural maintenance. Invoke with /skill:obsidian-wiki-maintain <lint|status>.
+description: Maintain the health of the personal wiki at ~/Documents/wiki/. Use for lint checks (contradictions, orphans, stale claims), wiki status reports, and structural maintenance. Invoke with /skill:obsidian-wiki-maintain <lint|status>.
 ---
 
-# Maintain the LLM Wiki
+# Maintain the Wiki
 
-Health checks and maintenance for the wiki at `~/Documents/llm-wiki/`.
+Health checks and maintenance for the wiki at `~/Documents/wiki/`.
 
 ## Wiki Status
 

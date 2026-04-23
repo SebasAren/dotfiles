@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const WIKI_DIR = `${process.env.HOME}/Documents/llm-wiki/wiki`;
+const WIKI_DIR = `${process.env.HOME}/Documents/wiki/wiki`;
 const RERANK_MODEL = "cohere/rerank-4-fast";
 const RERANK_URL = "https://openrouter.ai/api/v1/rerank";
 const MAX_CONTENT_CHARS = 500;

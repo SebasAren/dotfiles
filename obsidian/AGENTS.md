@@ -1,6 +1,6 @@
 # Obsidian
 
-Stowed scripts for the LLM wiki at `~/Documents/llm-wiki/`.
+Stowed scripts for the wiki at `~/Documents/wiki/`.
 
 ## What's Here
 

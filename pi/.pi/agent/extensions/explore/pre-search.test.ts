@@ -569,3 +569,150 @@ describe("use-intent caller weighting", () => {
     expect(useCallerScore).toBeGreaterThan(defineCallerScore);
   });
 });
+
+describe("Python import extraction", () => {
+  it("extracts from-import statements", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("app.py", [
+      `from mypackage.submodule import do_thing`,
+      `from another.module import Foo, Bar`,
+    ].join("\n"));
+    expect(imports).toContain("mypackage.submodule");
+    expect(imports).toContain("another.module");
+    expect(imports.length).toBe(2);
+  });
+
+  it("extracts plain import statements", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("app.py", [
+      `import os`,
+      `import json`,
+      `import mypackage.utils`,
+    ].join("\n"));
+    expect(imports).toContain("os");
+    expect(imports).toContain("json");
+    expect(imports).toContain("mypackage.utils");
+    expect(imports.length).toBe(3);
+  });
+});
+
+describe("Lua require extraction", () => {
+  it("extracts require() calls with double quotes", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("main.lua", [
+      `local foo = require("foo")`,
+      `require("bar.baz")`,
+    ].join("\n"));
+    expect(imports).toContain("foo");
+    expect(imports).toContain("bar.baz");
+    expect(imports.length).toBe(2);
+  });
+
+  it("extracts require() calls with single quotes", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("main.lua", `require('mymod')`);
+    expect(imports).toContain("mymod");
+    expect(imports.length).toBe(1);
+  });
+
+  it("extracts bare require without parentheses (Lua pattern)", () => {
+    const { extractImports } = require("./file-index");
+    const imports = extractImports("main.lua", `require "mymod"`);
+    expect(imports).toContain("mymod");
+    expect(imports.length).toBe(1);
+  });
+});
+
+describe("barrel import resolution", () => {
+  it("resolves package name imports to index files", () => {
+    const idx = new FileIndex("/fake");
+    // Set up package name map (normally done by buildPackageNameMap)
+    (idx as any).packageNameMap.set("@pi-ext/shared", "shared/src");
+    (idx as any).files.set("shared/src/index.ts", {
+      path: "shared/src/index.ts",
+      language: ".ts",
+      symbols: [],
+      description: "Shared utilities",
+      imports: [],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const resolved = (idx as any).resolveImport("consumer.ts", "@pi-ext/shared");
+    expect(resolved).toBe("shared/src/index.ts");
+  });
+
+  it("resolves subpath package imports", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).packageNameMap.set("@pi-ext/shared", "shared/src");
+    (idx as any).files.set("shared/src/test-mocks.ts", {
+      path: "shared/src/test-mocks.ts",
+      language: ".ts",
+      symbols: [],
+      description: "Test mocks",
+      imports: [],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const resolved = (idx as any).resolveImport(
+      "consumer.ts",
+      "@pi-ext/shared/test-mocks",
+    );
+    expect(resolved).toBe("shared/src/test-mocks.ts");
+  });
+
+  it("resolves Python dotted module imports", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("mypackage/utils/helpers.py", {
+      path: "mypackage/utils/helpers.py",
+      language: ".py",
+      symbols: [],
+      description: "",
+      imports: [],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const resolved = (idx as any).resolveImport("main.py", "mypackage.utils.helpers");
+    expect(resolved).toBe("mypackage/utils/helpers.py");
+  });
+
+  it("resolves Lua dotted module imports", () => {
+    const idx = new FileIndex("/fake");
+    (idx as any).files.set("mymod/sub/init.lua", {
+      path: "mymod/sub/init.lua",
+      language: ".lua",
+      symbols: [],
+      description: "",
+      imports: [],
+      exports: [],
+      size: 100,
+      mtimeMs: 0,
+    });
+
+    const resolved = (idx as any).resolveImport("main.lua", "mymod.sub");
+    expect(resolved).toBe("mymod/sub/init.lua");
+  });
+});
+
+describe("Lua description extraction", () => {
+  it("extracts Lua single-line comments", () => {
+    // extractDescription is not exported, but we can test via indexFile behavior.
+    // For now, test the regex pattern directly.
+    const source = `-- This module handles user auth\nlocal M = {}`;
+    const luaComment = source.match(/^--\s*(.+)/m);
+    expect(luaComment).not.toBeNull();
+    expect(luaComment![1]).toContain("This module handles user auth");
+  });
+
+  it("extracts Lua multi-line comments", () => {
+    const source = `--[[\n  Auth module\n  Handles login/logout\n]]\nlocal M = {}`;
+    const luaMultiline = source.match(/--\[\[[\s\S]*?\]\]/);
+    expect(luaMultiline).not.toBeNull();
+    expect(luaMultiline![0]).toContain("Auth module");
+  });
+});

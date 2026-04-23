@@ -1,11 +1,11 @@
 ---
 name: obsidian-wiki-query
-description: Look up information in the local LLM wiki at ~/Documents/llm-wiki/. Use when the user asks a question that the wiki might cover — AI models, agentic coding, spec-driven development, tooling, or any topic previously ingested. Also use with /skill:obsidian-wiki-query <question>.
+description: Look up information in the personal wiki at ~/Documents/wiki/. Use when the user asks a question that the wiki might cover — AI models, agentic coding, spec-driven development, tooling, or any topic previously ingested. Also use with /skill:obsidian-wiki-query <question>.
 ---
 
-# Query the LLM Wiki
+# Query the Wiki
 
-Answer questions from the wiki at `~/Documents/llm-wiki/`. The wiki is a persistent, LLM-maintained knowledge base with ~86 pages covering AI models, agentic coding, spec-driven development, and related topics.
+Answer questions from the wiki at `~/Documents/wiki/`. The wiki is a general-purpose, LLM-maintained knowledge base. All domains are welcome — not just AI/LLM topics.
 
 ## Search Algorithm
 
@@ -13,7 +13,7 @@ Follow these steps in order. Stop when you have enough to answer.
 
 ### Step 1 — Index lookup
 
-Read `~/Documents/llm-wiki/wiki/index.md`. Check for exact or close matches in the Concepts, Entities, Sources, and Synthesis sections. This is the fastest path for known topics.
+Read `~/Documents/wiki/wiki/index.md`. Check for exact or close matches in the Concepts, Entities, Sources, and Synthesis sections. This is the fastest path for known topics.
 
 ### Step 2 — Full-text search
 
@@ -27,8 +27,8 @@ This searches all wiki pages with `rg` and shows matching files plus context lin
 
 For manual control:
 ```bash
-rg -il "<keyword>" ~/Documents/llm-wiki/wiki/          # list matching files
-rg -i -C 2 "<phrase>" ~/Documents/llm-wiki/wiki/       # context around matches
+rg -il "<keyword>" ~/Documents/wiki/wiki/          # list matching files
+rg -i -C 2 "<phrase>" ~/Documents/wiki/wiki/       # context around matches
 ```
 
 Try multiple search terms — the wiki uses specific terminology (e.g., "agent swarm" not "multi-agent AI", "spec-driven development" not "requirements engineering").
