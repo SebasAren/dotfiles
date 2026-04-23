@@ -11,12 +11,12 @@ Process sources into the persistent wiki at `~/Documents/wiki/`.
 
 ```
 ~/Documents/wiki/
-├── raw/                   # Immutable source documents (read only)
+├── raw/                   # Immutable source documents placed by the user (LLM reads, never writes generated artifacts here)
 │   ├── inbox/             # Staging area — drop files/URLs here, agent moves them
 │   ├── articles/          # Web articles, blog posts, news
 │   ├── notes/             # Markdown notes, text files
 │   ├── papers/            # Academic papers, PDFs
-│   ├── videos/            # YouTube videos (transcripts only, via yt-dlp)
+│   ├── videos/            # User-placed video files
 ├── wiki/                  # LLM-maintained knowledge base
 │   ├── concepts/          # Concept & topic pages
 │   ├── entities/          # Entity pages (people, places, things)
@@ -28,7 +28,7 @@ Process sources into the persistent wiki at `~/Documents/wiki/`.
 
 ## Core Principles
 
-1. **Raw sources are immutable** — never modify files in `raw/`
+1. **Raw sources are user-placed and immutable** — never modify files in `raw/` and never write generated artifacts (transcripts, extracted text, etc.) into it
 2. **The wiki is LLM-owned** — create, update, link, and maintain all pages
 3. **Cross-reference aggressively** — use `[[wiki links]]` for all references
 4. **File valuable outputs back** — save analyses as wiki pages, not in chat history
@@ -85,20 +85,22 @@ Not all sources deserve equal trust. Apply critical thinking based on source typ
 1. **Read the source:**
    - **Local file:** `read` it directly.
    - **URL (web):** `web_fetch` it.
-   - **URL (YouTube):** Fetch transcript with `yt-dlp`:
+   - **URL (YouTube):** Fetch transcript with `yt-dlp` to a temp directory, process it, then clean up:
      ```bash
+     TMPDIR=$(mktemp -d)
      yt-dlp --write-auto-sub --sub-format vtt --convert-subs srt --skip-download \
-       --output "$HOME/Documents/wiki/raw/videos/{id}.%(ext)s" {url}
+       --output "$TMPDIR/{id}.%(ext)s" {url}
+     # Strip timestamps and formatting
+     sed '/^[0-9]/d; /^$/d; /-->/d' "$TMPDIR/{id}.en.srt" \
+       | sed 's/<[^>]*>//g' | uniq > "$TMPDIR/{slug}.md"
+     rm "$TMPDIR/{id}.en.srt"
      ```
-     Then convert to clean markdown:
+     Then `read` the resulting `$TMPDIR/{slug}.md`. If `--write-auto-sub` fails, try `--write-sub`. If no captions exist, tell the user.
+     
+     When ingestion is complete, remove the temp directory:
      ```bash
-     # Strip timestamps and formatting, save as .md
-     sed '/^[0-9]/d; /^$/d; /-->/d' "raw/videos/{id}.en.srt" \
-       | sed 's/<[^>]*>//g' | uniq > "raw/videos/{slug}.md"
-     # Remove the intermediate .srt file
-     rm raw/videos/{id}.en.srt
+     rm -rf "$TMPDIR"
      ```
-     Then `read` the resulting `.md`. If `--write-auto-sub` fails, try `--write-sub`. If no captions exist, tell the user.
    - **PDF:** Extract text.
 2. **Evaluate claim strength** — identify the source's credibility tier (see Source Skepticism above). Flag unsupported strong claims and controversial assertions.
 3. **Discuss key takeaways** with the user — surface any flagged claims for their review before writing to the wiki.
