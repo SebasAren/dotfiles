@@ -184,3 +184,136 @@ describe("runLintChecks", () => {
     expect(fn.issues.every((i) => !i.path.includes("agent-swarm"))).toBe(true);
   });
 });
+
+// ── Bug fix regressions ────────────────────────────────────────────────────
+
+describe("broken-links: code span exclusion", () => {
+  let fixtureDir: string;
+
+  beforeAll(() => {
+    fixtureDir = mkdtempSync(join(tmpdir(), "wiki-lint-code-"));
+    const wikiDir = join(fixtureDir, "wiki");
+    mkdirSync(join(wikiDir, "concepts"), { recursive: true });
+
+    // Page with links inside backticks — should NOT be flagged
+    writeFileSync(
+      join(wikiDir, "concepts", "code-links.md"),
+      "# Code Links\n\nUse `[[page-name]]` for links. See also [[real-page]].\n",
+    );
+
+    // The real page that exists
+    writeFileSync(
+      join(wikiDir, "concepts", "real-page.md"),
+      "# Real Page\n\nReferenced by [[code-links]].\n",
+    );
+  });
+
+  afterAll(() => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+  });
+
+  it("ignores links inside inline code spans", async () => {
+    const results = await runLintChecks(fixtureDir, ["broken-links"]);
+    const broken = results.find((r) => r.check === "broken-links")!;
+    // page-name is inside backticks and should NOT appear as a broken link
+    expect(broken.issues.every((i) => !i.message.includes("page-name"))).toBe(true);
+  });
+
+  it("still detects real broken links outside code spans", async () => {
+    const results = await runLintChecks(fixtureDir, ["broken-links"]);
+    const broken = results.find((r) => r.check === "broken-links")!;
+    // real-page exists, so no broken links at all
+    expect(broken.issues.length).toBe(0);
+  });
+
+  it("ignores links inside fenced code blocks", async () => {
+    const fixtureFenced = mkdtempSync(join(tmpdir(), "wiki-lint-fenced-"));
+    const wikiDir = join(fixtureFenced, "wiki");
+    mkdirSync(join(wikiDir, "concepts"), { recursive: true });
+
+    writeFileSync(
+      join(wikiDir, "concepts", "fenced.md"),
+      "# Fenced\n\n```\n[[nonexistent-inside-fence]]\n```\n\nReal link: [[target]].\n",
+    );
+    writeFileSync(
+      join(wikiDir, "concepts", "target.md"),
+      "# Target\n\nReferenced.\n",
+    );
+
+    const results = await runLintChecks(fixtureFenced, ["broken-links"]);
+    const broken = results.find((r) => r.check === "broken-links")!;
+    expect(broken.issues.every((i) => !i.message.includes("nonexistent-inside-fence"))).toBe(true);
+    expect(broken.issues.length).toBe(0);
+
+    rmSync(fixtureFenced, { recursive: true, force: true });
+  });
+});
+
+describe("broken-links: root-level wiki pages", () => {
+  let fixtureDir: string;
+
+  beforeAll(() => {
+    fixtureDir = mkdtempSync(join(tmpdir(), "wiki-lint-root-"));
+    const wikiDir = join(fixtureDir, "wiki");
+    mkdirSync(join(wikiDir, "concepts"), { recursive: true });
+
+    // Root-level page (not in a subdir)
+    writeFileSync(
+      join(wikiDir, "overview.md"),
+      "# Overview\n\nThe wiki overview.\n",
+    );
+
+    // Page linking to the root-level page
+    writeFileSync(
+      join(wikiDir, "concepts", "home.md"),
+      "# Home\n\nSee [[overview]] for the overview.\n",
+    );
+  });
+
+  afterAll(() => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+  });
+
+  it("resolves links to root-level wiki pages", async () => {
+    const results = await runLintChecks(fixtureDir, ["broken-links"]);
+    const broken = results.find((r) => r.check === "broken-links")!;
+    // overview.md exists at wiki/ root and should be found
+    expect(broken.issues.every((i) => !i.message.includes("overview"))).toBe(true);
+    expect(broken.issues.length).toBe(0);
+  });
+});
+
+describe("missing-h1: YAML frontmatter skip", () => {
+  let fixtureDir: string;
+
+  beforeAll(() => {
+    fixtureDir = mkdtempSync(join(tmpdir(), "wiki-lint-h1-"));
+    const wikiDir = join(fixtureDir, "wiki");
+    mkdirSync(join(wikiDir, "concepts"), { recursive: true });
+
+    // Page with YAML frontmatter then H1 — should NOT be flagged
+    writeFileSync(
+      join(wikiDir, "concepts", "with-frontmatter.md"),
+      "---\ntags:\n  - type/concept\n---\n\n# With Frontmatter\n\nContent here.\n",
+    );
+
+    // Page with YAML frontmatter but NO H1 after — SHOULD be flagged
+    writeFileSync(
+      join(wikiDir, "concepts", "no-h1-frontmatter.md"),
+      "---\ntags:\n  - type/concept\n---\n\nNo heading here.\n",
+    );
+  });
+
+  afterAll(() => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+  });
+
+  it("skips YAML frontmatter and checks H1 after it", async () => {
+    const results = await runLintChecks(fixtureDir, ["missing-h1"]);
+    const h1 = results.find((r) => r.check === "missing-h1")!;
+    // with-frontmatter has H1 after frontmatter — should NOT be flagged
+    expect(h1.issues.every((i) => !i.path.includes("with-frontmatter"))).toBe(true);
+    // no-h1-frontmatter has no H1 after frontmatter — SHOULD be flagged
+    expect(h1.issues.some((i) => i.path.includes("no-h1-frontmatter"))).toBe(true);
+  });
+});

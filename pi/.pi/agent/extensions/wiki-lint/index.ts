@@ -53,6 +53,9 @@ export interface WikiLintDetails {
 
 const WIKI_SUBDIRS = ["concepts", "entities", "sources", "synthesis", "analysis"];
 
+/** Directories (relative to wikiDir) to search when resolving link slugs. Includes root. */
+const SLUG_SEARCH_DIRS = [".", ...WIKI_SUBDIRS];
+
 /** Recursively list .md files in a directory. */
 function listMdFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -85,8 +88,8 @@ function extractSlug(linkTarget: string): string {
 
 /** Check if a slug resolves to an existing wiki file. */
 function slugExists(slug: string, wikiDir: string): boolean {
-  for (const sub of WIKI_SUBDIRS) {
-    if (existsSync(join(wikiDir, sub, `${slug}.md`))) return true;
+  for (const dir of SLUG_SEARCH_DIRS) {
+    if (existsSync(join(wikiDir, dir, `${slug}.md`))) return true;
   }
   return false;
 }
@@ -98,25 +101,56 @@ function rg(...args: string[]): string {
   return result.stdout ?? "";
 }
 
+/** Strip fenced code blocks and inline code spans from markdown content. */
+function stripCodeSpans(content: string): string {
+  // Remove fenced code blocks first
+  const withoutFenced = content.replace(/```[\s\S]*?```/g, "");
+  // Remove inline code spans
+  return withoutFenced.replace(/`[^`]+`/g, "");
+}
+
+/** Find the first non-blank content line after optional YAML frontmatter. */
+function firstContentLine(lines: string[]): string {
+  if (lines.length === 0) return "";
+  let startIdx = 0;
+
+  // Skip YAML frontmatter (--- ... ---)
+  if (lines[0].trim() === "---") {
+    const closingIdx = lines.findIndex((line, i) => i > 0 && line.trim() === "---");
+    if (closingIdx !== -1) {
+      startIdx = closingIdx + 1;
+    }
+  }
+
+  // Skip blank lines after frontmatter (or at start)
+  for (let i = startIdx; i < lines.length; i++) {
+    if (lines[i].trim() !== "") return lines[i];
+  }
+  return "";
+}
+
 // ── Check implementations ──────────────────────────────────────────────────
 
 function checkBrokenLinks(wikiDir: string): LintResult {
   const issues: LintIssue[] = [];
 
-  // Extract all unique [[links]] across wiki pages
-  const stdout = rg("-o", "\\[\\[([^\\]]+)\\]\\]", "--no-filename", wikiDir);
+  // Extract all unique [[links]] across wiki pages, ignoring those inside backtick code spans
+  const allPages = listAllWikiPages(wikiDir);
   const seen = new Set<string>();
 
-  for (const line of stdout.split("\n")) {
-    const m = line.match(/\[\[([^\]]+)\]\]/);
-    if (!m) continue;
-    const raw = m[1];
-    const slug = extractSlug(raw);
-    if (!slug || seen.has(slug)) continue;
-    seen.add(slug);
+  for (const pagePath of allPages) {
+    const content = readFileSync(pagePath, "utf8");
+    const cleanContent = stripCodeSpans(content);
 
-    if (!slugExists(slug, wikiDir)) {
-      issues.push({ path: `${slug}.md`, message: `Broken link: [[${raw}]] — no matching file found` });
+    for (const m of cleanContent.matchAll(/\[\[([^\]]+)\]\]/g)) {
+      const raw = m[1];
+      const slug = extractSlug(raw);
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+
+      if (!slugExists(slug, wikiDir)) {
+        issues.push({ path: `${slug}.md`, message: `Broken link: [[${raw}]] — no matching file found` });
+      }
     }
   }
 
@@ -149,9 +183,10 @@ function checkMissingH1(wikiDir: string): LintResult {
 
   for (const pagePath of allPages) {
     const content = readFileSync(pagePath, "utf8");
-    const firstLine = content.split("\n")[0];
-    if (!firstLine.startsWith("# ")) {
-      issues.push({ path: pagePath, message: `Missing H1 title. First line: "${firstLine.slice(0, 60)}"` });
+    const lines = content.split("\n");
+    const heading = firstContentLine(lines);
+    if (!heading.startsWith("# ")) {
+      issues.push({ path: pagePath, message: `Missing H1 title. First content line: "${heading.slice(0, 60)}"` });
     }
   }
 
