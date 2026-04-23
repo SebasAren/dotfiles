@@ -20,7 +20,8 @@
     "worktree-scope",
     "cheap-clarify",
     "wiki-search",
-    "wiki-lint"
+"wiki-lint",
+    "wiki-stash"
   ],
   "devDependencies": {
     "@eslint/js": "^9.0.0",

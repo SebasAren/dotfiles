@@ -59,7 +59,8 @@ export function renderLintResult(
 
   if (state.expanded) {
     for (const checkResult of details.results) {
-      const checkIcon = checkResult.issues.length === 0 ? theme.fg("success", "✓") : theme.fg("warning", "⚠");
+      const checkIcon =
+        checkResult.issues.length === 0 ? theme.fg("success", "✓") : theme.fg("warning", "⚠");
       text += `\n  ${checkIcon} ${checkResult.check}: ${checkResult.issues.length}`;
       for (const issue of checkResult.issues.slice(0, 5)) {
         text += `\n    ${theme.fg("dim", `• ${issue.message}`)}`;

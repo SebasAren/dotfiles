@@ -112,6 +112,17 @@
       "name": "@pi-ext/todo",
       "version": "1.0.0",
     },
+    "wiki-search": {
+      "name": "@pi-ext/wiki-search",
+      "version": "1.0.0",
+    },
+    "wiki-stash": {
+      "name": "@pi-ext/wiki-stash",
+      "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+    },
     "worktree-scope": {
       "name": "worktree-scope",
       "version": "1.0.0",
@@ -277,6 +288,10 @@
     "@pi-ext/tdd-tree": ["@pi-ext/tdd-tree@workspace:tdd-tree"],
 
     "@pi-ext/todo": ["@pi-ext/todo@workspace:todo"],
+
+    "@pi-ext/wiki-search": ["@pi-ext/wiki-search@workspace:wiki-search"],
+
+    "@pi-ext/wiki-stash": ["@pi-ext/wiki-stash@workspace:wiki-stash"],
 
     "@protobufjs/aspromise": ["@protobufjs/aspromise@1.1.2", "", {}, "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ=="],
 

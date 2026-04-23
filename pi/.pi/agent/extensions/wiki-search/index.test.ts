@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, mock, beforeAll } from "bun:test";
+import { spawnSync } from "node:child_process";
 
 beforeAll(() => {
   mock.module("@mariozechner/pi-coding-agent", () => ({
@@ -29,39 +30,55 @@ import { renderSearchCall, renderSearchResult } from "./render";
 // ── executeWikiSearch ──────────────────────────────────────────────────────
 
 describe("executeWikiSearch", () => {
-  const BINARY =
-    "/var/home/sebas/.local/share/worktrees/dotfiles/obsidian-search/obsidian/.local/bin/wiki-search";
+  // Resolve wiki-search binary via PATH (works across worktrees and CI)
+  const BINARY = "wiki-search";
 
-  it("returns structured result for a valid query", async () => {
-    const result = await executeWikiSearch({ query: "agent orchestration", top: 3 }, BINARY);
+  // Skip integration tests if wiki-search is not installed
+  const binaryAvailable =
+    spawnSync("which", ["wiki-search"], {
+      encoding: "utf8",
+    }).status === 0;
 
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].type).toBe("text");
-    expect(typeof result.content[0].text).toBe("string");
-    expect(result.details).toBeDefined();
-    expect(result.details!.query).toBe("agent orchestration");
-    expect(result.details!.resultCount).toBeGreaterThanOrEqual(0);
-    expect(result.details!.reranked).toBe(true);
-    expect(result.details!.semantic).toBe(false);
-    expect(result.details!.wikiDir).toBe(`${process.env.HOME}/Documents/wiki/wiki`);
-    expect(Array.isArray(result.details!.paths)).toBe(true);
-  }, 15_000);
+  const maybeIt = binaryAvailable ? it : it.skip;
 
-  it("respects semantic and no_rerank flags", async () => {
-    const result = await executeWikiSearch(
-      {
-        query: "agent orchestration",
-        top: 2,
-        semantic: true,
-        no_rerank: true,
-      },
-      BINARY,
-    );
+  maybeIt(
+    "returns structured result for a valid query",
+    async () => {
+      const result = await executeWikiSearch({ query: "agent orchestration", top: 3 }, BINARY);
 
-    expect(result.details!.semantic).toBe(true);
-    expect(result.details!.reranked).toBe(false);
-    expect(Array.isArray(result.details!.paths)).toBe(true);
-  }, 15_000);
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0].type).toBe("text");
+      expect(typeof result.content[0].text).toBe("string");
+      expect(result.details).toBeDefined();
+      expect(result.details!.query).toBe("agent orchestration");
+      expect(result.details!.resultCount).toBeGreaterThanOrEqual(0);
+      expect(result.details!.reranked).toBe(true);
+      expect(result.details!.semantic).toBe(false);
+      expect(result.details!.wikiDir).toBe(`${process.env.HOME}/Documents/wiki/wiki`);
+      expect(Array.isArray(result.details!.paths)).toBe(true);
+    },
+    15_000,
+  );
+
+  maybeIt(
+    "respects semantic and no_rerank flags",
+    async () => {
+      const result = await executeWikiSearch(
+        {
+          query: "agent orchestration",
+          top: 2,
+          semantic: true,
+          no_rerank: true,
+        },
+        BINARY,
+      );
+
+      expect(result.details!.semantic).toBe(true);
+      expect(result.details!.reranked).toBe(false);
+      expect(Array.isArray(result.details!.paths)).toBe(true);
+    },
+    15_000,
+  );
 });
 
 // ── renderSearchCall ───────────────────────────────────────────────────────

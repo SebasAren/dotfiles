@@ -26,7 +26,7 @@ beforeAll(() => {
   }));
 });
 
-import { runLintChecks, type LintCheck, type LintResult } from "./index";
+import { runLintChecks } from "./index";
 
 // ── Test fixtures ──────────────────────────────────────────────────────────
 
@@ -53,10 +53,7 @@ function createFixtureWiki(): string {
   );
 
   // Page with missing H1
-  writeFileSync(
-    join(wikiDir, "concepts", "no-title.md"),
-    "This page has no H1 title.\n",
-  );
+  writeFileSync(join(wikiDir, "concepts", "no-title.md"), "This page has no H1 title.\n");
 
   // Orphan page (nothing links to it)
   writeFileSync(
@@ -80,10 +77,7 @@ function createFixtureWiki(): string {
   );
 
   // Entity referenced nowhere
-  writeFileSync(
-    join(wikiDir, "entities", "moonshot-ai.md"),
-    "# Moonshot AI\n\nA company.\n",
-  );
+  writeFileSync(join(wikiDir, "entities", "moonshot-ai.md"), "# Moonshot AI\n\nA company.\n");
 
   // Inbox file (old enough to flag)
   const oldFile = join(rawDir, "old-note.md");
@@ -235,10 +229,7 @@ describe("broken-links: code span exclusion", () => {
       join(wikiDir, "concepts", "fenced.md"),
       "# Fenced\n\n```\n[[nonexistent-inside-fence]]\n```\n\nReal link: [[target]].\n",
     );
-    writeFileSync(
-      join(wikiDir, "concepts", "target.md"),
-      "# Target\n\nReferenced.\n",
-    );
+    writeFileSync(join(wikiDir, "concepts", "target.md"), "# Target\n\nReferenced.\n");
 
     const results = await runLintChecks(fixtureFenced, ["broken-links"]);
     const broken = results.find((r) => r.check === "broken-links")!;
@@ -258,10 +249,7 @@ describe("broken-links: root-level wiki pages", () => {
     mkdirSync(join(wikiDir, "concepts"), { recursive: true });
 
     // Root-level page (not in a subdir)
-    writeFileSync(
-      join(wikiDir, "overview.md"),
-      "# Overview\n\nThe wiki overview.\n",
-    );
+    writeFileSync(join(wikiDir, "overview.md"), "# Overview\n\nThe wiki overview.\n");
 
     // Page linking to the root-level page
     writeFileSync(

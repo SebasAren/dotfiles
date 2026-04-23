@@ -6,7 +6,7 @@
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
@@ -96,7 +96,11 @@ function slugExists(slug: string, wikiDir: string): boolean {
 
 /** Run ripgrep and return stdout. */
 function rg(...args: string[]): string {
-  const result = spawnSync("rg", args, { encoding: "utf8", maxBuffer: 10 * 1024 * 1024, timeout: 30_000 });
+  const result = spawnSync("rg", args, {
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+    timeout: 30_000,
+  });
   if (result.error) return "";
   return result.stdout ?? "";
 }
@@ -149,7 +153,10 @@ function checkBrokenLinks(wikiDir: string): LintResult {
       seen.add(slug);
 
       if (!slugExists(slug, wikiDir)) {
-        issues.push({ path: `${slug}.md`, message: `Broken link: [[${raw}]] — no matching file found` });
+        issues.push({
+          path: `${slug}.md`,
+          message: `Broken link: [[${raw}]] — no matching file found`,
+        });
       }
     }
   }
@@ -170,7 +177,10 @@ function checkOrphans(wikiDir: string): LintResult {
     const hasInbound = stdout.trim().length > 0;
 
     if (!hasInbound) {
-      issues.push({ path: pagePath, message: `Orphan: no inbound [[${slug}]] links from other wiki pages` });
+      issues.push({
+        path: pagePath,
+        message: `Orphan: no inbound [[${slug}]] links from other wiki pages`,
+      });
     }
   }
 
@@ -186,7 +196,10 @@ function checkMissingH1(wikiDir: string): LintResult {
     const lines = content.split("\n");
     const heading = firstContentLine(lines);
     if (!heading.startsWith("# ")) {
-      issues.push({ path: pagePath, message: `Missing H1 title. First content line: "${heading.slice(0, 60)}"` });
+      issues.push({
+        path: pagePath,
+        message: `Missing H1 title. First content line: "${heading.slice(0, 60)}"`,
+      });
     }
   }
 
@@ -201,7 +214,10 @@ function checkFilenames(wikiDir: string): LintResult {
   for (const pagePath of allPages) {
     const name = basename(pagePath);
     if (!validPattern.test(name)) {
-      issues.push({ path: pagePath, message: `Invalid filename: "${name}" — should be lowercase-with-dashes.md` });
+      issues.push({
+        path: pagePath,
+        message: `Invalid filename: "${name}" — should be lowercase-with-dashes.md`,
+      });
     }
   }
 
@@ -216,7 +232,10 @@ function checkEmptyPages(wikiDir: string): LintResult {
     const stat = statSync(pagePath);
     if (stat.size < 50) {
       const content = readFileSync(pagePath, "utf8").trim();
-      issues.push({ path: pagePath, message: `Near-empty page (${stat.size} bytes): "${content.slice(0, 50)}"` });
+      issues.push({
+        path: pagePath,
+        message: `Near-empty page (${stat.size} bytes): "${content.slice(0, 50)}"`,
+      });
     }
   }
 
@@ -345,7 +364,7 @@ export default function (pi: ExtensionAPI) {
   // Quick command: /lint-wiki
   pi.registerCommand("lint-wiki", {
     description: "Run structural lint checks on the wiki",
-    handler: async (args, ctx) => {
+    handler: async (args, _ctx) => {
       const checks = args ? args.trim().split(/[\s,]+/) : undefined;
       const checkStr = checks ? ` with checks: ${checks.join(", ")}` : "";
       pi.sendUserMessage(`Run wiki_lint${checkStr}.`, { deliverAs: "followUp" });
