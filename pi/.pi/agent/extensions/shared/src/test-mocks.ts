@@ -16,7 +16,7 @@
  *
  *   mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
  *   mock.module("@mariozechner/pi-tui", piTuiMock);
- *   mock.module("@sinclair/typebox", typeboxMock);
+ *   mock.module("typebox", typeboxMock);
  *
  *   import myExtension from "./index";
  */
@@ -24,31 +24,19 @@
 /**
  * Complete mock for `@mariozechner/pi-coding-agent`.
  * Covers every export used by any extension:
- *   - `getMarkdownTheme` (explore, librarian, wt-worktree)
- *   - `createEditTool`   (fuzzy-edit)
+ *   - `createEditTool` (fuzzy-edit)
  *   - `withFileMutationQueue` (fuzzy-edit)
  */
 export const piCodingAgentMock = () => ({
   getMarkdownTheme: () => ({}),
   getSettingsListTheme: () => ({}),
+  // v0.68+: only factory forms remain; removed prebuilt read/bash/write/find/grep/ls tools
   createEditTool: () => ({
     description: "edit tool",
     execute: () => {
       throw new Error("Could not find oldText in file.");
     },
   }),
-  createReadTool: () => ({
-    description: "read tool",
-    execute: () => ({ content: [{ type: "text", text: "" }] }),
-  }),
-  createBashTool: () => ({
-    description: "bash tool",
-    execute: () => ({ stdout: "", stderr: "", code: 0 }),
-  }),
-  createWriteTool: () => ({ description: "write tool", execute: () => ({}) }),
-  createFindTool: () => ({ description: "find tool", execute: () => ({ stdout: "" }) }),
-  createGrepTool: () => ({ description: "grep tool", execute: () => ({ stdout: "" }) }),
-  createLsTool: () => ({ description: "ls tool", execute: () => ({ stdout: "" }) }),
   withFileMutationQueue: (_path: string, fn: () => Promise<any>) => fn(),
   renderDiff: (text: string) => text,
   highlightCode: (text: string) => text.split("\n"),
@@ -205,7 +193,7 @@ export const piTuiRenderMock = () => ({
 });
 
 /**
- * Complete mock for `@sinclair/typebox`.
+ * Complete mock for `typebox`.
  * Covers every `Type.*` method used by any extension.
  */
 export const typeboxMock = () => ({

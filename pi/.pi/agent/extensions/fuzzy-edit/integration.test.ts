@@ -6,7 +6,7 @@ import { piCodingAgentMock, typeboxMock } from "../shared/src/test-mocks";
 
 // Mock external dependencies with shared mock factories
 mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@sinclair/typebox", typeboxMock);
+mock.module("typebox", typeboxMock);
 
 import fuzzyEditExtension from "./index";
 

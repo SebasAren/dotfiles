@@ -18,7 +18,7 @@ import {
   SettingsManager,
 } from "@mariozechner/pi-coding-agent";
 import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 
 import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 

@@ -17,7 +17,7 @@ export interface WebFetchDetails {
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
 
 export const WebFetchParams = Type.Object({
