@@ -20,6 +20,7 @@ When this skill is invoked, determine the mode from the user's input:
 ```bash
 tdd-plan create <slug> --title <title> --steps <text> [--steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
 tdd-plan edit <slug> [--title <title>] [--steps <text>] [--steps-file <path>] [--context <text>] [--architecture <text>]
+tdd-plan design <slug> [--show] [--current-state <text>] [--desired-state <text>] [--patterns <text>] [--decisions <text>] [--questions <text>]
 tdd-plan list                                               # List all plans
 tdd-plan show [slug]                                        # Show plan details (defaults to most recent)
 tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>  # Update phase status
@@ -40,9 +41,41 @@ Create a structured implementation plan. The plan MUST follow strict TDD discipl
 
 1. **Understand the request.** Ask clarifying questions if the scope is ambiguous. Don't plan blindly.
 2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
-3. **Draft the plan.** Follow the output format below with all RED/GREEN/REFACTOR steps.
-4. **Review for completeness.** Check that every piece of functionality has a corresponding test.
-5. **Create the plan** using `tdd-plan create`. Present the plan inline, then use the `questionnaire` tool to confirm:
+3. **Explore the codebase.** Use the `explore` tool to understand relevant context. Build the explore query from the user's description.
+4. **Create a design artifact.** Before drafting steps, create a design artifact that surfaces what the agent found, what it plans to do, and what it doesn't understand. This is the human's opportunity to correct misconceptions *before* code is written. Run:
+
+```bash
+tdd-plan create <slug> --title <title> --steps '[{"name":"Placeholder","red":"tbd","green":"tbd","refactor":""}]' --context <context> --architecture <architecture>
+tdd-plan design <slug> \
+  --current-state "What the codebase looks like now" \
+  --desired-state "What the solution should achieve" \
+  --patterns "Relevant code patterns found in the codebase" \
+  --decisions "Design decisions already resolved" \
+  --questions "Things the agent doesn't know and needs answers to"
+```
+
+Then present the design artifact to the user for review via `questionnaire`:
+
+```typescript
+questionnaire({
+  questions: [{
+    id: "confirm-design",
+    prompt: "Review the design artifact. Correct any misconceptions before I plan the steps.",
+    label: "Design",
+    options: [
+      { value: "looks-good", label: "Looks good, proceed to planning" },
+      { value: "needs-changes", label: "I need to correct something" },
+      { value: "cancel", label: "Cancel" }
+    ]
+  }]
+})
+```
+
+If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present. The goal is to give the human every opportunity to correct the agent's understanding *before* planning.
+
+5. **Draft the plan.** With the corrected design artifact in hand, replace the placeholder steps with the real RED/GREEN/REFACTOR steps. Follow the output format below.
+6. **Review for completeness.** Check that every piece of functionality has a corresponding test.
+7. **Update the plan** using `tdd-plan edit` to replace placeholder steps with real ones. Present the plan inline, then use the `questionnaire` tool to confirm:
 
 ```typescript
 questionnaire({
@@ -184,6 +217,13 @@ Present the plan to the user in this format for review:
 ```
 ## Plan: [Feature/Change Title]
 
+### Design Artifact
+- **Current state:** What the codebase looks like now
+- **Desired end state:** What the solution should achieve
+- **Patterns:** Relevant code patterns from the codebase
+- **Decisions:** Resolved design decisions
+- **Open questions:** Things that need answers
+
 ### Context
 Brief description of what we're building and why.
 
@@ -235,7 +275,7 @@ If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
    - **Ruby:** `bundle exec rspec`
    - **Other:** Look at Makefile, justfile, or ask the user.
 4. If you cannot determine the test command, ask before proceeding.
-5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration establishes a shared understanding and becomes the session tree kickoff point.
+5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration is implementation-focused (finding exact files, functions, imports to modify) and is separate from the design-phase exploration done during Planning. This establishes a shared understanding and becomes the session tree kickoff point.
 6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. This labels the current session tree position as the TDD kickoff checkpoint. **IMPORTANT: This must be called exactly once per plan, only after the initial exploration. Never call `tdd-set-kickoff` again for the same plan.** Each subsequent step can optionally branch fresh from this single kickoff point.
 
 ### Fresh Start (per step, optional)

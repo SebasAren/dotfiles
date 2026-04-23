@@ -46,11 +46,20 @@ interface Step {
 	completed: boolean;
 }
 
+interface DesignArtifact {
+	currentState: string;
+	desiredState: string;
+	patterns: string;
+	decisions: string;
+	questions: string;
+}
+
 interface Plan {
 	title: string;
 	slug: string;
 	context: string;
 	architecture: string;
+	design?: DesignArtifact;
 	created: string;
 	updated: string;
 	steps: Step[];
@@ -298,6 +307,21 @@ function showPlan(plan: Plan): void {
 	if (plan.architecture) {
 		console.log("## Architecture");
 		console.log(plan.architecture);
+		console.log("");
+	}
+
+	if (plan.design) {
+		console.log("## Design Artifact");
+		console.log("");
+		console.log("**Current State:**", plan.design.currentState);
+		console.log("");
+		console.log("**Desired End State:**", plan.design.desiredState);
+		console.log("");
+		console.log("**Patterns to Follow:**", plan.design.patterns);
+		console.log("");
+		console.log("**Resolved Decisions:**", plan.design.decisions);
+		console.log("");
+		console.log("**Open Questions:**", plan.design.questions);
 		console.log("");
 	}
 
@@ -602,6 +626,56 @@ function cmdNote(args: string[]): void {
 	console.log(`Added note to ${slug}`);
 }
 
+function cmdDesign(args: string[]): void {
+	const slug = args[0];
+	if (!slug) {
+		console.error("Usage: tdd-plan design <slug> [--show] [--current-state <text>] [--desired-state <text>] [--patterns <text>] [--decisions <text>] [--questions <text>]");
+		process.exit(1);
+	}
+
+	const flags = parseArgs(args.slice(1));
+
+	// --show mode: display existing design
+	if (args.includes("--show")) {
+		const plan = readPlan(slug);
+		if (!plan.design) {
+			console.error(`No design artifact for plan "${slug}".`);
+			process.exit(1);
+		}
+		console.log("## Design Artifact");
+		console.log("");
+		console.log("**Current State:**", plan.design.currentState);
+		console.log("");
+		console.log("**Desired End State:**", plan.design.desiredState);
+		console.log("");
+		console.log("**Patterns to Follow:**", plan.design.patterns);
+		console.log("");
+		console.log("**Resolved Decisions:**", plan.design.decisions);
+		console.log("");
+		console.log("**Open Questions:**", plan.design.questions);
+		console.log("");
+		return;
+	}
+
+	// Create or update design
+	const plan = readPlan(slug);
+
+	const existing = plan.design;
+	const design: DesignArtifact = {
+		currentState: flags["current-state"] ?? existing?.currentState ?? "",
+		desiredState: flags["desired-state"] ?? existing?.desiredState ?? "",
+		patterns: flags.patterns ?? existing?.patterns ?? "",
+		decisions: flags.decisions ?? existing?.decisions ?? "",
+		questions: flags.questions ?? existing?.questions ?? "",
+	};
+
+	plan.design = design;
+	writePlan(plan);
+
+	const action = existing ? "updated" : "created";
+	console.log(`Design artifact ${action} for: ${slug}`);
+}
+
 function cmdArchive(args: string[]): void {
 	const slug = args[0];
 	if (!slug) {
@@ -664,6 +738,9 @@ switch (command) {
 	case "archive":
 		cmdArchive(args);
 		break;
+	case "design":
+		cmdDesign(args);
+		break;
 	case "edit":
 		cmdEdit(args);
 		break;
@@ -676,11 +753,13 @@ switch (command) {
 Usage:
   tdd-plan create <slug> --title <title> (--steps <json> | --steps-file <path>) [--context <text>] [--architecture <text>] [--notes <json>]
   tdd-plan edit <slug> [--title <title>] [--steps <text> | --steps-file <path>] [--context <text>] [--architecture <text>] [--notes <json>]
+  tdd-plan design <slug> [--show] [--current-state <text>] [--desired-state <text>] [--patterns <text>] [--decisions <text>] [--questions <text>]
   tdd-plan list
   tdd-plan show [slug]
   tdd-plan phase <slug> <step> <red|green|refactor> <start|done|skip>
   tdd-plan complete <slug> <step>
   tdd-plan note <slug> <text>
+  tdd-plan design <slug> [--show] [--current-state <text>] [--desired-state <text>] [--patterns <text>] [--decisions <text>] [--questions <text>]
   tdd-plan archive <slug>
 
 Steps JSON format:

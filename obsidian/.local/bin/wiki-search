@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Search the LLM wiki for matching pages.
+# Usage: wiki-search <query> [--context N]
+#   --context N  lines of context around matches (default: 3)
+set -euo pipefail
+
+if [[ $# -lt 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+	cat <<'EOF'
+wiki-search - Search the LLM wiki
+
+Usage: wiki-search <query> [--context N]
+
+Options:
+  --context N  lines of context around each match (default: 3)
+
+Searches all wiki pages (concepts, entities, sources, synthesis, analysis)
+under ~/Documents/llm-wiki/wiki/ and prints matching file paths with context.
+EOF
+	exit 0
+fi
+
+query=""
+context=3
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--context)
+			context="${2:?--context requires a number}"
+			shift 2
+			;;
+		*)
+			query="$1"
+			shift
+			;;
+	esac
+done
+
+if [[ -z "$query" ]]; then
+	echo "Error: no query provided" >&2
+	exit 1
+fi
+
+wiki="$HOME/Documents/llm-wiki/wiki"
+
+if [[ ! -d "$wiki" ]]; then
+	echo "Error: wiki directory not found at $wiki" >&2
+	exit 1
+fi
+
+# Show matching files first, then context results
+echo "=== Matching pages ==="
+rg -il "$query" "$wiki" 2>/dev/null | sort || true
+echo ""
+echo "=== Context ==="
+rg -i --sort path -C "$context" --max-count 5 "$query" "$wiki" 2>/dev/null || true
