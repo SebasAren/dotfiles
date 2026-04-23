@@ -306,4 +306,14 @@ export default function (pi: ExtensionAPI) {
       return renderLintResult(result as any, state, theme);
     },
   });
+
+  // Quick command: /lint-wiki
+  pi.registerCommand("lint-wiki", {
+    description: "Run structural lint checks on the wiki",
+    handler: async (args, ctx) => {
+      const checks = args ? args.trim().split(/[\s,]+/) : undefined;
+      const checkStr = checks ? ` with checks: ${checks.join(", ")}` : "";
+      pi.sendUserMessage(`Run wiki_lint${checkStr}.`, { deliverAs: "followUp" });
+    },
+  });
 }
