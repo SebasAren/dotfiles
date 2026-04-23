@@ -3,21 +3,23 @@
  * and structured result formatting for the explore subagent.
  */
 
-import { spawn } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { planQuery, type QueryPlan } from "./query-planner";
 import { FileIndex, type ScoredFile, type FileEntry } from "./file-index";
 import { rerankCandidates, type RerankedFile } from "./reranker";
 
-// Module-level cache: repo cwd → FileIndex
+const MAX_CACHE_SIZE = 5;
+
+// Module-level cache: repo cwd → FileIndex (LRU, max 5 entries)
 const indexCache = new Map<string, FileIndex>();
 
 export interface PreSearchStats {
   indexSize: number;
   queryTimeMs: number;
   filesSurfaced: number;
-  snippetsInjected: number;
   fallbackToRipgrep: boolean;
+  hitBuildCap: boolean;
   rerankUsed: boolean;
 }
 
@@ -44,23 +46,28 @@ export function invalidateFilePath(filePath: string, sessionCwd: string): void {
  * 1. Decomposes the query into a structured plan.
  * 2. Builds or reuses an in-memory file index of the repo.
  * 3. Ranks files by multi-signal relevance.
- * 4. Returns a structured, tiered list with evidence and optional snippets.
+ * 4. Returns a structured, tiered list with evidence.
  */
 export async function preSearch(
   cwd: string,
   rawQuery: string,
-  opts: { symbolBoost?: boolean } = {},
 ): Promise<PreSearchResult> {
   const startTime = Date.now();
 
   // 1. Query decomposition
   const plan = planQuery(rawQuery);
 
-  // 2. Build or reuse index
+  // 2. Build or reuse index (evict oldest if cache is full)
+  let hitBuildCap = false;
   let index = indexCache.get(cwd);
   if (!index) {
+    if (indexCache.size >= MAX_CACHE_SIZE) {
+      // Evict oldest entry (first key in Map insertion order)
+      const oldest = indexCache.keys().next().value;
+      if (oldest !== undefined) indexCache.delete(oldest);
+    }
     index = new FileIndex(cwd);
-    await index.build();
+    hitBuildCap = await index.build();
     indexCache.set(cwd, index);
   }
 
@@ -70,7 +77,7 @@ export async function preSearch(
   // 4. Fall back to ripgrep if index returned nothing (empty repo or parsing issues)
   let fallback = false;
   if (scored.length === 0 && index.size < 10) {
-    const rgResults = await fallbackRipgrep(cwd, plan);
+    const rgResults = fallbackRipgrep(cwd, plan);
     scored = rgResults;
     fallback = true;
   }
@@ -111,8 +118,8 @@ export async function preSearch(
       indexSize: index.size,
       queryTimeMs: Date.now() - startTime,
       filesSurfaced: reranked.length,
-      snippetsInjected: 0,
       fallbackToRipgrep: fallback,
+      hitBuildCap,
       rerankUsed,
     },
   };
@@ -203,26 +210,31 @@ function formatResults(
 
 // ── Fallback ──────────────────────────────────────────────────────────────
 
-async function fallbackRipgrep(
+const RG_GLOBS = [
+  "-g", "*.ts", "-g", "*.tsx", "-g", "*.js", "-g", "*.jsx",
+  "-g", "*.vue", "-g", "*.svelte", "-g", "*.py", "-g", "*.go",
+  "-g", "*.rs", "-g", "*.rb", "-g", "*.java", "-g", "*.kt",
+  "-g", "*.swift", "-g", "*.c", "-g", "*.cpp", "-g", "*.h", "-g", "*.hpp",
+];
+
+function fallbackRipgrep(
   cwd: string,
   plan: QueryPlan,
-): Promise<ScoredFile[]> {
+): ScoredFile[] {
   if (plan.grepTerms.length === 0) return [];
 
   const seen = new Set<string>();
   const results: ScoredFile[] = [];
 
   for (const term of plan.grepTerms.slice(0, 3)) {
-    const escaped = term.replace(/'/g, "'\\''");
-    const out = await runCmd(cwd, "sh", [
-      "-c",
-      `rg -l --hidden ${rgGlobs()} '${escaped}' . 2>/dev/null | head -20`,
-    ]);
-    if (!out.trim()) continue;
+    const result = spawnSync("rg", [
+      "-l", "--hidden", ...RG_GLOBS, "--", term, ".",
+    ], { cwd, timeout: 5000, encoding: "utf-8" });
+    const out = result.stdout?.trim() ?? "";
+    if (!out) continue;
     const files = out
-      .trim()
       .split("\n")
-      .filter((f) => !seen.has(f));
+      .filter((f) => f && !seen.has(f));
     files.forEach((f) => seen.add(f));
     for (const f of files) {
       results.push({ path: f, score: 1, reasons: ["rg match"] });
@@ -230,65 +242,4 @@ async function fallbackRipgrep(
   }
 
   return results;
-}
-
-function rgGlobs(): string {
-  return [
-    "*.ts",
-    "*.tsx",
-    "*.js",
-    "*.jsx",
-    "*.vue",
-    "*.svelte",
-    "*.py",
-    "*.go",
-    "*.rs",
-    "*.rb",
-    "*.java",
-    "*.kt",
-    "*.swift",
-    "*.c",
-    "*.cpp",
-    "*.h",
-    "*.hpp",
-  ]
-    .map((e) => `-g '${e}'`)
-    .join(" ");
-}
-
-function runCmd(
-  cwd: string,
-  cmd: string,
-  args: string[],
-  timeoutMs = 5000,
-): Promise<string> {
-  return new Promise((resolve) => {
-    const proc = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
-    proc.stdin.end();
-    let out = "";
-    let resolved = false;
-    const resolveOnce = (value: string) => {
-      if (!resolved) {
-        resolved = true;
-        resolve(value);
-      }
-    };
-    proc.stdout.on("data", (d: Buffer) => (out += d));
-    proc.stderr.on("data", () => {});
-    const timer = setTimeout(() => {
-      proc.kill("SIGTERM");
-      setTimeout(() => {
-        if (!proc.killed) proc.kill("SIGKILL");
-        resolveOnce(out);
-      }, 1000);
-    }, timeoutMs);
-    proc.on("close", () => {
-      clearTimeout(timer);
-      resolveOnce(out);
-    });
-    proc.on("error", () => {
-      clearTimeout(timer);
-      resolveOnce("");
-    });
-  });
 }

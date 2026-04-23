@@ -5,7 +5,7 @@
  * multi-signal relevance scoring (symbols, intent, scope, import graph).
  */
 
-import { spawn } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import * as path from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { extractSymbols, type CodeSymbol } from "@pi-ext/shared";
@@ -50,14 +50,18 @@ export class FileIndex {
     return this.files.get(relPath);
   }
 
-  /** Build the index from all tracked source files. */
-  async build(): Promise<void> {
-    const fileList = await this.enumerateFiles();
+  /** Build the index from all tracked source files. Returns true if the build was truncated by the time cap. */
+  async build(): Promise<boolean> {
+    const fileList = this.enumerateFiles();
     const start = Date.now();
 
     const indexed: string[] = [];
+    let hitBuildCap = false;
     for (const relPath of fileList) {
-      if (Date.now() - start > MAX_BUILD_TIME_MS) break;
+      if (Date.now() - start > MAX_BUILD_TIME_MS) {
+        hitBuildCap = true;
+        break;
+      }
       const success = await this.indexFile(relPath);
       if (success) indexed.push(relPath);
     }
@@ -76,6 +80,8 @@ export class FileIndex {
         }
       }
     }
+
+    return hitBuildCap;
   }
 
   /** Search the index using a structured query plan. */
@@ -122,52 +128,50 @@ export class FileIndex {
 
   // ── Internal ─────────────────────────────────────────────────────────────
 
-  private async enumerateFiles(): Promise<string[]> {
-    return new Promise((resolve) => {
-      const exts = [
-        "*.ts",
-        "*.tsx",
-        "*.js",
-        "*.jsx",
-        "*.mjs",
-        "*.cjs",
-        "*.py",
-        "*.go",
-        "*.rs",
-        "*.vue",
-        "*.svelte",
-        "*.rb",
-        "*.java",
-        "*.kt",
-        "*.swift",
-        "*.c",
-        "*.cpp",
-        "*.h",
-        "*.hpp",
-      ];
-      const gitCmd = `git ls-files -- ${exts.map((e) => `'${e}'`).join(" ")}`;
-      const findOr = exts.map((e) => `-name '${e}'`).join(" -o ");
-      const findCmd =
-        `find . -type f \\( ${findOr} \\) ! -path './node_modules/*' ! -path './.*' ! -path './dist/*' ! -path './build/*'`;
+  private enumerateFiles(): string[] {
+    const exts = [
+      "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs",
+      "*.py", "*.go", "*.rs", "*.vue", "*.svelte",
+      "*.rb", "*.java", "*.kt", "*.swift",
+      "*.c", "*.cpp", "*.h", "*.hpp",
+    ];
 
-      const proc = spawn(
-        "sh",
-        ["-c", `${gitCmd} 2>/dev/null || ${findCmd} 2>/dev/null`],
-        { cwd: this.cwd },
-      );
-      let out = "";
-      proc.stdout.on("data", (d: Buffer) => (out += d));
-      proc.on("close", () => {
-        const files = out
-          .trim()
-          .split("\n")
-          .filter((f) => f && !f.includes("node_modules/") && !f.startsWith(".git/"))
-          .map((f) => f.replace(/^\.\//, ""))
-          .slice(0, MAX_INDEXED_FILES);
-        resolve(files);
-      });
-      proc.on("error", () => resolve([]));
-    });
+    // Try git ls-files first (works in git repos)
+    const gitResult = spawnSync("git", [
+      "ls-files", "--", ...exts,
+    ], { cwd: this.cwd, timeout: 5000, encoding: "utf-8" });
+
+    if (gitResult.status === 0 && gitResult.stdout.trim()) {
+      return gitResult.stdout
+        .trim()
+        .split("\n")
+        .filter((f) => f && !f.includes("node_modules/") && !f.startsWith(".git/"))
+        .map((f) => f.replace(/^\.\//, ""))
+        .slice(0, MAX_INDEXED_FILES);
+    }
+
+    // Fallback: find command for non-git directories
+    const findArgs = [".", "-type", "f", "("];
+    for (let i = 0; i < exts.length; i++) {
+      if (i > 0) findArgs.push("-o");
+      findArgs.push("-name", exts[i]);
+    }
+    findArgs.push(")", "!", "-path", "./node_modules/*", "!", "-path", "./.*",
+      "!", "-path", "./dist/*", "!", "-path", "./build/*");
+
+    const findResult = spawnSync("find", findArgs,
+      { cwd: this.cwd, timeout: 5000, encoding: "utf-8" });
+
+    if (findResult.status === 0 && findResult.stdout.trim()) {
+      return findResult.stdout
+        .trim()
+        .split("\n")
+        .filter((f) => f && !f.includes("node_modules/") && !f.startsWith(".git/"))
+        .map((f) => f.replace(/^\.\//, ""))
+        .slice(0, MAX_INDEXED_FILES);
+    }
+
+    return [];
   }
 
   private async indexFile(relPath: string): Promise<boolean> {
@@ -185,7 +189,8 @@ export class FileIndex {
         .filter(
           (sym) =>
             sym.name &&
-            (["export", "function", "class", "interface"] as string[]).includes(sym.kind),
+            sym.kind !== "export" &&
+            (["function", "class", "interface"] as string[]).includes(sym.kind),
         )
         .map((sym) => sym.name);
 

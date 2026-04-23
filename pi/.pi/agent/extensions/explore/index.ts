@@ -24,7 +24,7 @@ import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
 
 import { EXPLORE_SYSTEM_PROMPT } from "./constants";
 import { renderCall, renderResult } from "./render";
-import { preSearch, invalidateFilePath } from "./pre-search";
+import { preSearch, invalidateFilePath, type PreSearchStats } from "./pre-search";
 
 /** Shared auth/model infrastructure (created once, reused across subagent runs). */
 let authStorage: AuthStorage | undefined;
@@ -104,6 +104,8 @@ export interface ExploreDetails {
   query?: string;
   success?: boolean;
   usage?: { input: number; output: number; turns: number; cost: number; contextTokens: number };
+  preSearchStats?: PreSearchStats;
+  /** @internal Allows renderSubagentResult to accept this type */
   [key: string]: unknown;
 }
 
@@ -176,7 +178,7 @@ export default function (pi: ExtensionAPI) {
       const timeoutMs = params.timeoutMs ?? defaultTimeout;
 
       // Pre-search: run intelligent pre-search before spawning the subagent
-      const preSearchResult = await preSearch(cwd, params.query, { symbolBoost: true });
+      const preSearchResult = await preSearch(cwd, params.query);
 
       // Build query with constraints and optional focus files
       let query = params.query + preSearchResult.text;
