@@ -21,7 +21,6 @@ bashrc/                    # Bash config        → bashrc/AGENTS.md
 tmux/.config/tmux/         # Tmux               → tmux/README.md
 wt/.config/worktrunk/      # Worktrunk
 pi/.pi/                    # Pi agent           → pi/.pi/README.md
-opencode/.config/opencode/ # Opencode
 m908/.config/mouse_m908/   # Mouse config
 homebrew/                  # brew-sync CLI      → homebrew/AGENTS.md
 mise.toml                  # Runtime versions

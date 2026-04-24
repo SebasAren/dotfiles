@@ -20,7 +20,6 @@ This isn't just config files — it's an **AI-augmented development environment*
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
-| `opencode/` | Opencode | Alternative AI assistant config |
 | `m908/` | Redragon M908 | Mouse macro configuration |
 
 ## Prerequisites
