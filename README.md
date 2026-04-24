@@ -1,23 +1,28 @@
 # Dotfiles
 
 [![test](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml)
+[![GNU Stow](https://img.shields.io/badge/managed%20with-GNU%20Stow-blue)](https://www.gnu.org/software/stow/)
+[![mise](https://img.shields.io/badge/runtimes-mise-green)](https://mise.jdx.dev/)
+[![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/mariozechner/pi-coding-agent)
 
 Personal dotfiles repository for a Linux workstation. Managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based configuration.
+
+This isn't just config files — it's an **AI-augmented development environment**. The [Pi agent extensions](#pi-agent-extensions) form a custom toolchain where subagents handle reconnaissance and research on cheap models, the parent agent stays focused on the actual task, and knowledge is persisted to an Obsidian wiki for cross-session learning.
 
 ## What's Inside
 
 | Directory | Tool | Purpose |
 |-----------|------|---------|
-| `nvim/` | Neovim | Editor: Lazy.nvim, 17 LSP servers, blink.cmp completion, AI coding |
-| `tmux/` | Tmux | Terminal multiplexer: Ctrl+a prefix, vi copy, Tokyo Night theme |
+| `pi/` | **Pi Agent** | AI coding assistant with 20+ custom extensions (explore subagent, librarian, wiki integration, fuzzy edit, and more) |
+| `nvim/` | Neovim | Editor: Lazy.nvim, 17 LSP servers, blink.cmp completion, AI coding → [details](nvim/README.md) |
+| `tmux/` | Tmux | Terminal multiplexer: Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
 | `docker/` | Docker | 5 self-hosted services (media, proxy, VPN, game streaming) |
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
-| `pi/` | Pi agent | AI coding assistant extensions, skills, and context7 integration |
-| `opencode/` | Opencode | Alternative AI assistant config |
-| `m908/` | Redragon M908 | Mouse macro configuration |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
+| `opencode/` | Opencode | Alternative AI assistant config |
+| `m908/` | Redragon M908 | Mouse macro configuration |
 
 ## Prerequisites
 
@@ -88,7 +93,7 @@ Secrets are only resolved when tools like `pi`, `nvim`, or `wt` actually need th
 Each service is standalone:
 
 ```bash
-cd docker/docker-services/jellyfin && docker compose up -d
+cd docker/docker-services/jellyfin && podman compose up -d
 ```
 
 Services requiring VPN or environment variables need a `.env` file (gitignored). See [Docker Services](#docker-services) below.
@@ -100,6 +105,77 @@ On first launch, TPM auto-installs. If it doesn't:
 ```
 prefix + I    # (Ctrl+a, then Shift+i)
 ```
+
+## Pi Agent Extensions
+
+Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) AI coding assistant, written in TypeScript/Bun. Each extension is a self-contained module registering tools, commands, and TUI renderers.
+
+> **Full documentation**: [`pi/.pi/README.md`](pi/.pi/README.md)
+
+### Extension Overview
+
+| Extension | Purpose |
+|-----------|---------|
+| **explore** | Subagent-powered codebase reconnaissance with pre-search, file indexing, and semantic reranking |
+| **librarian** | Documentation research subagent (Exa web search + Context7 library docs + personal wiki) |
+| **wiki-stash** | Persist conversation knowledge to Obsidian wiki without interrupting the session |
+| **fuzzy-edit** | Tab-aware fuzzy fallback for the edit tool |
+| **wiki-search** | Hybrid BM25 + vector search with Cohere reranking over personal wiki |
+| **wiki-read** | Scope-safe wiki page reader |
+| **wiki-lint** | Structural health checks for the wiki |
+| **todo** | Todo management with state persisted in session entries |
+| **plan-mode** | Read-only mode toggleable via `/plan` |
+| **tdd-tree** | TDD kickoff point labeling in the session tree |
+| **context7** | Up-to-date library documentation lookup |
+| **exa-search** | Web search and page fetch via Exa API |
+| **git-checkpoint** | Git stash checkpoints at each turn |
+| **worktree-scope** | Enforces git worktree boundaries |
+| **claude-rules** | `.claude/rules/` parser with picomatch glob matching |
+| **cache-control** | LLM cache hint injection |
+| **cheap-clarify** | Cheap-model clarification subagent |
+| **qwen-reasoning-fix** | Workaround for Qwen reasoning format issues |
+
+### Explore Subagent Architecture
+
+The explore extension is the most sophisticated tool in the suite. It performs intelligent codebase reconnaissance by combining query planning, in-memory file indexing, semantic reranking, and a read-only subagent.
+
+```
+User query
+  │
+  ├─► Query Planner ─► intent (define|use|arch|change) + entities + scope hints
+  │
+  ├─► File Index (LRU-cached, per repo)
+  │     ├─ git ls-files → symbol extraction → import graph
+  │     └─ Multi-signal heuristic scoring
+  │
+  ├─► Cohere Reranker (synthetic docs, no raw content)
+  │     └─ Tiered results: Highly (≥60%) / Probably (≥30%) / Mentioned (≥10%)
+  │
+  └─► Subagent (read-only: read, grep, find, ls, bash)
+        └─ Structured output: Files Retrieved / Key Code / Summary
+```
+
+Supports parallel exploration (up to 4×), scout-then-deepen patterns, and real-time index invalidation on edits.
+
+**Example:**
+
+```
+> explore "how does the worktree scope extension detect worktree boundaries?"
+
+[PRE-SEARCH RESULTS]
+Query analysis: arch | entities: worktree, scope, extension | scope: extensions/worktree-scope
+
+## Highly Relevant (read these first)
+1. `./worktree-scope/index.ts` — score 92% — exact entity: worktree, path entity: scope
+2. `./shared/src/subagent.ts` — score 67% — import proximity
+
+## Summary
+The worktree-scope extension detects a git worktree by checking for a `.git` file
+(rather than directory) at the repo root, then injects a system prompt snippet
+enforcing write boundaries...
+```
+
+See [`pi/.pi/README.md`](pi/.pi/README.md) for the full architecture deep-dive, design decisions, and development guide.
 
 ## Architecture Decisions
 
@@ -127,38 +203,23 @@ Git worktrees let you work on multiple branches simultaneously without stashing 
 - Pre-commit hooks for formatting and linting
 - Squash-merge by default for clean history
 
+### Why subagents for exploration and research?
+
+Running the main model (e.g. Claude) to grep through files is expensive and slow. The explore and librarian subagents delegate to a cheaper model (configurable via `CHEAP_MODEL`) with a focused toolset, reducing cost by 10-50× while keeping the parent agent's context clean for the actual task.
+
 ## Tool Details
 
 ### Neovim
 
-**Plugin manager**: [Lazy.nvim](https://github.com/folke/lazy.nvim) — lazy-loads everything.
+→ **[Full details in `nvim/README.md`](nvim/README.md)**
 
-**Completion**: [blink.cmp](https://github.com/Saghen/blink.cmp) with AI providers:
-- **Codestral** (Mistral) for code completion
-- **Minuet-AI** for extended context suggestions
-
-**LSP**: 17 servers managed via `nvim-lspconfig` + Mason. Per-server configs in `lsp/*.lua`. Key servers: basedpyright (Python), vtsls (TypeScript), lua_ls, rust_analyzer, gopls.
-
-**Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) — StyLua, prettierd, black+isort. Format on save.
-
-**Linting**: [nvim-lint](https://github.com/mfussenegger/nvim-lint) — ruff, luacheck, hadolint.
-
-**Debugging**: nvim-dap + nvim-dap-ui for JavaScript/TypeScript and Python.
-
-**AI coding**: [CodeCompanion.nvim](https://github.com/olimorris/codecompanion.nvim) with Venice AI adapter.
-
-**Custom overrides**: Create `nvim/.config/nvim/lua/custom-settings.lua` (gitignored) for machine-specific settings. Loaded via `pcall` so it's optional.
+Lazy.nvim with 17 LSP servers, blink.cmp completion (Codestral + Minuet-AI), conform.nvim formatting, nvim-dap debugging, and CodeCompanion.nvim AI coding.
 
 ### Tmux
 
-- **Prefix**: `Ctrl+a` (not the default `Ctrl+b` — easier to reach)
-- **Navigation**: `Alt+hjkl` to switch panes without prefix
-- **Windows**: `Alt+1..9` to switch, `Alt+</>` to reorder
-- **Splits**: `Alt+v` (horizontal), `Alt+s` (vertical)
-- **Copy mode**: vi-style (`v` to select, `y` to yank to clipboard via `wl-copy`)
-- **Theme**: Tokyo Night
-- **No mouse**: keyboard-only navigation by design
-- **Worktrunk integration**: `prefix+W` opens worktree creation popup
+→ **[Full details in `tmux/README.md`](tmux/README.md)**
+
+Alt-based daily keybindings (no prefix for common ops), vi copy mode with `wl-copy`, Tokyo Night theme, worktrunk popup integration.
 
 ### Docker Services
 
@@ -170,11 +231,11 @@ Git worktrees let you work on multiple branches simultaneously without stashing 
 | **transmission** | BitTorrent via VPN (OpenVPN) | 9091 |
 | **wolf** | Game streaming (Moonlight/Sunshine) | 47984 |
 
-**Network**: jellyfin, audiobookshelf, and nginx-proxy-manager share an external `nginx` network so NPM can proxy to them. Transmission and Wolf use bridge networking.
+**Network**: jellyfin, audiobookshelf, and nginx-proxy-manager share an external `nginx` network. Transmission and Wolf use bridge networking.
 
-**Media paths**: `/var/stash/media` and `/var/stash2/media` (mounted read-only in containers).
+**Media paths**: `/var/stash/media` and `/var/stash2/media` (mounted read-only).
 
-**VPN**: Transmission uses `haugene/transmission-openvpn`. Set `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD` in environment. VPN configs go in `docker/docker-services/transmission/vpn/`.
+**VPN**: Transmission uses `haugene/transmission-openvpn`. Set `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD` in `.env`. VPN configs in `docker/docker-services/transmission/vpn/`.
 
 **SELinux**: Volume mounts use `:U,z` labels for automatic SELinux context. This is Fedora/RHEL-specific; on non-SELinux systems these labels are harmless but ignored.
 
@@ -214,12 +275,6 @@ Git worktree management. Config at `wt/.config/worktrunk/config.toml`.
 **Commit messages**: Generated by pi (AI agent) via `generate-commit-msg.sh`. The hook feeds the diff to pi with conventional commit format instructions, falls back to a simple `chore: update N files` if pi fails.
 
 **Merge workflow**: Squash-merge with rebase by default. `wt merge` verifies and cleans up the worktree after merging.
-
-### Pi Agent
-
-AI coding assistant. Extensions live in `pi/.pi/agent/extensions/`:
-- **context7**: Up-to-date library documentation lookup (requires `CONTEXT7_API_KEY`)
-- Custom skills for TDD, commits, worktree management
 
 ## Development
 
@@ -271,32 +326,29 @@ git config core.hooksPath .githooks
 
 ```
 .
+├── pi/.pi/                      # Pi agent
+│   ├── agent/extensions/        # 20+ custom extensions
+│   └── README.md                # Extension documentation
 ├── nvim/.config/nvim/           # Neovim
 │   ├── lua/config/              # Core config (LSP, keymaps, diagnostics)
 │   ├── lua/plugins/             # Plugin specs (Lazy.nvim)
-│   ├── lsp/                     # Per-server LSP configs
-│   └── lua/prompts/             # AI prompt templates
+│   └── lsp/                     # Per-server LSP configs
 ├── tmux/.config/tmux/           # Tmux
 │   ├── tmux.conf                # Main config
 │   └── scripts/                 # Popup scripts (wt integration)
 ├── bashrc/                      # Bash
 │   ├── .bashenv                 # Global env vars
 │   └── .bashrc.d/               # Modular sourced scripts
-├── docker/docker-services/      # Docker
+├── docker/docker-services/      # Docker (podman compose)
 │   ├── jellyfin/
 │   ├── audiobookshelf/
 │   ├── nginx-proxy-manager/
 │   ├── transmission/            # Requires VPN .env
 │   └── wolf/
 ├── wt/.config/worktrunk/        # Worktrunk
-│   ├── config.toml              # wt configuration
-│   └── generate-commit-msg.sh   # AI commit message hook
-├── pi/.pi/                      # Pi agent
-│   └── agent/extensions/        # Extensions (context7, etc.)
 ├── homebrew/                    # brew-sync CLI + Brewfile
 ├── mise.toml                    # Runtime versions
 ├── scripts/hooks/               # Git hooks
-├── install.sh                   # Minimal installer (stow nvim + pass-cli)
 ├── AGENTS.md                    # Agent-specific guide
 └── CONVENTIONS.md               # Development conventions
 ```

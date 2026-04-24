@@ -16,20 +16,20 @@ stow */                    # install all
 ## Structure
 
 ```
-nvim/.config/nvim/         # Neovim
+nvim/.config/nvim/         # Neovim            → nvim/README.md
 docker/docker-services/    # Docker services
-bashrc/                    # Bash config
-tmux/.config/tmux/         # Tmux
+bashrc/                    # Bash config        → bashrc/AGENTS.md
+tmux/.config/tmux/         # Tmux               → tmux/README.md
 wt/.config/worktrunk/      # Worktrunk
-pi/.pi/                    # Pi agent
+pi/.pi/                    # Pi agent           → pi/.pi/README.md
 opencode/.config/opencode/ # Opencode
 m908/.config/mouse_m908/   # Mouse config
-homebrew/                  # brew-sync CLI + Brewfile
+homebrew/                  # brew-sync CLI      → homebrew/AGENTS.md
 mise.toml                  # Runtime versions
 scripts/hooks/             # Git hooks
 ```
 
-Each tool directory has its own `AGENTS.md` with path-specific details.
+Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `README.md` (human-facing details with architecture context). Some have both.
 
 ## Global Conventions
 
@@ -51,14 +51,17 @@ Each tool directory has its own `AGENTS.md` with path-specific details.
 | Task | Location |
 |------|----------|
 | Neovim plugin | `nvim/.config/nvim/lua/plugins/` |
+| Neovim docs | `nvim/README.md` |
 | LSP server config | `nvim/.config/nvim/lsp/*.lua` |
 | Docker service | `docker/docker-services/<service>/` |
 | Shell aliases | `bashrc/.bashrc.d/alias` |
 | Shell secrets | `bashrc/.bashrc.d/secrets` |
 | Tmux config | `tmux/.config/tmux/tmux.conf` |
+| Tmux docs | `tmux/README.md` |
 | Worktrunk config | `wt/.config/worktrunk/config.toml` |
 | Git hooks | `scripts/hooks/` |
 | Pi extensions | `pi/.pi/agent/extensions/` (see its `AGENTS.md`) |
+| Pi extension docs | `pi/.pi/README.md` |
 | Tests | `pi/.pi/agent/extensions/**/*.test.ts`, `pi/.local/bin/tdd-plan.test.ts`, `obsidian/.local/lib/wiki-search/wiki-search.test.ts` |
 | CI | `.github/workflows/test.yml` |
 | Homebrew packages | `homebrew/Brewfile` |
