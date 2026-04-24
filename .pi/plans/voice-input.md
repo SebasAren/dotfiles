@@ -157,7 +157,7 @@ whis toggle        # Record → clipboard → paste
 
 TalkType has smart paste detection (`Ctrl+Shift+V` in terminals, `Ctrl+V` elsewhere).
 
-### Dotfiles integration — systemd user service
+### Sebbashop integration — systemd user service
 
 ```ini
 # ~/.config/systemd/user/talktype.service

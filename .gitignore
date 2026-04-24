@@ -6,7 +6,6 @@ nvim/.config/nvim/lua/plugins/llms
 .stack-work/
 .env
 __pycache__/
-qtile/.config/qtile/wallpapers/wallpaper.jpg
 mysql_data/
 history.txt
 .aider*

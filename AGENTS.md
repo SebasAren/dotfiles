@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Dotfiles repo managed with GNU Stow. For human setup, see [README.md](README.md).
+Sebbashop — AI-augmented development environment, managed with GNU Stow. For human setup, see [README.md](README.md).
 
 ## How Stow Works
 
@@ -17,7 +17,6 @@ stow */                    # install all
 
 ```
 nvim/.config/nvim/         # Neovim            → nvim/README.md
-docker/docker-services/    # Docker services
 bashrc/                    # Bash config        → bashrc/AGENTS.md
 tmux/.config/tmux/         # Tmux               → tmux/README.md
 wt/.config/worktrunk/      # Worktrunk
@@ -38,7 +37,6 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 - **Python**: 4-space indent, ruff, `snake_case` funcs, `PascalCase` classes
 - **Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames
 - **Git**: conventional commits (`feat:`, `fix:`, `chore:`), atomic changes
-- **Docker**: `.env` gitignored; media at `/stash/`, `/stash2/`; UID 1000:1000
 - **Secrets**: never commit; use `~/.secrets.tpl` with Proton Pass CLI
 
 ## Global Anti-Patterns
@@ -52,7 +50,6 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 | Neovim plugin | `nvim/.config/nvim/lua/plugins/` |
 | Neovim docs | `nvim/README.md` |
 | LSP server config | `nvim/.config/nvim/lsp/*.lua` |
-| Docker service | `docker/docker-services/<service>/` |
 | Shell aliases | `bashrc/.bashrc.d/alias` |
 | Shell secrets | `bashrc/.bashrc.d/secrets` |
 | Tmux config | `tmux/.config/tmux/tmux.conf` |

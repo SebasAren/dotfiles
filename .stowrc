@@ -1,3 +1,5 @@
+# --target must be the home directory. Stow doesn't expand $HOME, so this
+# is hardcoded. Change it if you clone this repo on a different machine.
 --target=/var/home/sebas
 --ignore=.stowrc
 --ignore=AGENTS.md

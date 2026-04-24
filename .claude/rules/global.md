@@ -1,8 +1,8 @@
 ---
-description: Global project conventions — dotfiles, docs structure, and language standards
+description: Global project conventions — sebbashop, docs structure, and language standards
 ---
 
-## Dotfiles (GNU Stow)
+## Stow Packages (GNU Stow)
 
 - Files in `tool-name/.config/tool/` are symlinked to `~/.config/tool/`
 - Always edit files in the repo, never in the symlink target

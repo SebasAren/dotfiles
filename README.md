@@ -1,11 +1,11 @@
-# Dotfiles
+# Sebbashop
 
-[![test](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml)
+[![test](https://github.com/SebasAren/sebbashop/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/sebbashop/actions/workflows/test.yml)
 [![GNU Stow](https://img.shields.io/badge/managed%20with-GNU%20Stow-blue)](https://www.gnu.org/software/stow/)
 [![mise](https://img.shields.io/badge/runtimes-mise-green)](https://mise.jdx.dev/)
 [![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/mariozechner/pi-coding-agent)
 
-Personal dotfiles repository for a Linux workstation. Managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based configuration.
+AI-augmented development environment for a Linux workstation. Managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based configuration.
 
 This isn't just config files — it's an **AI-augmented development environment**. The [Pi agent extensions](#pi-agent-extensions) form a custom toolchain where subagents handle reconnaissance and research on cheap models, the parent agent stays focused on the actual task, and knowledge is persisted to an Obsidian wiki for cross-session learning.
 
@@ -17,7 +17,6 @@ This isn't just config files — it's an **AI-augmented development environment*
 | `nvim/` | Neovim | Editor: Lazy.nvim, 17 LSP servers, blink.cmp completion, AI coding → [details](nvim/README.md) |
 | `tmux/` | Tmux | Terminal multiplexer: Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
-| `docker/` | Docker | 5 self-hosted services (media, proxy, VPN, game streaming) |
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
@@ -26,10 +25,9 @@ This isn't just config files — it's an **AI-augmented development environment*
 
 ## Prerequisites
 
-- **OS**: Linux (Fedora/RHEL preferred — SELinux labels in Docker configs assume `:z` support)
+- **OS**: Linux (Fedora/RHEL preferred)
 - **Shell**: Bash 4+
 - **Git**: 2.30+
-- **Docker**: Docker Engine + Compose v2 (for services)
 - **Homebrew** (Linuxbrew): installed to `/home/linuxbrew/.linuxbrew/`
 
 ## Quick Setup
@@ -42,7 +40,7 @@ mise install
 
 This installs Python 3.12, Lua 5.4, Node, Bun, and tooling (ruff, StyLua, shellcheck, prettier) as defined in `mise.toml`.
 
-### 2. Stow dotfiles into `~/.config/`
+### 2. Stow packages into `~/.config/`
 
 GNU Stow creates symlinks from the repo to your home directory. Each top-level directory is a "package."
 
@@ -88,17 +86,7 @@ cp bashrc/.secrets.tpl ~/.secrets.tpl
 
 Secrets are only resolved when tools like `pi`, `nvim`, or `wt` actually need them — not on shell startup.
 
-### 5. Start Docker services
-
-Each service is standalone:
-
-```bash
-cd docker/docker-services/jellyfin && podman compose up -d
-```
-
-Services requiring VPN or environment variables need a `.env` file (gitignored). See [Docker Services](#docker-services) below.
-
-### 6. Install Tmux plugins
+### 5. Install Tmux plugins
 
 On first launch, TPM auto-installs. If it doesn't:
 
@@ -221,24 +209,6 @@ Lazy.nvim with 17 LSP servers, blink.cmp completion (Codestral + Minuet-AI), con
 
 Alt-based daily keybindings (no prefix for common ops), vi copy mode with `wl-copy`, Tokyo Night theme, worktrunk popup integration.
 
-### Docker Services
-
-| Service | What it does | Port |
-|---------|-------------|------|
-| **jellyfin** | Media server (movies, TV, music) | 8096 |
-| **audiobookshelf** | Audiobook and podcast server | 13378 |
-| **nginx-proxy-manager** | Reverse proxy with web UI | 8000 (HTTP), 8100 (admin) |
-| **transmission** | BitTorrent via VPN (OpenVPN) | 9091 |
-| **wolf** | Game streaming (Moonlight/Sunshine) | 47984 |
-
-**Network**: jellyfin, audiobookshelf, and nginx-proxy-manager share an external `nginx` network. Transmission and Wolf use bridge networking.
-
-**Media paths**: `/var/stash/media` and `/var/stash2/media` (mounted read-only).
-
-**VPN**: Transmission uses `haugene/transmission-openvpn`. Set `OPENVPN_PROVIDER`, `OPENVPN_USERNAME`, `OPENVPN_PASSWORD` in `.env`. VPN configs in `docker/docker-services/transmission/vpn/`.
-
-**SELinux**: Volume mounts use `:U,z` labels for automatic SELinux context. This is Fedora/RHEL-specific; on non-SELinux systems these labels are harmless but ignored.
-
 ### Shell (Bash)
 
 Modular config in `bashrc/.bashrc.d/`. Each file handles one concern:
@@ -339,12 +309,6 @@ git config core.hooksPath .githooks
 ├── bashrc/                      # Bash
 │   ├── .bashenv                 # Global env vars
 │   └── .bashrc.d/               # Modular sourced scripts
-├── docker/docker-services/      # Docker (podman compose)
-│   ├── jellyfin/
-│   ├── audiobookshelf/
-│   ├── nginx-proxy-manager/
-│   ├── transmission/            # Requires VPN .env
-│   └── wolf/
 ├── wt/.config/worktrunk/        # Worktrunk
 ├── homebrew/                    # brew-sync CLI + Brewfile
 ├── mise.toml                    # Runtime versions

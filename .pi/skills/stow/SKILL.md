@@ -1,16 +1,16 @@
 ---
 name: stow
-description: Manage GNU Stow dotfiles packages — install, uninstall, handle conflicts, add new stowable scripts, and resolve AGENTS.md symlink collisions. Use when installing/uninstalling stow packages, debugging symlink issues, or adding new tools to the dotfiles repo.
+description: Manage GNU Stow packages — install, uninstall, handle conflicts, add new stowable scripts, and resolve AGENTS.md symlink collisions. Use when installing/uninstalling stow packages, debugging symlink issues, or adding new tools to sebbashop.
 ---
 
 # Stow Skill
 
-GNU Stow management for this dotfiles repository. Files in `tool-name/.config/tool/` symlink to `~/.config/tool/` via `stow`.
+GNU Stow management for sebbashop. Files in `tool-name/.config/tool/` symlink to `~/.config/tool/` via `stow`.
 
 ## When to Use This Skill
 
 - Installing or uninstalling stow packages
-- Adding a new tool to the dotfiles repo
+- Adding a new tool to sebbashop
 - Debugging symlink or stow conflicts
 - Adding stowable scripts or `.stow-local-ignore` files
 

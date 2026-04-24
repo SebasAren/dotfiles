@@ -107,7 +107,7 @@ User query  (e.g. "how does the worktree scope extension detect worktree boundar
 ```bash
 # Parallel exploration (4 simultaneous queries)
 explore(query="Neovim LSP configuration", directory="nvim/.config/nvim/lsp/")
-explore(query="Docker service networking", directory="docker/docker-services/")
+explore(query="Shell secret resolution", directory="bashrc/.bashrc.d/")
 explore(query="Shell secret resolution", directory="bashrc/.bashrc.d/")
 explore(query="Git hook pipeline", directory="scripts/hooks/")
 
