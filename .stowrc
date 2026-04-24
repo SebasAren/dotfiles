@@ -3,5 +3,4 @@
 --ignore=AGENTS.md
 --ignore=README.md
 --ignore=CONVENTIONS.md
---ignore=install.sh
 --ignore=mise.toml

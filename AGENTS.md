@@ -44,7 +44,6 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 ## Global Anti-Patterns
 
 - **DO NOT** add qutebrowser config — it does not exist
-- **DO NOT** expect `install.sh` to install everything — it only runs `stow nvim`
 
 ## Where to Look
 
