@@ -46,6 +46,9 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: tdd-plan CLI tests
         working-directory: pi/.local/bin
         run: bun test tdd-plan.test.ts

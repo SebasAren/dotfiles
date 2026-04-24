@@ -416,6 +416,11 @@ describe("main", () => {
   });
 
   test("respects --top flag with rerank", async () => {
+    const tmpDir = await makeTmpDir("wiki-search-test-");
+    writeFileSync(join(tmpDir, "agentic-coding.md"), "agentic coding with agents");
+    writeFileSync(join(tmpDir, "ml.md"), "machine learning agents");
+    writeFileSync(join(tmpDir, "baking.md"), "baking sourdough");
+
     const originalFetch = globalThis.fetch;
     globalThis.fetch = mock(async (_url: string, opts: any) => {
       const body = JSON.parse(opts.body);
@@ -443,12 +448,14 @@ describe("main", () => {
 
     const out = await main(["agent", "--top", "2"], {
       OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: tmpDir,
     });
     expect(out).toContain("Reranked by relevance");
 
     const pageHeaders = out.match(/─── .+ ───/g) ?? [];
     expect(pageHeaders.length).toBe(2);
 
+    rmSync(tmpDir, { recursive: true });
     globalThis.fetch = originalFetch;
   });
 
