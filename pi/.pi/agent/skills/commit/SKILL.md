@@ -16,25 +16,19 @@ Review everything you did this session. Ask yourself:
 - Did I encounter **recurring pitfalls** that are worth recording?
 - Did I learn anything **project-specific** that isn't captured in existing rules?
 
-If you found anything notable, use the **questionnaire** tool to ask the user:
+If you found anything notable, present the findings to the user:
 
-```
-questionnaire({
-  questions: [{
-    id: "store-findings",
-    prompt: "I found some notable findings this session:\n\n<list each finding as a bullet>\n\nWould you like me to persist these as rules in .claude/rules/ for future sessions?",
-    label: "Rules",
-    options: [
-      { value: "yes", label: "Yes, save all" },
-      { value: "pick", label: "Let me choose which ones" },
-      { value: "no", label: "No, skip" }
-    ]
-  }]
-})
-```
+> I found some notable findings this session:
+> - <list each finding as a bullet>
+>
+> Would you like me to persist these as rules in `.claude/rules/` for future sessions?
+>
+> - **Yes, save all**
+> - **Let me choose which ones**
+> - **No, skip**
 
 - If the user answers **yes** → continue to Step 2 with all findings.
-- If the user answers **pick** → ask a follow-up questionnaire with one option per finding so they can select which to keep.
+- If the user answers **pick** → present each finding as a numbered option so they can select which to keep.
 - If the user answers **no** → skip to Step 3.
 
 If **nothing notable** was found, skip directly to Step 3.

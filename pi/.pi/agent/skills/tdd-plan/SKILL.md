@@ -54,43 +54,29 @@ tdd-plan design <slug> \
   --questions "Things the agent doesn't know and needs answers to"
 ```
 
-Then present the design artifact to the user for review via `questionnaire`:
+Then present the design artifact to the user for review:
 
-```typescript
-questionnaire({
-  questions: [{
-    id: "confirm-design",
-    prompt: "Review the design artifact. Correct any misconceptions before I plan the steps.",
-    label: "Design",
-    options: [
-      { value: "looks-good", label: "Looks good, proceed to planning" },
-      { value: "needs-changes", label: "I need to correct something" },
-      { value: "cancel", label: "Cancel" }
-    ]
-  }]
-})
-```
+> Review the design artifact. Correct any misconceptions before I plan the steps.
+>
+> - **Looks good, proceed to planning**
+> - **I need to correct something**
+> - **Cancel**
+
+If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present.
 
 If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present. The goal is to give the human every opportunity to correct the agent's understanding *before* planning.
 
 5. **Draft the plan.** With the corrected design artifact in hand, replace the placeholder steps with the real RED/GREEN/REFACTOR steps. Follow the output format below.
 6. **Review for completeness.** Check that every piece of functionality has a corresponding test.
-7. **Update the plan** using `tdd-plan edit` to replace placeholder steps with real ones. Present the plan inline, then use the `questionnaire` tool to confirm:
+7. **Update the plan** using `tdd-plan edit` to replace placeholder steps with real ones. Present the plan inline, then ask for confirmation:
 
-```typescript
-questionnaire({
-  questions: [{
-    id: "confirm-plan",
-    prompt: "Does this plan look good?",
-    label: "Plan",
-    options: [
-      { value: "yes", label: "Yes, proceed to implementation" },
-      { value: "refine", label: "Let me refine it" },
-      { value: "cancel", label: "Cancel" }
-    ]
-  }]
-})
-```
+> Does this plan look good?
+>
+> - **Yes, proceed to implementation**
+> - **Let me refine it**
+> - **Cancel**
+
+If **refine**, ask what to change and re-draft. If **cancel**, stop. If **yes**, proceed to implementation.
 
 If the user selects **refine**, ask what to change and re-draft. If **cancel**, stop. If **yes**, proceed to implementation.
 
@@ -238,7 +224,7 @@ High-level overview of the components involved.
 - Edge cases, integration points, things to watch out for
 ```
 
-After the user confirms the plan via questionnaire, proceed to [Implementation](#implementation).
+After the user confirms the plan, proceed to [Implementation](#implementation).
 
 ---
 
@@ -249,22 +235,15 @@ Execute an existing plan step-by-step. Each step follows the strict Red-Green-Re
 ### Setup
 
 1. **Locate the plan.** Run `tdd-plan show <slug>` to display the plan. If no slug is provided, run `tdd-plan list` and ask which one to implement.
-2. **Confirm the plan.** Show the plan summary, then use the `questionnaire` tool:
+2. **Confirm the plan.** Show the plan summary, then ask for confirmation:
 
-```typescript
-questionnaire({
-  questions: [{
-    id: "start-impl",
-    prompt: "Ready to implement this plan?",
-    label: "Start",
-    options: [
-      { value: "start", label: "Yes, start implementing" },
-      { value: "view", label: "Show full plan details first" },
-      { value: "cancel", label: "Not now" }
-    ]
-  }]
-})
-```
+> Ready to implement this plan?
+>
+> - **Yes, start implementing**
+> - **Show full plan details first**
+> - **Not now**
+
+If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
 
 If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
 3. **Determine test command.** Check how to run tests in the project:
@@ -348,21 +327,14 @@ Show:
 
 ### Finish
 
-After all steps are complete, show the final summary and use the `questionnaire` tool:
+After all steps are complete, show the final summary and ask what to do:
 
-```typescript
-questionnaire({
-  questions: [{
-    id: "plan-done",
-    prompt: "All steps complete! What would you like to do?",
-    label: "Finish",
-    options: [
-      { value: "archive", label: "Archive the plan", description: "Move to .pi/plans/archive/" },
-      { value: "keep", label: "Keep the plan", description: "Leave it for reference" }
-    ]
-  }]
-})
-```
+> All steps complete! What would you like to do?
+>
+> - **Archive the plan** — Move to `.pi/plans/archive/`
+> - **Keep the plan** — Leave it for reference
+
+If **archive**, run `tdd-plan archive <slug>`.
 
 If **archive**, run `tdd-plan archive <slug>`.
 

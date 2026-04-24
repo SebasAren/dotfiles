@@ -117,7 +117,6 @@ describe("plan mode extension", () => {
         "grep",
         "find",
         "ls",
-        "questionnaire",
         "explore",
         "librarian",
       ]);

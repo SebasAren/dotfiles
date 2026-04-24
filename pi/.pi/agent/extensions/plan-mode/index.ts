@@ -12,16 +12,7 @@ import type {
 } from "@mariozechner/pi-coding-agent";
 import { Key } from "@mariozechner/pi-tui";
 
-const PLAN_MODE_TOOLS = [
-  "read",
-  "bash",
-  "grep",
-  "find",
-  "ls",
-  "questionnaire",
-  "explore",
-  "librarian",
-];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "explore", "librarian"];
 
 const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
 
