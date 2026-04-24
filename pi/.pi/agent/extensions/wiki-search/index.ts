@@ -89,10 +89,56 @@ export async function executeWikiSearch(
   const stderr = result.stderr ?? "";
 
   if (result.status !== 0) {
-    const msg = stderr.trim() || stdout.trim() || `exit code ${result.status}`;
-    throw new Error(`wiki-search failed: ${msg}`);
+    const errMsg = stderr.trim() || stdout.trim() || `exit code ${result.status}`;
+
+    // No results found is a valid outcome, not an error
+    if (errMsg.startsWith("No matching pages")) {
+      return buildResult("", query, semantic, no_rerank);
+    }
+
+    // Auto-rebuild on stale index: rebuild and retry once
+    if (errMsg.includes("stale")) {
+      const rebuildResult = spawnSync(binaryPath, ["--rebuild"], {
+        encoding: "utf8",
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: 60_000,
+        env: { ...process.env },
+      });
+
+      if (rebuildResult.status === 0) {
+        // Retry the original search
+        const retry = spawnSync(binaryPath, args, {
+          encoding: "utf8",
+          maxBuffer: 10 * 1024 * 1024,
+          timeout: 30_000,
+          env: { ...process.env },
+        });
+
+        if (retry.status === 0) {
+          const retryStdout = retry.stdout ?? "";
+          return buildResult(retryStdout, query, semantic, no_rerank);
+        }
+
+        const retryErr =
+          retry.stderr?.trim() || retry.stdout?.trim() || `exit code ${retry.status}`;
+        throw new Error(`wiki-search failed after rebuild: ${retryErr}`);
+      }
+
+      // Rebuild failed (e.g., no API key) — throw informative error
+      const rebuildErr =
+        rebuildResult.stderr?.trim() ||
+        rebuildResult.stdout?.trim() ||
+        `exit code ${rebuildResult.status}`;
+      throw new Error(`wiki-search: index stale and auto-rebuild failed: ${rebuildErr}`);
+    }
+
+    throw new Error(`wiki-search failed: ${errMsg}`);
   }
 
+  return buildResult(stdout, query, semantic, no_rerank);
+}
+
+function buildResult(stdout: string, query: string, semantic: boolean, no_rerank: boolean) {
   const wikiDir = `${process.env.HOME}/Documents/wiki/wiki`;
 
   // Parse relative paths from result headers like "─── entities/humanlayer.md (score: 0.956) ───"
@@ -118,7 +164,6 @@ export async function executeWikiSearch(
     details,
   };
 }
-
 // ── Extension entry point ──────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {

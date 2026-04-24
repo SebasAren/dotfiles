@@ -56,7 +56,9 @@ describe("wiki-read extension", () => {
   });
 
   it("rejects paths outside the wiki directory", () => {
-    expect(() => executeWikiRead({ path: "../../etc/passwd" })).toThrow("outside the wiki directory");
+    expect(() => executeWikiRead({ path: "../../etc/passwd" })).toThrow(
+      "outside the wiki directory",
+    );
   });
 
   it("reads a wiki page by absolute path", () => {
@@ -78,6 +80,8 @@ describe("wiki-read extension", () => {
   });
 
   it("throws for missing files", () => {
-    expect(() => executeWikiRead({ path: "concepts/does-not-exist.md" })).toThrow("Failed to read wiki page");
+    expect(() => executeWikiRead({ path: "concepts/does-not-exist.md" })).toThrow(
+      "Failed to read wiki page",
+    );
   });
 });

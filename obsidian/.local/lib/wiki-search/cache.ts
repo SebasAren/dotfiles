@@ -119,16 +119,20 @@ export async function buildCache(
   onProgress?.(`Done. Indexed ${allDocs.length} documents.`);
 }
 
-export function cacheIsStale(wikiDir: string): boolean {
+export function cacheIsStale(
+  wikiDir: string,
+): { stale: false } | { stale: true; reason: "hash" | "structure" } {
   const manifest = loadJson<Manifest>("manifest.json");
-  if (!manifest) return true;
+  if (!manifest) return { stale: true, reason: "structure" };
   const currentPaths = new Set(walkMarkdown(wikiDir));
   const cachedPaths = new Set(Object.keys(manifest));
-  if (currentPaths.size !== cachedPaths.size) return true;
-  for (const p of currentPaths) if (!cachedPaths.has(p)) return true;
+  if (currentPaths.size !== cachedPaths.size)
+    return { stale: true, reason: "structure" };
+  for (const p of currentPaths)
+    if (!cachedPaths.has(p)) return { stale: true, reason: "structure" };
   for (const [p, entry] of Object.entries(manifest)) {
-    if (!existsSync(p)) return true;
-    if (fileHash(p) !== entry.hash) return true;
+    if (!existsSync(p)) return { stale: true, reason: "structure" };
+    if (fileHash(p) !== entry.hash) return { stale: true, reason: "hash" };
   }
-  return false;
+  return { stale: false };
 }

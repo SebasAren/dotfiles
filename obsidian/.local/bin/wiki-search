@@ -9,15 +9,12 @@ const result = await main(
   process.env as Record<string, string | undefined>,
 );
 
-if (result.startsWith("No matching pages") || result.startsWith("Error:")) {
-  console.error(result);
-  process.exit(1);
-} else if (
-  result.startsWith("No search index found") ||
-  result.startsWith("Search index is stale")
-) {
-  console.error(result);
-  process.exit(1);
-} else {
+if (result.startsWith("No matching pages")) {
   console.log(result);
+  process.exit(0);
 }
+if (result.startsWith("Error:")) {
+  console.error(result);
+  process.exit(1);
+}
+console.log(result);

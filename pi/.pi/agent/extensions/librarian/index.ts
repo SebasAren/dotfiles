@@ -86,7 +86,14 @@ async function createLibrarianSession(
     // Explicitly allowlist only the extension tools the librarian needs.
     // This prevents the librarian subagent from calling itself (recursion)
     // and disables built-in filesystem tools that don't belong here.
-    tools: ["web_search", "web_fetch", "context7_search", "context7_docs", "wiki_search", "wiki_read"],
+    tools: [
+      "web_search",
+      "web_fetch",
+      "context7_search",
+      "context7_docs",
+      "wiki_search",
+      "wiki_read",
+    ],
     authStorage,
     modelRegistry,
     sessionManager: SessionManager.inMemory(),

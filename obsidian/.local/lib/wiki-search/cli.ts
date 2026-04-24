@@ -63,11 +63,30 @@ Falls back to BM25-only if key is unset.`;
   }
 
   // ── Check cache ──
-  const bm25Index = loadJson<Bm25Index>("bm25-index.json");
-  const vectors = loadJson<Record<string, number[]>>("vectors.json");
-  const hasCache = bm25Index !== null;
-  const hasVectors = vectors !== null && apiKey;
-  const cacheStale = hasCache ? cacheIsStale(wikiDir) : true;
+  let bm25Index = loadJson<Bm25Index>("bm25-index.json");
+  let vectors = loadJson<Record<string, number[]>>("vectors.json");
+  let hasCache = bm25Index !== null;
+  let hasVectors = vectors !== null && !!apiKey;
+  const staleResult = hasCache
+    ? cacheIsStale(wikiDir)
+    : ({ stale: true, reason: "structure" } as const);
+  let cacheStale = staleResult.stale;
+
+  // ── Attempt auto-rebuild when stale and key is available ──
+  if (hasCache && cacheStale && apiKey) {
+    try {
+      await buildCache(wikiDir, apiKey);
+      bm25Index = loadJson<Bm25Index>("bm25-index.json");
+      vectors = loadJson<Record<string, number[]>>("vectors.json");
+      hasCache = bm25Index !== null;
+      hasVectors = vectors !== null && !!apiKey;
+      cacheStale = false;
+    } catch {
+      if (staleResult.reason === "structure") {
+        hasCache = false;
+      }
+    }
+  }
 
   // ── Fallback to legacy ripgrep + rerank when no cache ──
   if (!hasCache) {
@@ -99,17 +118,22 @@ Falls back to BM25-only if key is unset.`;
     return lines.join("\n");
   }
 
-  if (cacheStale) {
-    return `Search index is stale. Run: wiki-search --rebuild`;
-  }
-
   // ── Search ──
   let candidates: string[];
   let scored: Array<{ path: string; score: number }>;
 
   if (hasVectors) {
-    scored = await hybridSearch(query, bm25Index!, vectors!, alpha, apiKey);
-    candidates = scored.map((s) => s.path);
+    try {
+      scored = await hybridSearch(query, bm25Index!, vectors!, alpha, apiKey);
+      candidates = scored.map((s) => s.path);
+    } catch {
+      // API unavailable — fall back to BM25-only with stale cache
+      scored = Array.from(scoreBm25(query, bm25Index!))
+        .map(([path, score]) => ({ path, score }))
+        .sort((a, b) => b.score - a.score);
+      candidates = scored.map((s) => s.path);
+      hasVectors = false;
+    }
   } else {
     scored = Array.from(scoreBm25(query, bm25Index!))
       .map(([path, score]) => ({ path, score }))
@@ -128,6 +152,8 @@ Falls back to BM25-only if key is unset.`;
     lines.push(
       `=== Hybrid search (BM25 ${alpha.toFixed(1)}, vector ${(1 - alpha).toFixed(1)}) ===`,
     );
+  } else if (apiKey) {
+    lines.push(`=== BM25 search ===`);
   } else {
     lines.push(`=== BM25 search (no API key) ===`);
   }

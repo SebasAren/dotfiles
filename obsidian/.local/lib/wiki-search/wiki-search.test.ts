@@ -468,4 +468,134 @@ describe("main", () => {
     const out = await main(["--rebuild"], {});
     expect(out).toContain("Error: OPENROUTER_API_KEY required");
   });
+
+  test("auto-rebuilds on hash-only staleness with working API", async () => {
+    const dir = await makeTmpDir("auto-rebuild-");
+    const originalHome = process.env.HOME;
+    process.env.HOME = dir;
+
+    mkdirSync(join(dir, "wiki"));
+    writeFileSync(join(dir, "wiki", "a.md"), "# Title A\nHello world");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async (_url: string, opts: any) => {
+      const body = JSON.parse(opts.body);
+      const texts = body.input as string[];
+      return new Response(
+        JSON.stringify({
+          data: texts.map(() => ({ embedding: [0.1, 0.2, 0.3] })),
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+
+    await main(["--rebuild"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+
+    // Modify file to make cache hash-stale
+    writeFileSync(join(dir, "wiki", "a.md"), "# Title A\nHello world updated");
+
+    const out = await main(["world"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+    expect(out).not.toContain("Search index is stale");
+    expect(out).toContain("matching page(s)");
+
+    globalThis.fetch = originalFetch;
+    process.env.HOME = originalHome;
+    rmSync(dir, { recursive: true });
+  });
+
+  test("falls back to stale cache on hash-only staleness when API is down", async () => {
+    const dir = await makeTmpDir("hash-fallback-");
+    const originalHome = process.env.HOME;
+    process.env.HOME = dir;
+
+    mkdirSync(join(dir, "wiki"));
+    writeFileSync(join(dir, "wiki", "a.md"), "# Title A\nHello world");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async (_url: string, opts: any) => {
+      const body = JSON.parse(opts.body);
+      const texts = body.input as string[];
+      return new Response(
+        JSON.stringify({
+          data: texts.map(() => ({ embedding: [0.1, 0.2, 0.3] })),
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+
+    await main(["--rebuild"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+
+    // Modify file
+    writeFileSync(join(dir, "wiki", "a.md"), "# Title A\nHello world updated");
+
+    // Break API
+    globalThis.fetch = mock(async () => {
+      return new Response(JSON.stringify({ error: "down" }), { status: 503 });
+    });
+
+    const out = await main(["world"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+    expect(out).not.toContain("Search index is stale");
+    expect(out).toContain("matching page(s)");
+
+    globalThis.fetch = originalFetch;
+    process.env.HOME = originalHome;
+    rmSync(dir, { recursive: true });
+  });
+
+  test("falls back to ripgrep on structural staleness when API is down", async () => {
+    const dir = await makeTmpDir("struct-fallback-");
+    const originalHome = process.env.HOME;
+    process.env.HOME = dir;
+
+    mkdirSync(join(dir, "wiki"));
+    writeFileSync(join(dir, "wiki", "a.md"), "# Title A\nHello world");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async (_url: string, opts: any) => {
+      const body = JSON.parse(opts.body);
+      const texts = body.input as string[];
+      return new Response(
+        JSON.stringify({
+          data: texts.map(() => ({ embedding: [0.1, 0.2, 0.3] })),
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+
+    await main(["--rebuild"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+
+    // Add a new file → structural staleness
+    writeFileSync(join(dir, "wiki", "b.md"), "# Title B\nMachine learning");
+
+    // Break API
+    globalThis.fetch = mock(async () => {
+      return new Response(JSON.stringify({ error: "down" }), { status: 503 });
+    });
+
+    const out = await main(["world"], {
+      OPENROUTER_API_KEY: "test-key",
+      WIKI_DIR: join(dir, "wiki"),
+    });
+    expect(out).not.toContain("Search index is stale");
+    expect(out).toContain("matching page(s)");
+
+    globalThis.fetch = originalFetch;
+    process.env.HOME = originalHome;
+    rmSync(dir, { recursive: true });
+  });
 });
