@@ -101,7 +101,13 @@ function rg(...args: string[]): string {
     maxBuffer: 10 * 1024 * 1024,
     timeout: 30_000,
   });
-  if (result.error) return "";
+  if (result.error) {
+    throw new Error(`ripgrep failed: ${result.error.message}`);
+  }
+  if (result.status !== 0 && result.status !== 1) {
+    // status 1 = no matches, which is fine; anything else is an error
+    throw new Error(`ripgrep exited with status ${result.status}: ${result.stderr ?? ""}`);
+  }
   return result.stdout ?? "";
 }
 
