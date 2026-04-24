@@ -1,0 +1,55 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pi-extensions:
+    name: Pi extensions (typecheck + bun test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pi/.pi/agent/extensions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck all workspaces
+        run: |
+          set -e
+          for dir in */; do
+            if [ -f "$dir/tsconfig.json" ]; then
+              echo "==> $dir"
+              npx tsc --noEmit -p "$dir/tsconfig.json"
+            fi
+          done
+
+      - name: Run bun test
+        run: bun test
+
+  standalone:
+    name: Standalone CLI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: tdd-plan CLI tests
+        working-directory: pi/.local/bin
+        run: bun test tdd-plan.test.ts
+
+      - name: wiki-search tests
+        working-directory: obsidian/.local/lib/wiki-search
+        run: bun test wiki-search.test.ts

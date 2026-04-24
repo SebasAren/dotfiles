@@ -58,7 +58,9 @@ Each tool directory has its own `AGENTS.md` with path-specific details.
 | Tmux config | `tmux/.config/tmux/tmux.conf` |
 | Worktrunk config | `wt/.config/worktrunk/config.toml` |
 | Git hooks | `scripts/hooks/` |
-| Pi extensions | `pi/.pi/agent/extensions/` |
+| Pi extensions | `pi/.pi/agent/extensions/` (see its `AGENTS.md`) |
+| Tests | `pi/.pi/agent/extensions/**/*.test.ts`, `pi/.local/bin/tdd-plan.test.ts`, `obsidian/.local/lib/wiki-search/wiki-search.test.ts` |
+| CI | `.github/workflows/test.yml` |
 | Homebrew packages | `homebrew/Brewfile` |
 | brew-sync CLI | `homebrew/.local/bin/brew-sync` |
 

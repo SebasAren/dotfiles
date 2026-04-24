@@ -1,5 +1,7 @@
 # Dotfiles
 
+[![test](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/dotfiles/actions/workflows/test.yml)
+
 Personal dotfiles repository for a Linux workstation. Managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based configuration.
 
 ## What's Inside
@@ -231,6 +233,31 @@ mise run luacheck     # Lint Lua
 mise run ruff         # Lint + format Python
 mise run shellcheck   # Lint shell scripts
 ```
+
+### Testing
+
+The TypeScript surface (Pi agent extensions and two standalone CLIs) is covered by **459 tests across 36 files**, all running under [`bun test`](https://bun.sh/docs/cli/test) and executed on every push by GitHub Actions (see [`.github/workflows/test.yml`](.github/workflows/test.yml)).
+
+| Location | Tests | Style |
+|----------|-------|-------|
+| `pi/.pi/agent/extensions/**/*.test.ts` | 413 | Unit tests co-located with source; `integration.test.ts` per extension covers load/register cycles |
+| `pi/.local/bin/tdd-plan.test.ts` | 5 | End-to-end CLI tests via `execSync` against the `tdd-plan` binary |
+| `obsidian/.local/lib/wiki-search/wiki-search.test.ts` | 41 | Unit tests with real filesystem fixtures for the `wiki-search` CLI |
+
+**Run locally:**
+
+```bash
+# Pi extensions (typecheck + tests)
+cd pi/.pi/agent/extensions
+for dir in */; do [ -f "$dir/tsconfig.json" ] && npx tsc --noEmit -p "$dir/tsconfig.json"; done
+bun test
+
+# Standalone CLIs
+bun test pi/.local/bin/tdd-plan.test.ts
+bun test obsidian/.local/lib/wiki-search/wiki-search.test.ts
+```
+
+**Mocking conventions**: External SDKs (`exa-js`, `@upstash/context7-sdk`, `@mariozechner/pi-coding-agent`) are mocked via shared factories in `pi/.pi/agent/extensions/shared/src/test-mocks.ts` — tests never hit the network and need no API keys. See `.claude/rules/pi-extensions.md` for the full rationale.
 
 ### Git Hooks
 
