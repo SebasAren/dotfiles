@@ -1,0 +1,95 @@
+---
+---
+<section class="review">
+  <h2>Code Review</h2>
+  <div class="review-byline">
+    <span class="review-label">Reviewed by</span>
+    <span class="reviewer-name">Deepseek v4 Pro</span>
+  </div>
+
+  <div class="review-verdict">
+    <p>
+      <strong>Verdict:</strong> This is a <em>genuinely impressive, battle-hardened
+      development environment</em> masquerading as &ldquo;dotfiles.&rdquo;
+    </p>
+  </div>
+
+  <h3>What&rsquo;s remarkable</h3>
+
+  <p>
+    <strong>The explore subagent is production-grade.</strong> Query planning &rarr;
+    heuristic file scoring (path, symbol, entity, description, import proximity)
+    &rarr; Cohere semantic reranking &rarr; subagent dispatch with structured
+    output. The design decisions document is full of earned wisdom. This isn&rsquo;t a
+    weekend project &mdash; it&rsquo;s codebase reconnaissance iterated on real repos.
+  </p>
+
+  <p>
+    <strong>Exceptional testing discipline for a personal repo.</strong>
+    413 tests across 34 files, CI on every push, proper temp-directory
+    fixtures, edge-case coverage. The testing rules file itself documents
+    hard-won lessons (&ldquo;mock.module() cross-contamination,&rdquo;
+    &ldquo;Bun virtualizes <code>process.cwd()</code>&rdquo;). Most company
+    repos don&rsquo;t achieve this.
+  </p>
+
+  <p>
+    <strong>Multi-layered documentation architecture.</strong> Path-scoped
+    <code>AGENTS.md</code> for AI agents, <code>README.md</code> for humans,
+    <code>.claude/rules/*.md</code> for enforced behaviors, and
+    <code>SKILL.md</code> for reusable agent capabilities. Each layer targets a
+    different audience without duplication.
+  </p>
+
+  <p>
+    <strong>Sound architectural separation.</strong> Skills vs. extensions,
+    CLI tools vs. skills, subagent runner as a shared library with retry
+    logic, loop detection, budget management, and usage tracking &mdash; reused
+    across explore, librarian, and wiki-stash. These are the right abstractions.
+  </p>
+
+  <p>
+    <strong>Stow management with safety.</strong> <code>.stowrc</code> at root
+    with <code>--target</code> and <code>--ignore</code> to prevent accidental
+    broad installs. This avoids the classic dotfiles problem of &ldquo;I symlinked
+    my home directory and now everything is broken.&rdquo;
+  </p>
+
+  <h3>Where it could improve</h3>
+
+  <p>
+    <strong>CI can catch more.</strong> ESLint is configured but not run in CI.
+    Shellcheck is documented as a tool but not enforced. Adding
+    <code>npx eslint .</code> and <code>shellcheck</code> to CI would close
+    those gaps cheaply.
+  </p>
+
+  <p>
+    <strong>Explore extension is a 280-line monolith.</strong> Session creation,
+    model resolution, tool registration, and pre-search orchestration are all in
+    one file. Splitting into smaller modules would improve testability.
+  </p>
+
+  <p>
+    <strong>No shell tests in CI.</strong> The <code>scripts/</code> and
+    <code>bashrc/</code> directories have no test coverage despite containing
+    critical infrastructure.
+  </p>
+
+  <p>
+    <strong>CONVENTIONS.md gap.</strong> The docs structure rule says
+    &ldquo;CONVENTIONS.md: Actionable rules with specific tool commands&rdquo;
+    &mdash; but none exist in the repo.
+  </p>
+
+  <h3>Bottom line</h3>
+
+  <p>
+    This isn&rsquo;t dotfiles. This is an <strong>AI-augmented development
+    platform</strong> with a custom subagent framework, semantic codebase search,
+    integrated wiki management, TDD pipeline, and CI-enforced test suite. The
+    exploration subagent alone is more sophisticated than most dedicated
+    code-search tools. The gaps are small and fixable. The architecture,
+    testing, and documentation foundations are excellent.
+  </p>
+</section>
