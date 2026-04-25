@@ -1,0 +1,52 @@
+{
+  "title": "store-memory Skill",
+  "slug": "store-memory",
+  "context": "Create a pi agent skill that allows the agent to autonomously dump conceptual observations to ~/Documents/wiki/raw/inbox/ as timestamped markdown files with minimal frontmatter. The agent decides autonomously when to store. Content boundary: general/conceptual knowledge only (not code-specific patterns, which go to .claude/rules/). The ingest pipeline handles curation later.",
+  "architecture": "Skills live in pi/.pi/agent/skills/<name>/SKILL.md (Markdown instruction files). Extensions live in pi/.pi/agent/extensions/<name>/ (TypeScript code registering tools/commands). For store-memory, the skill instructs the agent to use the write tool (or a bash script) to create files in raw/inbox/. No downstream processing — the obsidian-wiki-ingest skill handles that separately.",
+  "created": "2026-04-25T14:15:01.791Z",
+  "updated": "2026-04-25T14:28:11.403Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "store-memory script and library",
+      "red": {
+        "description": "Write test that calls createMemoryNote with title, content, and tags arguments and verifies a markdown file is created in ~/Documents/wiki/raw/inbox/ with YYYY-MM-DD-descriptive-slug.md naming, correct YAML frontmatter (title, created as ISO 8601, tags as array), and content body",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement createMemoryNote library function and CLI wrapper that writes the file. CLI accepts --title, --tags, content from stdin or positional args",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "store-memory SKILL.md",
+      "red": {
+        "description": "Write test that validates SKILL.md exists at pi/.pi/agent/skills/store-memory/SKILL.md, has valid YAML frontmatter with required fields (name, description), and contains sections for trigger, format, usage, and content boundary rules",
+        "status": "done"
+      },
+      "green": {
+        "description": "Write the SKILL.md with proper structure",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [],
+  "design": {
+    "currentState": "The wiki has a raw/inbox/ directory at ~/Documents/wiki/raw/inbox/ that is currently empty. Raw/ is for user-placed source documents with YAML frontmatter. Existing frontmatter conventions (from raw/notes/): title, source, author, published, created, description, tags. Pi skills live in pi/.pi/agent/skills/<name>/SKILL.md — simple markdown instruction files. Extensions (pi/.pi/agent/extensions/<name>/) register tools/commands in TypeScript. The wiki-stash extension already writes to wiki/concepts|entities|synthesis — distinct from raw/inbox/ dumping. The obsidian-wiki-ingest skill processes inbox contents into the wiki structure. No existing extension or skill for raw/inbox/ writing exists.",
+    "desiredState": "A store-memory skill (pi/.pi/agent/skills/store-memory/SKILL.md) that instructs the agent: when to store (autonomously, any moment), what to store (conceptual knowledge only, not code patterns), and how to write to raw/inbox/ with correct format. Files created follow hybrid naming: YYYY-MM-DD-descriptive-slug.md. Frontmatter: title, created (ISO 8601), tags (array). The skill tells the agent to use the write tool (or bash) directly — no extension needed. The skill is listed in pi/.pi/agent/AGENTS.md's skill registry.",
+    "patterns": "Skill format (from commit/SKILL.md): YAML frontmatter (name, description) + markdown body with ## sections for workflow steps and usage. Skills reference tools via backtick-bash blocks (e.g. ```bash\\nwiki-search ...\\n```). Skills are invoked via /skill:<name>. Raw/ frontmatter conventions: notes use title, source, author, published, created, description, tags. For agent-authored memories: title (descriptive), created (ISO 8601 timestamp), tags (kebab-case array). File naming: lowercase-hyphen-separated with date prefix.",
+    "decisions": "Trigger: agent decides autonomously, no permission asked. Content: general/conceptual knowledge → wiki; code patterns → .claude/rules/. Frontmatter: minimal (title, created, tags). Naming: YYYY-MM-DD-descriptive-slug.md. Destination: ~/Documents/wiki/raw/inbox/. Integration: independent from commit/ingest skills. No extension needed — agent uses write/bash tools directly.",
+    "questions": "What test framework validates this? Skills are markdown, not TypeScript — so there's no standard TDD loop. Options: (1) create a small CLI helper script in ~/.local/bin/ that handles the file creation and test that, (2) create a lightweight extension that registers a store_memory tool (testable with bun test, matches existing patterns), or (3) test just the SKILL.md structure (frontmatter validity, content conventions) as a 'soft' validation. Which approach fits?"
+  }
+}
