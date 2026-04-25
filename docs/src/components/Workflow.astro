@@ -2,19 +2,22 @@
 import TerminalPrompt from "./TerminalPrompt.astro";
 ---
 <section class="workflow">
-  <h2>The Workflow</h2>
+  <h2>The Agent Loop</h2>
   <p class="workflow-intro">
     Every feature starts the same way — not with code, but with questions.
+    The pi agent runs a structured four-step loop that keeps the human
+    in the driver's seat.
   </p>
 
   <div class="pipeline">
     <div class="pipeline-step">
       <span class="step-number">1</span>
-      <h3>Align</h3>
+      <h3>Grill</h3>
       <p>
-        Before writing a single line, the AI interviews me — edge cases, trade-offs, dependencies.
-        Inspired by Frederick Brooks' <em>design concept</em>: the shared idea that exists
-        between two minds. Most "I don't know" answers surface here, not mid-implementation.
+        Adversarial interview — edge cases, trade-offs, dependencies.
+        Questions surface unknowns before a line is written.
+        Research happens here: wiki queries, documentation lookup,
+        codebase reconnaissance via the explore subagent.
       </p>
     </div>
 
@@ -24,9 +27,10 @@ import TerminalPrompt from "./TerminalPrompt.astro";
       <span class="step-number">2</span>
       <h3>Plan</h3>
       <p>
-        The aligned idea gets routed to structured planning — TDD with red-green-refactor for
-        well-scoped features, or read-only plan mode for exploratory work. The plan is an
-        artifact, not a feeling. Steps are numbered. Acceptance criteria are explicit.
+        Design discussion crystallizes into a numbered plan with
+        explicit acceptance criteria. Routed to tdd-plan for test-first
+        implementation or plan-mode for exploratory work. The plan is
+        an artifact, not a feeling.
       </p>
     </div>
 
@@ -34,11 +38,25 @@ import TerminalPrompt from "./TerminalPrompt.astro";
 
     <div class="pipeline-step">
       <span class="step-number">3</span>
-      <h3>Build &amp; Reflect</h3>
+      <h3>Build</h3>
       <p>
-        Implementation follows the plan step by step. When it's done, a reflection pass
-        captures gotchas and non-obvious findings as persistent rules for future sessions.
-        Every commit leaves the codebase smarter than it found it.
+        Implementation follows the plan step by step, red-green-refactor.
+        The explore subagent maps unfamiliar code, traces dependencies,
+        and validates assumptions throughout. Every build step is
+        tracked against the plan.
+      </p>
+    </div>
+
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step">
+      <span class="step-number">4</span>
+      <h3>Reflect</h3>
+      <p>
+        When implementation is done, a reflection pass captures gotchas
+        and non-obvious findings as persistent rules. Every commit
+        leaves the codebase smarter than it found it. Rules are
+        machine-enforced, not wiki-lost.
       </p>
     </div>
   </div>

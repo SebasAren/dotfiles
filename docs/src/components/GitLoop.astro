@@ -1,0 +1,52 @@
+---
+import TerminalPrompt from "./TerminalPrompt.astro";
+---
+<section class="git-loop">
+  <h2>The Git Loop</h2>
+  <p class="git-loop-intro">
+    Underneath the agent loop runs a worktree-based git workflow that
+    isolates every task in its own branch — safe, parallel, and
+    merge-ready.
+  </p>
+
+  <div class="git-pipeline">
+    <div class="git-step">
+      <span class="step-number">1</span>
+      <h3>Branch</h3>
+      <p>
+        One worktree per feature. <code>wt step create</code> spins up
+        an isolated directory with its own branch. No stash, no
+        context-switch — just a clean slate for the agent.
+      </p>
+    </div>
+
+    <div class="pipeline-arrow">→</div>
+
+    <div class="git-step">
+      <span class="step-number">2</span>
+      <h3>Implement</h3>
+      <p>
+        The pi agent works inside the worktree, following the plan
+        from the agent loop. Multiple worktrees can run parallel agent
+        sessions — like a CI pipeline for AI tasks.
+      </p>
+    </div>
+
+    <div class="pipeline-arrow">→</div>
+
+    <div class="git-step">
+      <span class="step-number">3</span>
+      <h3>Review</h3>
+      <p>
+        The human reviews the worktree diff. If it passes, <code>wt
+        step merge</code> brings it home. If not, the worktree is
+        discarded — no cleanup, no stray branches.
+      </p>
+    </div>
+  </div>
+
+  <TerminalPrompt
+    command="wt step review"
+    output={"On step review of pi/extension-panel\n\n  Changes since step start:\n    pi/.pi/agent/extensions/panel.ts   +142\n    pi/.pi/agent/extensions/panel.test.ts  +98\n\n  ✓ All tests passing\n  ✓ Conventional commit: feat(pi): add extension panel with TUI integration\n\n→ Ready to merge."}
+  />
+</section>

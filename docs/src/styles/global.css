@@ -18,7 +18,7 @@
   --border: #30363d;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono",
     "Consolas", monospace;
-  --max-width: 48rem;
+  --max-width: 56rem;
 }
 
 html {
@@ -43,8 +43,18 @@ body {
 .hero .handle {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--accent);
+  background: linear-gradient(135deg, #58a6ff 0%, #a371f7 50%, #58a6ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: wave 3s ease-in-out infinite alternate;
   margin-bottom: 0.5rem;
+}
+
+@keyframes wave {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .hero .tagline {
@@ -245,13 +255,14 @@ body {
 
 .pipeline {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 1.25rem;
   margin-bottom: 2.5rem;
 }
 
 .pipeline-step {
-  flex: 1;
+  flex: 1 1 calc(50% - 0.625rem);
+  min-width: 18rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -285,10 +296,11 @@ body {
 }
 
 .pipeline-arrow {
+  display: none;
   color: var(--border);
   font-size: 1.5rem;
-  padding-top: 2rem;
   flex-shrink: 0;
+  align-self: center;
 }
 
 @media (max-width: 640px) {
@@ -296,6 +308,7 @@ body {
     flex-direction: column;
   }
   .pipeline-arrow {
+    display: block;
     padding-top: 0;
     text-align: center;
     transform: rotate(90deg);
@@ -477,6 +490,69 @@ body {
 .changelog h2 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
+}
+
+/* Git Loop */
+.git-loop {
+  max-width: var(--max-width);
+  margin: 0 auto 6rem;
+}
+
+.git-loop h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.git-loop-intro {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.git-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.git-step {
+  flex: 1 1 calc(50% - 0.625rem);
+  min-width: 18rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+.git-step h3 {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.git-step p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.git-step code {
+  background: var(--bg-terminal);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: var(--accent-dim);
+}
+
+@media (max-width: 640px) {
+  .git-pipeline {
+    flex-direction: column;
+  }
+  .git-pipeline .pipeline-arrow {
+    display: block;
+    text-align: center;
+    transform: rotate(90deg);
+  }
 }
 
 /* Responsive */

@@ -25,16 +25,6 @@ const intros: Record<string, { title: string; description: string }> = {
     description:
       "A full-featured Neovim config with Lazy.nvim, 17 LSP servers, AI-assisted completion via Codestral, and integrated formatting/linting. The primary editor for all development work.",
   },
-  "tmux/readme": {
-    title: "Tmux",
-    description:
-      "Terminal multiplexer with Alt-key pane navigation, TPM plugin management, and a tokyo-night theme. Designed for fast context switching between projects.",
-  },
-  "bashrc/agents": {
-    title: "Shell",
-    description:
-      "Modular .bashrc.d/ architecture with secrets managed via Proton Pass CLI, a Worktrunk wrapper for git worktree workflows, and a custom TUI for package installation.",
-  },
 };
 
 const displayOrder = [
@@ -42,8 +32,6 @@ const displayOrder = [
   "pi/pi/readme",
   "obsidian/agents",
   "nvim/readme",
-  "tmux/readme",
-  "bashrc/agents",
 ];
 
 const sorted = displayOrder
@@ -52,7 +40,7 @@ const sorted = displayOrder
 ---
 
 <section class="tools">
-  <h2>The Setup</h2>
+  <h2>The Environment</h2>
   {sorted.map((tool) => {
     const meta = intros[tool!.id];
     return <ToolCard title={meta.title} description={meta.description} tool={tool!} />;
