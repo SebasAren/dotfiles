@@ -282,13 +282,9 @@ bun test obsidian/.local/lib/wiki-search/wiki-search.test.ts
 
 **Mocking conventions**: External SDKs (`exa-js`, `@upstash/context7-sdk`, `@mariozechner/pi-coding-agent`) are mocked via shared factories in `pi/.pi/agent/extensions/shared/src/test-mocks.ts` — tests never hit the network and need no API keys. See `.claude/rules/pi-extensions.md` for the full rationale.
 
-### Git Hooks
+### Pre-commit Checks
 
-Pre-commit hooks run fast checks (format validation, YAML/JSON linting, whitespace trimming). Install with:
-
-```bash
-git config core.hooksPath .githooks
-```
+Run `mise run pre-commit` before committing — it executes format + lint + typecheck + tests. No git hook is auto-installed; the `wt step commit` workflow invokes it.
 
 ## Repository Structure
 
@@ -310,7 +306,7 @@ git config core.hooksPath .githooks
 ├── wt/.config/worktrunk/        # Worktrunk
 ├── homebrew/                    # brew-sync CLI + Brewfile
 ├── mise.toml                    # Runtime versions
-├── scripts/hooks/               # Git hooks
+├── .mise/tasks/                 # mise tasks (pre-commit, format, lint, test, etc.)
 ├── AGENTS.md                    # Agent-specific guide
 └── CONVENTIONS.md               # Development conventions
 ```

@@ -1,5 +1,5 @@
 ---
-description: Global project conventions — SebbaFlow, docs structure, and language standards
+description: Global project conventions — stow, docs structure, and TypeScript/Bun gotchas
 ---
 
 ## Stow Packages (GNU Stow)
@@ -14,17 +14,15 @@ description: Global project conventions — SebbaFlow, docs structure, and langu
 
 **README.md**: Human-facing entry point. Include architecture decisions (why, not just what), numbered setup steps, and repo structure tree.
 
-**CONVENTIONS.md**: Actionable rules with specific tool commands (e.g., `mise run stylua`), not vague guidance.
+**CONVENTIONS.md**: Source of truth for per-language code style (Lua, Python, Shell, TypeScript). Actionable rules with specific tool commands (e.g., `mise run stylua`), not vague guidance. Don't duplicate its contents in AGENTS.md or rule files — link to it.
 
-## Language Conventions
+## TypeScript / Bun gotchas
 
-**Lua** (2-space indent, StyLua): `snake_case` vars/funcs, `---@type` annotations, `vim.keymap.set` over legacy API, `pcall` for optional requires.
+These are external constraints not visible in code, kept here because they apply across every Bun script in the repo:
 
-**Python** (4-space indent, ruff): `snake_case` funcs/vars, `PascalCase` classes. Use ruff for linting, black + isort for formatting.
-
-**Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames.
-
-**TypeScript/Bun**: Use `spawnSync` with array args (no shell escaping needed). Do not use `Bun.escapeShellArg` (undefined in Bun 1.3.x) or `Bun.makeTempDir` (doesn't exist) — use `mkdtempSync` from `node:fs` instead.
+- Use `spawnSync` with array args (no shell escaping needed).
+- `Bun.escapeShellArg` is undefined in Bun 1.3.x — pass arrays to `spawnSync` instead.
+- `Bun.makeTempDir` does not exist — use `mkdtempSync` from `node:fs`.
 
 ## Stow Safety
 
@@ -32,7 +30,7 @@ description: Global project conventions — SebbaFlow, docs structure, and langu
 
 ## Shellcheck in `.bashrc.d`
 
-These files intentionally omit `set -euo pipefail` (they are sourced interactively), but still fix these recurring warnings:
+These files intentionally omit `set -euo pipefail` (they are sourced interactively). All three recurring warning types below have been remediated — keep these patterns in mind for new scripts:
 - **SC2155**: `export VAR=$(cmd)` → `VAR=$(cmd); export VAR`
 - **SC2162**: `read env_key` → `read -r env_key`
 - **SC2054**: `FZF_OPTS=(a,b)` → `FZF_OPTS=(a b)` (arrays use spaces, not commas)

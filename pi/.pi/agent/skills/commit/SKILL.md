@@ -9,14 +9,14 @@ Before committing, reflect on the session and persist any valuable findings. The
 
 ## Step 1: Reflect on Findings
 
-Review everything you did this session. Ask yourself:
+Review everything you did this session. A finding earns a rule only if it falls into one of two narrow categories:
 
-- Did I discover any **gotchas** — unexpected behavior, non-obvious constraints, or things that would surprise future sessions?
-- Did I find **misleading documentation**, **missing conventions**, or **undocumented patterns**?
-- Did I encounter **recurring pitfalls** that are worth recording?
-- Did I learn anything **project-specific** that isn't captured in existing rules?
+1. **External constraints not visible in code** — env vars, CI quirks, version gates, vendor API limits, system-binary requirements, undocumented SDK shapes.
+2. **Design decisions whose absence would invite churn** — conventions a future contributor would otherwise undo (e.g. "system prompt is declarative — no ALL CAPS register").
 
-If you found anything notable, present the findings to the user:
+**Derivability test**: if an agent could learn the finding by reading one file, it is *not* a rule. The code is already authoritative — duplicating it in `.claude/rules/` just creates a second source of truth that will rot.
+
+If you found anything that clears the bar, present the findings to the user:
 
 > I found some notable findings this session:
 > - <list each finding as a bullet>
@@ -81,6 +81,17 @@ description: What this rule covers
 - **Short rules are merge candidates** — Rules under ~300 bytes covering a single topic are better merged into a broader rule than kept as separate files. Avoid rule sprawl.
 - **Rules vs skills heuristic** — Passive gotchas/conventions → rules. Action-oriented procedures (CLI workflows, how-to guides) → skills. Test: "Is this a warning or a procedure?"
 - **File-specific notes go in AGENTS.md** — Detailed gotchas for specific files (e.g., performance constraints for 5 plugin files) belong in that directory's `AGENTS.md`, not as a global rule. Rules should be for cross-project patterns.
+
+### What does NOT belong as a rule
+
+- **Implementation details derivable from the code** — scoring weights, tier thresholds, what a regex captures, which fields a function reads. The code is the source of truth; rules duplicating it rot the moment the code changes.
+- **Ephemeral fix recipes** — "I changed X to Y to fix Z." The fix is in the diff; the rationale is in the commit message.
+- **Anything already in `AGENTS.md` / `README.md` / `CONVENTIONS.md`** — before adding a rule, grep these. A third copy is a third thing to keep in sync.
+- **Historical narrative** — "post-2025-04 redesign", "we used to do X". Rules describe the current invariant, not the journey.
+
+### Prune as you go
+
+Rules age out. When editing an existing rule file, scan it for entries that have decayed into implementation detail (the code now obviously expresses them) or contradict the current code, and delete them in the same commit. A pruned rule file is more valuable than a comprehensive one — every stale bullet costs context on every load.
 
 ## Step 3: Stage and Commit with wt
 

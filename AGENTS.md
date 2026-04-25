@@ -31,11 +31,9 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 ## Global Conventions
 
 - **Edit in repo**, never in symlink targets
-- **Lua**: 2-space indent, StyLua, `snake_case`, `---@type` annotations
-- **Python**: 4-space indent, ruff, `snake_case` funcs, `PascalCase` classes
-- **Shell**: `set -euo pipefail`, one concern per file, lowercase-hyphen filenames
 - **Git**: conventional commits (`feat:`, `fix:`, `chore:`), atomic changes
 - **Secrets**: never commit; use `~/.secrets.tpl` with Proton Pass CLI
+- **Code style** (Lua, Python, Shell, TypeScript): see [CONVENTIONS.md](CONVENTIONS.md)
 
 ## Where to Look
 
@@ -50,7 +48,7 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 | Tmux docs | `tmux/README.md` |
 | Mise tasks | `.mise/tasks/` |
 | Worktrunk config | `wt/.config/worktrunk/config.toml` |
-| Git hooks | `scripts/hooks/` (removed — now `mise run` tasks) |
+| Pre-commit checks | `mise run pre-commit` (defined in `.mise/tasks/pre-commit`) |
 | Pi extensions | `pi/.pi/agent/extensions/` (see its `AGENTS.md`) |
 | Pi extension docs | `pi/.pi/README.md` |
 | Tests | `pi/.pi/agent/extensions/**/*.test.ts`, `pi/.local/bin/tdd-plan.test.ts`, `obsidian/.local/lib/wiki-search/wiki-search.test.ts` |
