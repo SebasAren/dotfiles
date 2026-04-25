@@ -71,6 +71,18 @@ body {
   color: var(--text-muted);
 }
 
+.terminal .cursor {
+  display: inline-block;
+  color: var(--accent);
+  animation: blink 1s step-end infinite;
+  margin-left: -0.15rem;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* Tools */
 .tools {
   max-width: var(--max-width);
