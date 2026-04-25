@@ -159,22 +159,10 @@ export function markdownToHtml(markdown: string): string {
   .hljs-operator { color: #89dceb; }
   .hljs-punctuation { color: #a6adc8; }
 
-  /* Watermark */
-  .watermark {
-    position: fixed;
-    bottom: 12px;
-    right: 16px;
-    font-size: 11px;
-    color: #585b70;
-    opacity: 0.6;
-    font-style: italic;
-    pointer-events: none;
-  }
 </style>
 </head>
 <body>
 ${bodyHtml}
-<div class="watermark">SebbaFlow™</div>
 </body>
 </html>`;
 }

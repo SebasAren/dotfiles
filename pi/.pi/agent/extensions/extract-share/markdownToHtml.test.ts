@@ -116,11 +116,4 @@ describe("markdownToHtml", () => {
       expect(html).toContain("&gt;");
     });
   });
-
-  describe("watermark", () => {
-    it("includes SebbaFlow trademark watermark", () => {
-      const html = markdownToHtml("# Hello");
-      expect(html).toContain("SebbaFlow");
-    });
-  });
 });
