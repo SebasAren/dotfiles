@@ -21,14 +21,10 @@ describe("copyToClipboard", () => {
     const png = Buffer.from("fake-png-data");
     copyToClipboard(png);
 
-    expect(mockSpawnSync).toHaveBeenCalledWith(
-      "wl-copy",
-      ["--type", "image/png"],
-      {
-        input: png,
-        stdio: ["pipe", "pipe", "pipe"],
-      },
-    );
+    expect(mockSpawnSync).toHaveBeenCalledWith("wl-copy", ["--type", "image/png"], {
+      input: png,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
   });
 
   it("falls back to xclip when wl-copy is not found", () => {

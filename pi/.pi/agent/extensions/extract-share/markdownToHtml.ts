@@ -49,10 +49,7 @@ const marked = new Marked(
 marked.use({
   renderer: {
     html(token: unknown): string {
-      const raw =
-        typeof token === "string"
-          ? token
-          : (token as { raw?: string })?.raw ?? "";
+      const raw = typeof token === "string" ? token : ((token as { raw?: string })?.raw ?? "");
       return raw
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")

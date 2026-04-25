@@ -26,9 +26,7 @@ export function copyToClipboard(png: Buffer): void {
     }
 
     if (result.signal) {
-      throw new Error(
-        `${cmd} was killed by signal ${result.signal}`,
-      );
+      throw new Error(`${cmd} was killed by signal ${result.signal}`);
     }
 
     if (result.status !== 0) {
