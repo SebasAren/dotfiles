@@ -5,17 +5,17 @@
 [![mise](https://img.shields.io/badge/runtimes-mise-green)](https://mise.jdx.dev/)
 [![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/mariozechner/pi-coding-agent)
 
-AI-augmented development environment for a Linux workstation. Managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based configuration.
+Linux workstation config, managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based installation.
 
-This isn't just config files — it's an **AI-augmented development environment**. The [Pi agent extensions](#pi-agent-extensions) form a custom toolchain where subagents handle reconnaissance and research on cheap models, the parent agent stays focused on the actual task, and knowledge is persisted to an Obsidian wiki for cross-session learning.
+Includes [Pi agent extensions](#pi-agent-extensions) that delegate codebase exploration and documentation lookup to cheaper models via subagents, and write notes to an Obsidian wiki between sessions.
 
 ## What's Inside
 
 | Directory | Tool | Purpose |
 |-----------|------|---------|
-| `pi/` | **Pi Agent** | AI coding assistant with 20+ custom extensions (explore subagent, librarian, wiki integration, fuzzy edit, and more) |
-| `nvim/` | Neovim | Editor: Lazy.nvim, 17 LSP servers, blink.cmp completion, AI coding → [details](nvim/README.md) |
-| `tmux/` | Tmux | Terminal multiplexer: Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
+| `pi/` | **Pi Agent** | Coding assistant with 20+ custom extensions (explore subagent, librarian, wiki integration, fuzzy edit, and more) |
+| `nvim/` | Neovim | Lazy.nvim, 17 LSP servers, blink.cmp completion, CodeCompanion → [details](nvim/README.md) |
+| `tmux/` | Tmux | Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
@@ -94,7 +94,7 @@ prefix + I    # (Ctrl+a, then Shift+i)
 
 ## Pi Agent Extensions
 
-Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) AI coding assistant, written in TypeScript/Bun. Each extension is a self-contained module registering tools, commands, and TUI renderers.
+Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) coding assistant, written in TypeScript/Bun. Each extension is a self-contained module registering tools, commands, and TUI renderers.
 
 > **Full documentation**: [`pi/.pi/README.md`](pi/.pi/README.md)
 
@@ -123,7 +123,7 @@ Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) 
 
 ### Explore Subagent Architecture
 
-The explore extension is the most sophisticated tool in the suite. It performs intelligent codebase reconnaissance by combining query planning, in-memory file indexing, semantic reranking, and a read-only subagent.
+The explore extension combines query planning, in-memory file indexing, semantic reranking, and a read-only subagent to answer codebase questions.
 
 ```
 User query
@@ -191,7 +191,7 @@ Git worktrees let you work on multiple branches simultaneously without stashing 
 
 ### Why subagents for exploration and research?
 
-Running the main model (e.g. Claude) to grep through files is expensive and slow. The explore and librarian subagents delegate to a cheaper model (configurable via `CHEAP_MODEL`) with a focused toolset, reducing cost by 10-50× while keeping the parent agent's context clean for the actual task.
+Running the main model (e.g. Claude) to grep through files burns tokens on output the parent doesn't need to see. The explore and librarian subagents delegate to a cheaper model (configurable via `CHEAP_MODEL`) with a focused toolset, returning a structured summary instead of raw tool output. This keeps the parent's context smaller and cuts token cost on reconnaissance work — the exact savings depend on model choice and query.
 
 ## Tool Details
 
