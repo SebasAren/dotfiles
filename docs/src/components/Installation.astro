@@ -1,0 +1,31 @@
+---
+import TerminalPrompt from "./TerminalPrompt.astro";
+---
+<section class="installation">
+  <h2>Installation</h2>
+  <p class="installation-intro">
+    One command to link every tool into your home directory.
+  </p>
+  <TerminalPrompt
+    command="stow */"
+    output={"✔ nvim\n✔ tmux\n✔ bashrc\n✔ pi\n✔ mise\n✔ homebrew\n✔ scripts"}
+  />
+</section>
+
+<style>
+  .installation {
+    max-width: var(--max-width);
+    margin: 0 auto 6rem;
+  }
+
+  .installation h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .installation-intro {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+</style>
