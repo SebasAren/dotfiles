@@ -413,6 +413,40 @@ body {
   color: var(--accent-dim);
 }
 
+/* Postscript */
+.postscript {
+  max-width: var(--max-width);
+  margin: 0 auto 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.postscript h2 {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.postscript p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.postscript p:last-child {
+  margin-bottom: 0;
+}
+
+.postscript code {
+  background: var(--bg-terminal);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: var(--accent-dim);
+}
+
 /* Links */
 .links {
   max-width: var(--max-width);
