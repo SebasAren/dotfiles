@@ -72,7 +72,7 @@ User query  (e.g. "how does the worktree scope extension detect worktree boundar
   │
   ├─► File Index  (LRU-cached per repo, max 5 repos)
   │     ├─ Enumerates files via `git ls-files` (fallback: `find`)
-  │     ├─ Extracts symbols, imports, exports, JSDoc descriptions
+  │     ├─ Extracts symbols, imports, exports, JSDoc descriptions via Tree-sitter AST parsing
   │     ├─ Builds reverse import graph (importedBy)
   │     └─ Multi-signal heuristic scoring:
   │          path match (+2), symbol match (+4-8), entity match (+6-12),
