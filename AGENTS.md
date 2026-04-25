@@ -37,10 +37,6 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 - **Git**: conventional commits (`feat:`, `fix:`, `chore:`), atomic changes
 - **Secrets**: never commit; use `~/.secrets.tpl` with Proton Pass CLI
 
-## Global Anti-Patterns
-
-- **DO NOT** add qutebrowser config — it does not exist
-
 ## Where to Look
 
 | Task | Location |
