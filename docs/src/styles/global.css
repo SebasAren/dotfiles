@@ -468,6 +468,17 @@ body {
   text-decoration: underline;
 }
 
+/* Changelog */
+.changelog {
+  max-width: var(--max-width);
+  margin: 0 auto 4rem;
+}
+
+.changelog h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   body {

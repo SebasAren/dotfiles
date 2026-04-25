@@ -1,0 +1,26 @@
+---
+import TerminalPrompt from "./TerminalPrompt.astro";
+
+const commits = [
+  "feat: add 9th AGENTS.md because the 8th wasn't enough",
+  "fix: stow -D deleted /usr/local by accident (reverted)",
+  "docs: explain why there are 11K lines of docs for one human",
+  "feat: teach pi to lint its own rules, pi ignores them anyway",
+  "fix: symlink loop in ~/.config/nvim/lua caused nvim to open nvim",
+  "test: now at 459 tests. Still 0 tests for the actual dotfiles.",
+  "docs: add caveman review. He had concerns. We fixed none.",
+  "feat: wiki-search now supports 3 modes. Human uses grep.",
+  "fix: tmux prefix key changed again. Muscle memory broken.",
+  "chore: update .claude/rules/ after learning the hard way (again)",
+  "feat: 18th pi extension. Running out of keyboard shortcuts.",
+  "fix: shellcheck finally wired into CI. It found things.",
+];
+---
+
+<section class="changelog">
+  <h2>Recent Activity</h2>
+  <TerminalPrompt
+    command="git log --oneline -12"
+    output={commits.join("\n")}
+  />
+</section>
