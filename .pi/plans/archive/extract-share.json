@@ -1,0 +1,128 @@
+{
+  "title": "Extract Extension — screenshot last assistant message to clipboard",
+  "slug": "extract-share",
+  "context": "Pi extension that extracts the last assistant message from the session, renders it as a styled PNG image (terminal aesthetic, monospace, dark theme, SebbaFlow™ watermark), and copies to clipboard. Triggered via /extract command and ctrl+shift+e shortcut. Uses Playwright for headless browser screenshotting. Auto-installs Chromium on first run.",
+  "architecture": "Pipeline: sessionManager.getBranch() → find last AssistantMessage → extract TextContent → markdown → HTML (with terminal CSS + highlight.js syntax highlighting) → Playwright screenshot → PNG buffer → wl-copy. Extension structure follows existing patterns: extract-share/index.ts, package.json, tsconfig.json. Dependencies: playwright (npm), marked (npm), highlight.js (npm).",
+  "created": "2026-04-25T17:11:32.011Z",
+  "updated": "2026-04-25T17:59:40.530Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Extension scaffold + message extraction",
+      "red": {
+        "description": "Write test that getLastAssistantMessage() extracts text content from session entries with a mock sessionManager returning entries with assistant messages",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create extract-share/ directory with index.ts, package.json, tsconfig.json. Implement getLastAssistantMessage() that walks getBranch() to find the last assistant role entry and extracts TextContent blocks",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Markdown to styled HTML converter",
+      "red": {
+        "description": "Write test that markdownToHtml() converts a markdown string (with code blocks, bold, lists, headers) to an HTML string with inline CSS styling and highlight.js syntax highlighting classes",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement markdownToHtml() using marked with highlight.js for code block syntax highlighting. Add terminal-themed CSS with SebbaFlow™ watermark",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "HTML to PNG via Playwright",
+      "red": {
+        "description": "Write test that htmlToPng() takes an HTML string and returns a PNG Buffer, confirming Playwright browser launches and screenshots the rendered page",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement htmlToPng() using Playwright. Auto-install Chromium on first run if missing. Set viewport width (~800px), auto-height, dark background",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 4,
+      "name": "PNG to clipboard via wl-copy",
+      "red": {
+        "description": "Write test that copyToClipboard() spawns wl-copy with the PNG buffer as stdin",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement copyToClipboard() using spawnSync to pipe PNG buffer to wl-copy",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 5,
+      "name": "Wire up /extract command and ctrl+shift+e shortcut",
+      "red": {
+        "description": "Write test that the extension registers a command extract and a shortcut ctrl+shift+e, and that invoking the handler calls getLastAssistantMessage → markdownToHtml → htmlToPng → copyToClipboard with correct arguments",
+        "status": "done"
+      },
+      "green": {
+        "description": "Wire up the full pipeline in the command and shortcut handlers. Add error handling (no last message, Playwright not installed, clipboard failure). Show ctx.ui.notify on success/failure",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 6,
+      "name": "Integration test",
+      "red": {
+        "description": "Write integration.test.ts that imports the extension module, confirms it registers without errors against the shared test mocks, and the command/shortcut handlers are wired",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement any fixes needed for the integration test to pass",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [
+    "Playwright auto-install: chromium must be installed on first run via npx playwright install chromium",
+    "Clipboard: wl-copy only (Wayland)",
+    "Terminal aesthetic: dark background (#1e1e2e or similar), monospace font (JetBrains Mono or system fallback)",
+    "SebbaFlow™ watermark: subtle branding in bottom-right corner",
+    "Width ~800px, auto-height based on content length",
+    "Markdown parser: marked",
+    "Syntax highlighting: highlight.js for code blocks"
+  ],
+  "design": {
+    "currentState": "No extract extension exists. Existing pi extensions follow a pattern: directory under pi/.pi/agent/extensions/ with index.ts, package.json, tsconfig.json. Tests use bun:test with shared mocks from @pi-ext/shared/test-mocks. The workspace package.json lists all extensions as workspaces.",
+    "desiredState": "New extract-share extension that: (1) registers /extract command and ctrl+shift+e shortcut, (2) extracts the last assistant message text from the session via sessionManager.getBranch(), (3) converts markdown to styled HTML with terminal aesthetic (dark bg, monospace, SebbaFlow™ watermark), (4) screenshots via Playwright headless Chromium at ~800px width, (5) copies PNG to clipboard using wl-copy/xclip/pbcopy. Auto-installs Chromium on first run.",
+    "patterns": "Extensions register commands via pi.registerCommand('name', { handler, description }). Shortcuts via pi.registerShortcut('ctrl+shift+e', { handler, description }). Session data accessed via ctx.sessionManager.getBranch() returning SessionEntry[] from leaf to root. Assistant messages have role: 'assistant' with content: TextContent[]. Tests use mock.module() from bun:test with factories from @pi-ext/shared/test-mocks.",
+    "decisions": "Playwright for rendering (not silicon). Terminal aesthetic with monospace font, dark background. SebbaFlow™ watermark in bottom-right. Auto-install Chromium on first use. Clipboard only (no file save). ~800px fixed width, auto height. Markdown parser: marked. Syntax highlighting: highlight.js in code blocks. Clipboard: wl-copy only (Wayland).",
+    "questions": ""
+  }
+}
