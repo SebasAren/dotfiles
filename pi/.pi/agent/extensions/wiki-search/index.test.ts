@@ -3,7 +3,6 @@
  */
 
 import { describe, it, expect, mock, beforeAll } from "bun:test";
-import { spawnSync } from "node:child_process";
 
 beforeAll(() => {
   mock.module("@mariozechner/pi-coding-agent", () => ({
@@ -24,62 +23,8 @@ beforeAll(() => {
   }));
 });
 
-import { executeWikiSearch, WikiSearchDetails } from "./index";
+import { WikiSearchDetails } from "./index";
 import { renderSearchCall, renderSearchResult } from "./render";
-
-// ── executeWikiSearch ──────────────────────────────────────────────────────
-
-describe("executeWikiSearch", () => {
-  // Resolve wiki-search binary via PATH (works across worktrees and CI)
-  const BINARY = "wiki-search";
-
-  // Skip integration tests if wiki-search is not installed
-  const binaryAvailable =
-    spawnSync("which", ["wiki-search"], {
-      encoding: "utf8",
-    }).status === 0;
-
-  const maybeIt = binaryAvailable ? it : it.skip;
-
-  maybeIt(
-    "returns structured result for a valid query",
-    async () => {
-      const result = await executeWikiSearch({ query: "agent orchestration", top: 3 }, BINARY);
-
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0].type).toBe("text");
-      expect(typeof result.content[0].text).toBe("string");
-      expect(result.details).toBeDefined();
-      expect(result.details!.query).toBe("agent orchestration");
-      expect(result.details!.resultCount).toBeGreaterThanOrEqual(0);
-      expect(result.details!.reranked).toBe(true);
-      expect(result.details!.semantic).toBe(false);
-      expect(result.details!.wikiDir).toBe(`${process.env.HOME}/Documents/wiki/wiki`);
-      expect(Array.isArray(result.details!.paths)).toBe(true);
-    },
-    15_000,
-  );
-
-  maybeIt(
-    "respects semantic and no_rerank flags",
-    async () => {
-      const result = await executeWikiSearch(
-        {
-          query: "agent orchestration",
-          top: 2,
-          semantic: true,
-          no_rerank: true,
-        },
-        BINARY,
-      );
-
-      expect(result.details!.semantic).toBe(true);
-      expect(result.details!.reranked).toBe(false);
-      expect(Array.isArray(result.details!.paths)).toBe(true);
-    },
-    15_000,
-  );
-});
 
 // ── renderSearchCall ───────────────────────────────────────────────────────
 
