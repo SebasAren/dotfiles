@@ -33,6 +33,7 @@ globs:
 ## Extension Architecture
 
 - **`turn_end` message shape**: The `turn_end` event's `message` carries `model`, `errorMessage`, `usage`, and `content` fields not declared in the exported `AgentSessionEvent` types. Define a local `SdkTurnEndMessage` interface (or `any`-cast) to access them safely; do not spread `(msg as any)` across multiple lines.
+- **`registerCommand` handlers receive `ExtensionCommandContext`, not `ExtensionContext`**. Command context extends base context with session-tree methods (`navigateTree`, `fork`, `newSession`, `waitForIdle`). Passing `ExtensionContext` as the handler param type causes a compile error when calling `navigateTree` — extract shared navigation logic into a helper typed with `ExtensionCommandContext`.
 - **`renderCall` component reuse**: Reuse `context.lastComponent` instead of creating new `Text()` each call — causes duplicate renders.
 - **Tool errors must be thrown, not returned**: Never catch errors in `execute()` and return them as text content — the framework treats returned results as successful calls. The model can't distinguish a failed edit from a successful one, which breaks retry logic. Always `throw new Error(...)` and let the framework handle error propagation.
 - **Subagent output formatting**: Explore/librarian subagent thinking is concatenated text, not markdown. Split on sentence boundaries (`. `, `: `, `! `, `? `), not newlines. Use `splitIntoSentences()` from `@pi-ext/shared`.

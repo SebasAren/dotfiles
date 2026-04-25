@@ -10,6 +10,7 @@ mock.module("playwright", () => ({
           Promise.resolve({
             setContent: mock(() => Promise.resolve()),
             screenshot: mock(() => Promise.resolve(Buffer.from("fake-png"))),
+            setDefaultTimeout: mock(() => {}),
           }),
         ),
         close: mock(() => Promise.resolve()),

@@ -1,29 +1,12 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
-// Mock pipeline functions — hoisted by Bun before any imports
+// Mock pipeline functions — no mock.module() for local modules to avoid cross-contamination
 const mockGetLastAssistantMessage = mock(() => "Hello from assistant");
 const mockMarkdownToHtml = mock((text: string) => `<p>${text}</p>`);
 const mockHtmlToPng = mock(async (_html: string) => Buffer.from("png-data"));
 const mockCopyToClipboard = mock((_png: Buffer) => {});
 
-mock.module("./getLastAssistantMessage", () => ({
-  getLastAssistantMessage: mockGetLastAssistantMessage,
-}));
-
-mock.module("./markdownToHtml", () => ({
-  markdownToHtml: mockMarkdownToHtml,
-}));
-
-mock.module("./htmlToPng", () => ({
-  htmlToPng: mockHtmlToPng,
-}));
-
-mock.module("./copyToClipboard", () => ({
-  copyToClipboard: mockCopyToClipboard,
-}));
-
-// Import the extension after mocks are registered
-import extractExtension from "./index";
+import { createExtension } from "./index";
 
 describe("extract-share extension", () => {
   beforeEach(() => {
@@ -32,6 +15,16 @@ describe("extract-share extension", () => {
     mockHtmlToPng.mockClear();
     mockCopyToClipboard.mockClear();
   });
+
+  /** Build the extension with mocked pipeline deps */
+  function buildExtension() {
+    return createExtension({
+      getLastAssistantMessage: mockGetLastAssistantMessage,
+      htmlToPng: mockHtmlToPng,
+      markdownToHtml: mockMarkdownToHtml,
+      copyToClipboard: mockCopyToClipboard,
+    });
+  }
 
   describe("registration", () => {
     it("registers a command named 'extract'", () => {
@@ -42,7 +35,7 @@ describe("extract-share extension", () => {
         registerShortcut: mock(() => {}),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       expect(registered).toHaveLength(1);
       expect(registered[0].name).toBe("extract");
@@ -57,7 +50,7 @@ describe("extract-share extension", () => {
           registered.push({ shortcut, description: opts.description }),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       expect(registered).toHaveLength(1);
       expect(registered[0].shortcut).toBe("ctrl+shift+e");
@@ -76,7 +69,7 @@ describe("extract-share extension", () => {
         registerShortcut: mock(() => {}),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {
@@ -109,7 +102,7 @@ describe("extract-share extension", () => {
         registerShortcut: mock(() => {}),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {
@@ -140,7 +133,7 @@ describe("extract-share extension", () => {
         registerShortcut: mock(() => {}),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {
@@ -171,7 +164,7 @@ describe("extract-share extension", () => {
         registerShortcut: mock(() => {}),
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {
@@ -205,7 +198,7 @@ describe("extract-share extension", () => {
         },
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {
@@ -237,7 +230,7 @@ describe("extract-share extension", () => {
         },
       };
 
-      extractExtension(mockApi as any);
+      buildExtension()(mockApi as any);
 
       const mockCtx = {
         sessionManager: {

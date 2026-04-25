@@ -255,13 +255,13 @@ If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
    - **Other:** Look at Makefile, justfile, or ask the user.
 4. If you cannot determine the test command, ask before proceeding.
 5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration is implementation-focused (finding exact files, functions, imports to modify) and is separate from the design-phase exploration done during Planning. This establishes a shared understanding and becomes the session tree kickoff point.
-6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. This labels the current session tree position as the TDD kickoff checkpoint. **IMPORTANT: This must be called exactly once per plan, only after the initial exploration. Never call `tdd-set-kickoff` again for the same plan.** Each subsequent step can optionally branch fresh from this single kickoff point.
+6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. Do not begin Step 1 (🔴 RED) until this is done. This labels the current session tree position as the TDD kickoff checkpoint. Call it exactly once per plan, only after the initial exploration. Never call `tdd-set-kickoff` again for the same plan. Each subsequent TDD step can then branch fresh from this single kickoff point.
 
 ### Fresh Start (per step, optional)
 
 Before starting a step, the user may choose to branch fresh from the kickoff point. This gives each step a clean session context — only the initial exploration is shared.
 
-If the user wants to start fresh, they can say so naturally (e.g., "fresh branch from kickoff") and you will send `/tdd-go-kickoff <slug>` as a user message. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. **Never call `tdd-set-kickoff` again — use `/tdd-go-kickoff` to return to the single kickoff point.**
+If the user wants to start fresh, they can say so naturally (e.g., "fresh branch from kickoff") and you will send `/kickoff` as a user message. If there are multiple active plans, you may send `/kickoff <slug>` or `/tdd-go-kickoff <slug>` instead. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. Use `/kickoff` (not `tdd-set-kickoff`) to return to the single kickoff point.
 
 Starting fresh is especially useful when:
 - A previous step's implementation is cluttering context
@@ -321,7 +321,7 @@ Show:
 
 **Then stop and ask the user what to do next.** The user will naturally say things like:
 - "Continue to next step" → proceed to the next step
-- "Fresh branch from kickoff" → send `/tdd-go-kickoff <slug>`, then proceed
+- "Fresh branch from kickoff" → send `/kickoff`, then proceed (or `/kickoff <slug>` if multiple plans)
 - "I want to make some changes" → address feedback, then ask again
 - "Pause here" → stop and let the user resume later
 
@@ -351,7 +351,8 @@ If **archive**, run `tdd-plan archive <slug>`.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
 9. **Commit after GREEN and after the full step.** Commit via `/skill:commit` after GREEN to trigger hooks on the minimal implementation, then again after completing the full Red-Green-Refactor cycle (if REFACTOR produced meaningful changes).
-10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/tdd-go-kickoff <slug>` to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
+10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/kickoff` (or `/tdd-go-kickoff <slug>`) to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
+11. **Kickoff gate.** Never begin Step 1 (🔴 RED) without first confirming the kickoff point is set. Do not write any test or implementation code until the kickoff is confirmed.
 
 ## Error Handling
 

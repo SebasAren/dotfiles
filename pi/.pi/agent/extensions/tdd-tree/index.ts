@@ -10,8 +10,12 @@
  *   tdd-go-kickoff   — Navigate to the labeled kickoff point (command)
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { type Component, Text } from "@mariozechner/pi-tui";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  ExtensionCommandContext,
+} from "@mariozechner/pi-coding-agent";
+import type { Component } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
 import { reuseOrCreateText } from "@pi-ext/shared";
 
@@ -37,15 +41,20 @@ function findLabeledEntry(ctx: ExtensionContext, label: string): string | undefi
 export default function (pi: ExtensionAPI) {
   // Track kickoff entries: slug → entryId (reconstructed on session_start)
   const kickoffEntries = new Map<string, string>();
+  let activeSlug: string | undefined;
 
   // Reconstruct state from session entries
   pi.on("session_start", async (_event, ctx) => {
     kickoffEntries.clear();
+    activeSlug = undefined;
     for (const entry of ctx.sessionManager.getEntries()) {
       if (entry.type === "custom" && entry.customType === "tdd-kickoff") {
-        const data = entry.data as { slug?: string; entryId?: string } | undefined;
+        const data = entry.data as
+          | { slug?: string; entryId?: string; labeledAt?: string }
+          | undefined;
         if (data?.slug && data?.entryId) {
           kickoffEntries.set(data.slug, data.entryId);
+          activeSlug = data.slug; // last (most recent) wins
         }
       }
     }
@@ -64,7 +73,7 @@ export default function (pi: ExtensionAPI) {
     promptGuidelines: [
       "Call tdd-set-kickoff exactly once per plan, after the explore phase completes, before starting Step 1.",
       "This creates a single labeled checkpoint in the session tree that all steps can branch from.",
-      "Use tdd-go-kickoff (via /tdd-go-kickoff <slug>) to navigate back to this existing point for fresh steps.",
+      "Use /kickoff to navigate back to this existing point for fresh steps (or /tdd-go-kickoff <slug> for explicit targeting).",
       "Never call tdd-set-kickoff more than once per plan.",
     ],
     parameters: Type.Object({
@@ -95,7 +104,7 @@ export default function (pi: ExtensionAPI) {
           content: [
             {
               type: "text" as const,
-              text: `A kickoff point already exists for "${params.slug}". Use /tdd-go-kickoff ${params.slug} to navigate to it instead of creating a new one.`,
+              text: `A kickoff point already exists for "${params.slug}". Use /kickoff (or /tdd-go-kickoff ${params.slug}) to navigate to it instead of creating a new one.`,
             },
           ],
           details: { success: false, error: "kickoff_already_exists" },
@@ -114,6 +123,7 @@ export default function (pi: ExtensionAPI) {
 
       // Track in memory
       kickoffEntries.set(params.slug, leafId);
+      activeSlug = params.slug;
 
       return {
         content: [
@@ -123,7 +133,7 @@ export default function (pi: ExtensionAPI) {
               `TDD kickoff point set for plan "${params.slug}".\n` +
               `Entry: ${leafId}\n` +
               `Label: ${label}\n\n` +
-              `Each TDD step can now branch from this point using /tdd-go-kickoff ${params.slug}.`,
+              `Use /kickoff (or /tdd-go-kickoff ${params.slug}) to branch fresh for each step.`,
           },
         ],
         details: { slug: params.slug, entryId: leafId, label },
@@ -137,16 +147,70 @@ export default function (pi: ExtensionAPI) {
       return text;
     },
 
-    renderResult(result, _state, theme): Component {
+    renderResult(result, _state, theme, context): Component {
       const details = result.details as { success?: boolean; slug?: string } | undefined;
+      const text = reuseOrCreateText(context);
       if (details?.success === false) {
-        return new Text(theme.fg("error", "❌ Failed to set kickoff point"));
+        text.setText(theme.fg("error", "❌ Failed to set kickoff point"));
+      } else {
+        text.setText(theme.fg("accent", `✅ Kickoff set for "${details?.slug ?? "plan"}"`));
       }
-      return new Text(theme.fg("accent", `✅ Kickoff set for "${details?.slug ?? "plan"}"`));
+      return text;
     },
   });
 
-  // ── Command: tdd-go-kickoff ────────────────────────────────────────────
+  // ── Shared navigation logic ────────────────────────────────────────────────
+
+  async function navigateToKickoff(slug: string, ctx: ExtensionCommandContext): Promise<void> {
+    const label = kickoffLabel(slug);
+
+    // Try to find from tracked entries first, then scan
+    let targetId = kickoffEntries.get(slug);
+    if (targetId) {
+      // Verify cached entry hasn't been pruned from the session tree
+      const exists = ctx.sessionManager.getEntries().some((e) => e.id === targetId);
+      if (!exists) {
+        kickoffEntries.delete(slug);
+        targetId = undefined;
+      }
+    }
+    if (!targetId) {
+      targetId = findLabeledEntry(ctx, label);
+    }
+
+    if (!targetId) {
+      ctx.ui.notify(
+        `No kickoff point found for "${slug}". Run exploration and use tdd-set-kickoff first.`,
+        "error",
+      );
+      return;
+    }
+
+    // Check if we're already at the kickoff point
+    const currentLeaf = ctx.sessionManager.getLeafId();
+    if (currentLeaf === targetId) {
+      ctx.ui.notify("Already at the kickoff point.", "info");
+      return;
+    }
+
+    // Navigate with summarization
+    const result = await ctx.navigateTree(targetId, {
+      summarize: true,
+      customInstructions:
+        "Summarize the TDD step work that was done after the kickoff exploration. " +
+        "Focus on: what tests were written, what implementation was added, what was refactored. " +
+        "Keep it concise — this is a handoff to the next step.",
+      label: `tdd-step-done-${slug}`,
+    });
+
+    if (result.cancelled) {
+      ctx.ui.notify("Navigation cancelled.", "info");
+    } else {
+      ctx.ui.notify(`Navigated to TDD kickoff for "${slug}". Starting fresh branch.`, "info");
+    }
+  }
+
+  // ── Command: tdd-go-kickoff ──────────────────────────────────────────────
 
   pi.registerCommand("tdd-go-kickoff", {
     description: "Navigate to the TDD kickoff point for a plan (branches from exploration state)",
@@ -156,45 +220,37 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Usage: /tdd-go-kickoff <slug>", "info");
         return;
       }
+      await navigateToKickoff(slug, ctx);
+    },
+  });
 
-      const label = kickoffLabel(slug);
+  // ── Command: kickoff (shortcut with active-slug fallback) ────────────────
 
-      // Try to find from tracked entries first, then scan
-      let targetId = kickoffEntries.get(slug);
-      if (!targetId) {
-        targetId = findLabeledEntry(ctx, label);
+  pi.registerCommand("kickoff", {
+    description:
+      "Navigate to the active TDD kickoff point. Defaults to the most recently set plan.",
+    handler: async (args, ctx) => {
+      let slug = args.trim();
+      if (!slug) {
+        if (activeSlug) {
+          slug = activeSlug;
+        } else {
+          if (kickoffEntries.size === 0) {
+            ctx.ui.notify(
+              "No kickoff points found. Run exploration and use tdd-set-kickoff first.",
+              "error",
+            );
+          } else {
+            const plans = Array.from(kickoffEntries.keys()).join(", ");
+            ctx.ui.notify(
+              `Multiple plans active: ${plans}. Use /kickoff <slug> or /tdd-go-kickoff <slug>.`,
+              "error",
+            );
+          }
+          return;
+        }
       }
-
-      if (!targetId) {
-        ctx.ui.notify(
-          `No kickoff point found for "${slug}". Run exploration and use tdd-set-kickoff first.`,
-          "error",
-        );
-        return;
-      }
-
-      // Check if we're already at the kickoff point
-      const currentLeaf = ctx.sessionManager.getLeafId();
-      if (currentLeaf === targetId) {
-        ctx.ui.notify("Already at the kickoff point.", "info");
-        return;
-      }
-
-      // Navigate with summarization
-      const result = await ctx.navigateTree(targetId, {
-        summarize: true,
-        customInstructions:
-          "Summarize the TDD step work that was done after the kickoff exploration. " +
-          "Focus on: what tests were written, what implementation was added, what was refactored. " +
-          "Keep it concise — this is a handoff to the next step.",
-        label: `tdd-step-done-${slug}`,
-      });
-
-      if (result.cancelled) {
-        ctx.ui.notify("Navigation cancelled.", "info");
-      } else {
-        ctx.ui.notify(`Navigated to TDD kickoff for "${slug}". Starting fresh branch.`, "info");
-      }
+      await navigateToKickoff(slug, ctx);
     },
   });
 }
