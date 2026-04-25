@@ -1,6 +1,6 @@
-# Sebbashop
+# SebbaFlow
 
-[![test](https://github.com/SebasAren/sebbashop/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/sebbashop/actions/workflows/test.yml)
+[![test](https://github.com/SebasAren/SebbaFlow/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/SebbaFlow/actions/workflows/test.yml)
 [![GNU Stow](https://img.shields.io/badge/managed%20with-GNU%20Stow-blue)](https://www.gnu.org/software/stow/)
 [![mise](https://img.shields.io/badge/runtimes-mise-green)](https://mise.jdx.dev/)
 [![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/mariozechner/pi-coding-agent)

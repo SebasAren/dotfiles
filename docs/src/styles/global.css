@@ -63,6 +63,20 @@ body {
   margin-bottom: 2rem;
 }
 
+.hero .repo {
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.hero .repo a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.hero .repo a:hover {
+  text-decoration: underline;
+}
+
 .terminal {
   background: var(--bg-terminal);
   border: 1px solid var(--border);

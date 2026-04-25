@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Sebbashop — AI-augmented development environment, managed with GNU Stow. For human setup, see [README.md](README.md).
+SebbaFlow — AI-augmented development environment, managed with GNU Stow. For human setup, see [README.md](README.md).
 
 ## How Stow Works
 

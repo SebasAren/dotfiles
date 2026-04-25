@@ -1,5 +1,5 @@
 ---
-description: Global project conventions — sebbashop, docs structure, and language standards
+description: Global project conventions — SebbaFlow, docs structure, and language standards
 ---
 
 ## Stow Packages (GNU Stow)
