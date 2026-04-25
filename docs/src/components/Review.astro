@@ -58,11 +58,11 @@
   <h3>Where it could improve</h3>
 
   <p>
-    <strong>CI pipeline is narrower than local checks.</strong> ESLint and
-    shellcheck are both enforced via <code>mise run lint</code> (and
-    pre-commit), but the CI workflow only runs typecheck and
-    <code>bun test</code>. Adding <code>mise run lint</code> to CI would
-    align remote validation with what contributors already run locally.
+    <strong>Monorepo-style CI for a dotfiles repo.</strong> A single
+    <code>mise run check</code> job runs everything &mdash; Lua formatting,
+    Python linting, shellcheck &mdash; even though most pushes only touch
+    TypeScript. A path-based split (e.g. only run Lua checks when
+    <code>nvim/</code> changes) would cut CI minutes.
   </p>
 
   <p>
@@ -191,10 +191,11 @@
   </p>
 
   <p>
-    <strong>CI doesn&rsquo;t enforce lint.</strong> The <code>mise run lint</code>
-    task runs ESLint and shellcheck locally and in pre-commit, but the
-    GitHub workflow skips them entirely. A contributor who bypasses
-    pre-commit hooks can land lint violations on main.
+    <strong>CI installs the full mise toolchain on every run.</strong>
+    The workflow uses <code>jdx/mise-action</code> to install bun, node,
+    shellcheck, ruff, stylua, and more &mdash; even though most jobs only
+    need bun and a few linters. Caching or a smaller tool set would
+    cut CI time noticeably.
   </p>
 
   <p>
