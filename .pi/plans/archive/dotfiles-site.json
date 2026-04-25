@@ -4,7 +4,7 @@
   "context": "Astro site in docs/ for GitHub user SebasAren. Deploy to gh-pages branch via GitHub Actions on push to main. Content pulled from 5 source files via glob loader. Single-page with hero, tools, philosophy, links sections. Dark terminal aesthetic. Test with vitest for content collections, astro build for integration.",
   "architecture": "docs/ is a self-contained Astro project with its own package.json. Content collections use glob() loader with base='../' to pull README/AGENTS.md files from the parent repo. Single Layout component wraps all sections. Components: Hero, TerminalPrompt, ToolsSection, ToolCard, Philosophy, Links. Global CSS handles theming. GitHub Actions builds and deploys to gh-pages branch.",
   "created": "2026-04-24T23:40:18.109Z",
-  "updated": "2026-04-24T23:56:08.638Z",
+  "updated": "2026-04-25T00:26:19.557Z",
   "steps": [
     {
       "index": 1,
