@@ -40,8 +40,29 @@ vim.o.expandtab = true -- expand tab to spaces
 
 -- Commands mode
 vim.o.wildmenu = true -- on TAB, complete options for system command
-vim.o.wildignore =
-  "deps,.svn,CVS,.git,.hg,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif,.DS_Store,*.aux,*.out,*.toc"
+vim.o.wildignore = table.concat({
+  "deps",
+  ".svn",
+  "CVS",
+  ".git",
+  ".hg",
+  "*.o",
+  "*.a",
+  "*.class",
+  "*.mo",
+  "*.la",
+  "*.so",
+  "*.obj",
+  "*.swp",
+  "*.jpg",
+  "*.png",
+  "*.xpm",
+  "*.gif",
+  ".DS_Store",
+  "*.aux",
+  "*.out",
+  "*.toc",
+}, ",")
 
 -- Split changes
 vim.o.splitbelow = true -- when splitting horizontally, move coursor to lower pane

@@ -53,10 +53,8 @@ export function renderResult(
     buildExpandedHeader: (d, t) => {
       const parts: string[] = [];
       if (d.query) parts.push(t.fg("muted", "Query: ") + t.fg("dim", String(d.query)));
-      if ((d as any).library)
-        parts.push(t.fg("muted", ` · Library: `) + t.fg("accent", String((d as any).library)));
-      if ((d as any).focus)
-        parts.push(t.fg("muted", ` · Focus: `) + t.fg("dim", String((d as any).focus)));
+      if (d.library) parts.push(t.fg("muted", ` · Library: `) + t.fg("accent", String(d.library)));
+      if (d.focus) parts.push(t.fg("muted", ` · Focus: `) + t.fg("dim", String(d.focus)));
       return parts.join("");
     },
   });

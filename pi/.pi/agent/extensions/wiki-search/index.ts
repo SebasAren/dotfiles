@@ -185,11 +185,11 @@ export default function (pi: ExtensionAPI) {
     parameters: WikiSearchParams,
 
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      return executeWikiSearch(params as any);
+      return executeWikiSearch(params);
     },
 
     renderCall(args, theme, context) {
-      return renderSearchCall(args as any, theme, context);
+      return renderSearchCall(args, theme, context);
     },
 
     renderResult(result, state, theme, _context) {

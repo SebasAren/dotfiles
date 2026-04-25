@@ -32,7 +32,7 @@ export function prepareArguments(args: unknown): {
   path: string;
   edits: { oldText: string; newText: string }[];
 } {
-  if (!args || typeof args !== "object") return args as any;
+  if (!args || typeof args !== "object") return args as ReturnType<typeof prepareArguments>;
   const input = args as {
     path?: string;
     edits?: Array<{ oldText: string; newText: string }> | string;
@@ -50,7 +50,8 @@ export function prepareArguments(args: unknown): {
     }
   }
 
-  if (typeof input.oldText !== "string" || typeof input.newText !== "string") return args as any;
+  if (typeof input.oldText !== "string" || typeof input.newText !== "string")
+    return args as ReturnType<typeof prepareArguments>;
   const edits = [...(input.edits ?? [])];
   edits.push({ oldText: input.oldText, newText: input.newText });
   const { oldText: _, newText: __, ...rest } = input;

@@ -222,7 +222,7 @@ export default function (pi: ExtensionAPI) {
             success: false,
             preSearchStats: preSearchResult.stats,
           },
-        } as any;
+        };
       }
 
       return {
@@ -249,12 +249,17 @@ export default function (pi: ExtensionAPI) {
 
   // Real-time invalidation: when Pi edits a file, drop it from the index
   // so the next explore call sees fresh data.
-  if ((pi as any).on) {
-    (pi as any).on("tool_call", async (event: any, toolCtx: any) => {
-      if (event.toolName === "edit" || event.toolName === "write") {
-        const filePath = event.input?.path;
+  const piOn = (
+    pi as ExtensionAPI & { on?: (event: string, listener: (...args: any[]) => void) => void }
+  ).on;
+  if (piOn) {
+    piOn("tool_call", async (event: unknown, toolCtx: unknown) => {
+      const e = event as { toolName?: string; input?: { path?: string } };
+      const tc = toolCtx as { cwd?: string } | undefined;
+      if (e.toolName === "edit" || e.toolName === "write") {
+        const filePath = e.input?.path;
         if (typeof filePath === "string") {
-          invalidateFilePath(filePath, toolCtx?.cwd || "");
+          invalidateFilePath(filePath, tc?.cwd || "");
         }
       }
     });

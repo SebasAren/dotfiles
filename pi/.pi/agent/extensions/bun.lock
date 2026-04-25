@@ -28,6 +28,9 @@
     "cheap-clarify": {
       "name": "@pi-ext/cheap-clarify",
       "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
     },
     "claude-rules": {
       "name": "@pi-ext/claude-rules",

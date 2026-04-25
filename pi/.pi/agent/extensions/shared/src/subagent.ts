@@ -59,6 +59,22 @@ function getRetryDelay(attempt: number): number {
   return Math.max(RETRY_BASE_DELAY_MS, Math.round(base + jitter));
 }
 
+/** Minimal shape of the assistant message payload in a turn_end event. */
+interface SdkTurnEndMessage {
+  role: "assistant";
+  content?: Array<{ type: string; text?: string }>;
+  model?: string;
+  errorMessage?: string;
+  usage?: {
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
+    cost?: { total?: number };
+    totalTokens?: number;
+  };
+}
+
 /** Options for {@link runSubagent}. */
 export interface RunSubagentOptions {
   /** Working directory for the subagent */
@@ -331,14 +347,14 @@ async function runSingleAttempt(
 
       // Handle turn_end — extract usage and model info
       if (event.type === "turn_end") {
-        const msg = event.message;
+        const msg = event.message as SdkTurnEndMessage;
         if (msg.role === "assistant") {
           result.usage.turns++;
-          if (!result.model && (msg as any).model) result.model = (msg as any).model;
-          if ((msg as any).errorMessage) result.errorMessage = (msg as any).errorMessage;
+          if (!result.model && msg.model) result.model = msg.model;
+          if (msg.errorMessage) result.errorMessage = msg.errorMessage;
 
           // Extract usage from the message if available
-          const usage = (msg as any).usage;
+          const usage = msg.usage;
           if (usage) {
             result.usage.input += usage.input || 0;
             result.usage.output += usage.output || 0;

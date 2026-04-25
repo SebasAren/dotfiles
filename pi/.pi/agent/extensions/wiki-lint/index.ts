@@ -366,7 +366,7 @@ export default function (pi: ExtensionAPI) {
     },
 
     renderCall(args, theme, context) {
-      return renderLintCall(args as any, theme, context);
+      return renderLintCall(args, theme, context);
     },
 
     renderResult(result, state, theme, _context) {

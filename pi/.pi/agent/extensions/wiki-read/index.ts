@@ -77,7 +77,7 @@ export default function (pi: ExtensionAPI) {
     parameters: WikiReadParams,
 
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      return executeWikiRead(params as any);
+      return executeWikiRead(params);
     },
 
     renderCall(args, theme, context) {
@@ -93,7 +93,7 @@ export default function (pi: ExtensionAPI) {
         return new Text(theme.fg("warning", "Reading wiki..."), 0, 0);
       }
 
-      const details = (result as any).details as WikiReadDetails | undefined;
+      const details = result.details as WikiReadDetails | undefined;
       const icon = theme.fg("success", "✓");
       let text = `${icon} ${theme.fg("toolTitle", theme.bold("wiki_read"))}`;
 

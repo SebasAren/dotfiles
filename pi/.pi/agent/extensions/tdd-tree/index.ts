@@ -84,7 +84,7 @@ export default function (pi: ExtensionAPI) {
             },
           ],
           details: { success: false },
-        } as any;
+        };
       }
 
       const label = kickoffLabel(params.slug);
@@ -99,7 +99,7 @@ export default function (pi: ExtensionAPI) {
             },
           ],
           details: { success: false, error: "kickoff_already_exists" },
-        } as any;
+        };
       }
 
       // Set the label on the current leaf
@@ -127,7 +127,7 @@ export default function (pi: ExtensionAPI) {
           },
         ],
         details: { slug: params.slug, entryId: leafId, label },
-      } as any;
+      };
     },
 
     renderCall(args, theme, context): Component {

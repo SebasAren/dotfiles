@@ -25,12 +25,14 @@ globs:
 - **Two tiers of TUI mock**: Most tests need `piTuiMock` (`.text` access). Rendering tests need `piTuiRenderMock` (working `render()` methods). Use `piCodingAgentThemeMock` for asserting on content without ANSI noise.
 - **`type: "text"` literal widening**: TypeScript widens `"text"` to `string` in tool result arrays. Use `type: "text" as const` or declare callback with literal type.
 - **`renderResult` callback `details`**: The `details` parameter is typed as `unknown`. Cast with `as any` in the callback when accessing extension-specific fields.
+- **`renderResult` callback `result`**: The entire `result` parameter typed as `AgentToolResult<unknown>` must be cast with `as any` when passed to typed render functions (e.g. `renderSearchResult(result as any, ...)`). The SDK does not expose a generic tool result type matching extension-specific `details`, so this cast is unavoidable.
 - **`@types/bun` required for `tsc`**: Add `"types": ["node", "bun"]` to tsconfig.
 - **Exclude test files from tsconfig `include`**: Tests that mock modules can conflict with real types. Bun's test runner doesn't typecheck.
 - **Bun parser: trailing commas after class expressions in objects**: `class {}` as an object property value must have a trailing comma. Missing comma reports the error on the *next* property line, not where the comma is missing, making it hard to spot.
 
 ## Extension Architecture
 
+- **`turn_end` message shape**: The `turn_end` event's `message` carries `model`, `errorMessage`, `usage`, and `content` fields not declared in the exported `AgentSessionEvent` types. Define a local `SdkTurnEndMessage` interface (or `any`-cast) to access them safely; do not spread `(msg as any)` across multiple lines.
 - **`renderCall` component reuse**: Reuse `context.lastComponent` instead of creating new `Text()` each call — causes duplicate renders.
 - **Tool errors must be thrown, not returned**: Never catch errors in `execute()` and return them as text content — the framework treats returned results as successful calls. The model can't distinguish a failed edit from a successful one, which breaks retry logic. Always `throw new Error(...)` and let the framework handle error propagation.
 - **Subagent output formatting**: Explore/librarian subagent thinking is concatenated text, not markdown. Split on sentence boundaries (`. `, `: `, `! `, `? `), not newlines. Use `splitIntoSentences()` from `@pi-ext/shared`.
@@ -38,7 +40,7 @@ globs:
 - **Librarian runs in-process via SDK**: The librarian creates an `AgentSession` with a `DefaultResourceLoader` that discovers extensions automatically (web_search, context7, etc.). No CLI flags needed — extensions are available by default.
 - **`parseSections` always creates ≥1 section**: The `splitIntoSentences` fallback only triggers for truly empty output, not "unstructured" text. Use `## Header` sections to exercise the section code path.
 - **`@mariozechner/pi-agent-core`**: Installed as a workspace dependency but considered internal. Prefer importing through `@mariozechner/pi-coding-agent` or create local type aliases if you need types not re-exported.
-- **Subagent loop detection must set exitCode=0**: Override to 0 so the caller treats partial output as success.
+- **`@pi-ext/shared` workspace dep for integration tests**: Even if production code doesn't import from shared, `integration.test.ts` needs `@pi-ext/shared/test-mocks`. Add `"@pi-ext/shared": "workspace:*"` to `package.json dependencies` or the test will throw `Cannot find module '@pi-ext/shared/test-mocks'`.
 
 ## Command-only extensions (fire-and-forget)
 
