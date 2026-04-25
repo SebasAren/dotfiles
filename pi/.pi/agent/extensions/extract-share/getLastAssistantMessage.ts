@@ -10,7 +10,10 @@ import type { SessionEntry } from "@mariozechner/pi-coding-agent";
  * Returns null if no assistant message is found.
  */
 export function getLastAssistantMessage(entries: SessionEntry[]): string | null {
-  for (const entry of entries) {
+  // getBranch() returns entries root-to-leaf (oldest first),
+  // so walk backwards to find the most recent assistant message.
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const entry = entries[i];
     if (entry.type !== "message") continue;
     if (entry.message.role !== "assistant") continue;
 

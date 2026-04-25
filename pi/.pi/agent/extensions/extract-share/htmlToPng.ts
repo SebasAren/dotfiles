@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, type Browser, type LaunchOptions } from "playwright";
 
 /**
  * Render an HTML string to a PNG image buffer using headless Chromium.
@@ -7,13 +7,19 @@ import { chromium } from "playwright";
  * sets the HTML content, and captures a full-page screenshot.
  *
  * @param html - Complete HTML document string
+ * @param launchBrowser - Optional browser launcher for testing (defaults to Chromium)
  * @returns PNG image as a Buffer
  * @throws If Playwright Chromium is not installed
  */
-export async function htmlToPng(html: string): Promise<Buffer> {
+export async function htmlToPng(
+  html: string,
+  launchBrowser: (options?: LaunchOptions) => Promise<Browser> = chromium.launch.bind(chromium) as (
+    options?: LaunchOptions,
+  ) => Promise<Browser>,
+): Promise<Buffer> {
   let browser;
   try {
-    browser = await chromium.launch({ headless: true, timeout: 15000 });
+    browser = await launchBrowser({ headless: true, timeout: 15000 });
   } catch (cause) {
     throw new Error(
       "Playwright Chromium not found. " +

@@ -3,7 +3,19 @@ import { getLastAssistantMessage } from "./getLastAssistantMessage";
 
 describe("getLastAssistantMessage", () => {
   it("extracts text content from the last assistant message in session entries", () => {
+    // getBranch() returns root-to-leaf (oldest first)
     const entries = [
+      {
+        type: "message",
+        id: "1",
+        parentId: null,
+        timestamp: "1",
+        message: {
+          role: "user" as const,
+          content: "Hi",
+          timestamp: 500,
+        },
+      },
       {
         type: "message",
         id: "2",
@@ -28,17 +40,6 @@ describe("getLastAssistantMessage", () => {
           },
           stopReason: "stop",
           timestamp: 1000,
-        },
-      },
-      {
-        type: "message",
-        id: "1",
-        parentId: null,
-        timestamp: "1",
-        message: {
-          role: "user" as const,
-          content: "Hi",
-          timestamp: 500,
         },
       },
     ];
@@ -71,29 +72,18 @@ describe("getLastAssistantMessage", () => {
     expect(result).toBeNull();
   });
 
-  it("extracts text from the last assistant message (leaf-first, so first assistant entry wins)", () => {
+  it("extracts text from the last assistant message (leaf-first, so most recent wins)", () => {
+    // getBranch() returns root-to-leaf (oldest first)
     const entries = [
       {
         type: "message",
-        id: "3",
-        parentId: "2",
-        timestamp: "3",
+        id: "1",
+        parentId: null,
+        timestamp: "1",
         message: {
-          role: "assistant" as const,
-          content: [{ type: "text" as const, text: "Second assistant" }],
-          api: "anthropic-messages",
-          provider: "anthropic",
-          model: "claude-3",
-          usage: {
-            input: 10,
-            output: 20,
-            cacheRead: 0,
-            cacheWrite: 0,
-            totalTokens: 30,
-            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-          },
-          stopReason: "stop",
-          timestamp: 2000,
+          role: "user" as const,
+          content: "Hi",
+          timestamp: 500,
         },
       },
       {
@@ -121,13 +111,25 @@ describe("getLastAssistantMessage", () => {
       },
       {
         type: "message",
-        id: "1",
-        parentId: null,
-        timestamp: "1",
+        id: "3",
+        parentId: "2",
+        timestamp: "3",
         message: {
-          role: "user" as const,
-          content: "Hi",
-          timestamp: 500,
+          role: "assistant" as const,
+          content: [{ type: "text" as const, text: "Second assistant" }],
+          api: "anthropic-messages",
+          provider: "anthropic",
+          model: "claude-3",
+          usage: {
+            input: 10,
+            output: 20,
+            cacheRead: 0,
+            cacheWrite: 0,
+            totalTokens: 30,
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+          },
+          stopReason: "stop",
+          timestamp: 2000,
         },
       },
     ];
@@ -138,6 +140,17 @@ describe("getLastAssistantMessage", () => {
 
   it("ignores thinking content and tool calls, only extracts text content", () => {
     const entries = [
+      {
+        type: "message",
+        id: "1",
+        parentId: null,
+        timestamp: "1",
+        message: {
+          role: "user" as const,
+          content: "Hi",
+          timestamp: 500,
+        },
+      },
       {
         type: "message",
         id: "2",
@@ -177,7 +190,42 @@ describe("getLastAssistantMessage", () => {
   });
 
   it("falls back to the previous assistant message when the most recent has no text", () => {
+    // getBranch() returns root-to-leaf (oldest first)
     const entries = [
+      {
+        type: "message",
+        id: "1",
+        parentId: null,
+        timestamp: "1",
+        message: {
+          role: "user" as const,
+          content: "Hi",
+          timestamp: 500,
+        },
+      },
+      {
+        type: "message",
+        id: "2",
+        parentId: "1",
+        timestamp: "2",
+        message: {
+          role: "assistant" as const,
+          content: [{ type: "text" as const, text: "Previous answer" }],
+          api: "anthropic-messages",
+          provider: "anthropic",
+          model: "claude-3",
+          usage: {
+            input: 10,
+            output: 20,
+            cacheRead: 0,
+            cacheWrite: 0,
+            totalTokens: 30,
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+          },
+          stopReason: "stop",
+          timestamp: 1500,
+        },
+      },
       {
         type: "message",
         id: "3",
@@ -206,40 +254,6 @@ describe("getLastAssistantMessage", () => {
           },
           stopReason: "stop",
           timestamp: 2000,
-        },
-      },
-      {
-        type: "message",
-        id: "2",
-        parentId: "1",
-        timestamp: "2",
-        message: {
-          role: "assistant" as const,
-          content: [{ type: "text" as const, text: "Previous answer" }],
-          api: "anthropic-messages",
-          provider: "anthropic",
-          model: "claude-3",
-          usage: {
-            input: 10,
-            output: 20,
-            cacheRead: 0,
-            cacheWrite: 0,
-            totalTokens: 30,
-            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-          },
-          stopReason: "stop",
-          timestamp: 1500,
-        },
-      },
-      {
-        type: "message",
-        id: "1",
-        parentId: null,
-        timestamp: "1",
-        message: {
-          role: "user" as const,
-          content: "Hi",
-          timestamp: 500,
         },
       },
     ];
