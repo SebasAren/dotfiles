@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Source common helpers
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/wt-common.sh"
 
 # Ensure we're in a git repo

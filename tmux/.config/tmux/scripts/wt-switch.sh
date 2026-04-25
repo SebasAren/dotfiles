@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Source common helpers
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/wt-common.sh"
 
 # Get worktree list
@@ -16,6 +17,7 @@ fi
 current_branch=$(git branch --show-current 2>/dev/null || echo "")
 
 # Build fzf input: branch names with current marked
+# shellcheck disable=SC2016
 branches=$(echo "$worktree_json" | $JQ_CMD -r --arg cur "$current_branch" '
     .[] | 
     if .branch == $cur then 
@@ -33,7 +35,7 @@ if [[ -z "$selected" ]]; then
 fi
 
 # Strip trailing asterisk and whitespace
-selected_branch=$(echo "$selected" | sed 's/ *$//')
+selected_branch="${selected% *}"
 
 # Get worktree path
 worktree_path=$(_wt_get_worktree_path "$selected_branch")

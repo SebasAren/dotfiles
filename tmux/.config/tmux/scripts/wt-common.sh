@@ -23,6 +23,7 @@ export FZF_DEFAULT_OPTS=" \
 _wt_fzf_opts() {
     local height="${1:-70%}"
     local prompt="${2:-▸ }"
+    # shellcheck disable=SC2054
     FZF_OPTS=(--height "$height" --border --margin=0,1 --padding=1 --prompt "$prompt" --header-lines 0 --ansi --extended --cycle --reverse)
 }
 
@@ -55,6 +56,7 @@ _wt_get_worktree_path() {
     local branch="$1"
     local json
     json=$(_wt_worktree_list)
+    # shellcheck disable=SC2016
     echo "$json" | $JQ_CMD -r --arg branch "$branch" '.[] | select(.branch == $branch) | .path' 2>/dev/null
 }
 

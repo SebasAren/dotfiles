@@ -8,6 +8,7 @@ set -euo pipefail
 
 # Source pi model settings if available
 if [[ -f ~/.bashrc.d/pi_models ]]; then
+# shellcheck source=/dev/null
   source ~/.bashrc.d/pi_models
 fi
 

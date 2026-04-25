@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#MISE description="Format, lint, typecheck, and test"
+set -euo pipefail
+
+failed=()
+
+run() {
+    local task="$1"
+    if ! mise run "$task" > /dev/null 2>&1; then
+        echo "✗ $task"
+        failed+=("$task")
+    else
+        echo "✓ $task"
+    fi
+}
+
+run format
+run lint
+run typecheck
+run test
+
+if [ ${#failed[@]} -gt 0 ]; then
+    echo ""
+    echo "Failed tasks: ${failed[*]}"
+    echo "Run individually for details: mise run <task>"
+    exit 1
+fi

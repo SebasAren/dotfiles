@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Source common helpers
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/wt-common.sh"
 
 # Get worktree list
@@ -16,6 +17,7 @@ fi
 default_branch=$(_wt_get_default_branch)
 
 # Build fzf input: branch names with dirty state indicator
+# shellcheck disable=SC2016
 branches=$(echo "$worktree_json" | $JQ_CMD -r --arg default "$default_branch" '
     .[] | 
     select(.branch != $default) |
@@ -39,9 +41,10 @@ if [[ -z "$selected" ]]; then
 fi
 
 # Strip trailing asterisk and whitespace (dirty indicator)
-selected_branch=$(echo "$selected" | sed 's/ *$//')
+selected_branch="${selected% *}"
 
 # Check for dirty state
+# shellcheck disable=SC2016
 is_dirty=$(echo "$worktree_json" | $JQ_CMD -r --arg branch "$selected_branch" '
     .[] | select(.branch == $branch) | (.dirty // false)
 ')

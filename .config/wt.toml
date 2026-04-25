@@ -8,7 +8,7 @@ copy = "wt step copy-ignored"
 tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
 
 [pre-commit]
-format = "mise run format"
+pre-commit = "mise run pre-commit"
 
 [[pre-merge]]
 check = "mise run check"

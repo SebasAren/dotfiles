@@ -33,7 +33,7 @@ All hooks run through mise tasks (see root `AGENTS.md` for the full task list):
 | pre-start | `mise run setup` |
 | post-start | `wt step copy-ignored` (inline) |
 | post-switch | `tmux rename-window` (inline) |
-| pre-commit | `mise run format` |
+| pre-commit | `mise run pre-commit` (format + lint + typecheck + test) |
 | pre-merge | `mise run check` |
 
 Project hook config is at `.config/wt.toml` in the repo root.
