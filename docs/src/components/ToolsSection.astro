@@ -4,12 +4,21 @@ import ToolCard from "./ToolCard.astro";
 
 const tools = await getCollection("tools");
 
-// The glob loader lowercases IDs
 const intros: Record<string, { title: string; description: string }> = {
   agents: {
     title: "Architecture & Conventions",
     description:
       "The backbone of the entire setup — a unified set of conventions for Lua, Python, Shell, and TypeScript. GNU Stow manages symlinks so every tool config lives in the repo and reflects instantly.",
+  },
+  "pi/pi/readme": {
+    title: "AI Agent (Pi)",
+    description:
+      "Custom AI agent extensions including an explore subagent for codebase reconnaissance, a librarian for documentation research, and semantic search with Cohere reranking.",
+  },
+  "obsidian/agents": {
+    title: "Personal Wiki",
+    description:
+      "A hybrid search engine over a personal knowledge base — BM25 for keyword matches, vector embeddings for semantic queries, and Cohere reranking to surface the best results. Three agent skills (query, ingest, maintain) keep it alive and cross-referenced.",
   },
   "nvim/readme": {
     title: "Neovim",
@@ -26,19 +35,15 @@ const intros: Record<string, { title: string; description: string }> = {
     description:
       "Modular .bashrc.d/ architecture with secrets managed via Proton Pass CLI, a Worktrunk wrapper for git worktree workflows, and a custom TUI for package installation.",
   },
-  "pi/pi/readme": {
-    title: "AI Agent (Pi)",
-    description:
-      "Custom AI agent extensions including an explore subagent for codebase reconnaissance, a librarian for documentation research, and semantic search with Cohere reranking.",
-  },
 };
 
 const displayOrder = [
   "agents",
+  "pi/pi/readme",
+  "obsidian/agents",
   "nvim/readme",
   "tmux/readme",
   "bashrc/agents",
-  "pi/pi/readme",
 ];
 
 const sorted = displayOrder

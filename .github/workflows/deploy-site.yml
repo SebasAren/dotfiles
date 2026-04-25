@@ -10,6 +10,7 @@ on:
       - "tmux/README.md"
       - "bashrc/AGENTS.md"
       - "pi/.pi/README.md"
+      - "obsidian/AGENTS.md"
       - ".github/workflows/deploy-site.yml"
 
 permissions:
