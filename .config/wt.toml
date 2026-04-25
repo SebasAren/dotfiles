@@ -1,4 +1,7 @@
 [[pre-start]]
+trust = "mise trust"
+
+[[pre-start]]
 setup = "mise run setup"
 
 [post-start]

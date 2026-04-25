@@ -2,9 +2,6 @@
 #MISE description="Bootstrap all dependencies"
 set -euo pipefail
 
-echo "=== Trust mise config ==="
-mise trust
-
 echo "=== Install tools ==="
 mise install
 
