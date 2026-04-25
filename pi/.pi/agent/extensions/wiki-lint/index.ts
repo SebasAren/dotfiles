@@ -178,8 +178,15 @@ function checkOrphans(wikiDir: string): LintResult {
     const slug = basename(pagePath, ".md");
     const dirName = basename(join(pagePath, ".."));
 
-    // Search for [[slug]] across all wiki files except the page itself
-    const stdout = rg("-l", `\\[\\[?${slug}`, "--glob", `!${dirName}/${slug}.md`, wikiDir);
+    // Search for [[slug]] or [[category/slug]] across all wiki files except the page itself
+    // Regex matches: [[slug, [[concepts/slug, [[sources/slug|alias, etc.
+    const stdout = rg(
+      "-l",
+      `\\[\\[(?:[^/\\]\\|]+/)*${slug}`,
+      "--glob",
+      `!${dirName}/${slug}.md`,
+      wikiDir,
+    );
     const hasInbound = stdout.trim().length > 0;
 
     if (!hasInbound) {

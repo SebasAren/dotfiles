@@ -271,6 +271,60 @@ describe("broken-links: root-level wiki pages", () => {
   });
 });
 
+describe("orphans: path-prefixed wiki links", () => {
+  let fixtureDir: string;
+
+  beforeAll(() => {
+    fixtureDir = mkdtempSync(join(tmpdir(), "wiki-lint-path-prefix-"));
+    const wikiDir = join(fixtureDir, "wiki");
+    mkdirSync(join(wikiDir, "concepts"), { recursive: true });
+    mkdirSync(join(wikiDir, "entities"), { recursive: true });
+    mkdirSync(join(wikiDir, "sources"), { recursive: true });
+
+    // Page linked via path prefix: [[concepts/deep-learning|Deep Learning]]
+    writeFileSync(
+      join(wikiDir, "concepts", "deep-learning.md"),
+      "# Deep Learning\n\nA subfield of ML.\n",
+    );
+
+    // Page that links to deep-learning using path-prefixed format
+    writeFileSync(
+      join(wikiDir, "sources", "ml-textbook.md"),
+      "# ML Textbook\n\nSee [[concepts/deep-learning|Deep Learning]] for details.\n",
+    );
+
+    // Another page linking with path prefix (no alias)
+    writeFileSync(
+      join(wikiDir, "entities", "related-topic.md"),
+      "# Related Topic\n\nUses [[concepts/deep-learning]].\n",
+    );
+
+    // Genuinely orphaned page (no inbound links at all)
+    writeFileSync(
+      join(wikiDir, "entities", "true-orphan.md"),
+      "# True Orphan\n\nNobody links here.\n",
+    );
+  });
+
+  afterAll(() => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+  });
+
+  it("does NOT flag pages linked via path-prefixed links as orphans", async () => {
+    const results = await runLintChecks(fixtureDir, ["orphans"]);
+    const orphans = results.find((r) => r.check === "orphans")!;
+    const orphanSlugs = orphans.issues.map((i) => i.path);
+    // deep-learning has inbound links via [[concepts/deep-learning|...]]
+    expect(orphanSlugs.every((p) => !p.includes("deep-learning"))).toBe(true);
+  });
+
+  it("still detects genuinely orphaned pages", async () => {
+    const results = await runLintChecks(fixtureDir, ["orphans"]);
+    const orphans = results.find((r) => r.check === "orphans")!;
+    expect(orphans.issues.some((i) => i.path.includes("true-orphan"))).toBe(true);
+  });
+});
+
 describe("missing-h1: YAML frontmatter skip", () => {
   let fixtureDir: string;
 
