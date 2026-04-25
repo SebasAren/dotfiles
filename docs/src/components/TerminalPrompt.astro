@@ -5,5 +5,101 @@ interface Props {
 }
 const { command, output } = Astro.props;
 ---
-<pre class="terminal"><code>$ <span class="prompt">{command}</span><span class="cursor">_</span>
-<span class="output">{output}</span></code></pre>
+
+<pre class="terminal" data-command={command}><code>
+$ <span class="type-cmd"></span><span class="cursor">_</span>
+<span class="type-out">{output}</span>
+</code></pre>
+
+<script>
+  document.querySelectorAll(".terminal").forEach((term) => {
+    const rawCmd = term.dataset.command || "";
+    const cmdSpan = term.querySelector(".type-cmd");
+    const outSpan = term.querySelector(".type-out");
+    const cursor = term.querySelector(".cursor");
+
+    if (!cmdSpan) return;
+
+    // Prevent immediate flash of full text
+    cmdSpan.textContent = "";
+    if (outSpan) outSpan.classList.add("awaiting");
+
+    let started = false;
+    const type = () => {
+      if (started) return;
+      started = true;
+      let i = 0;
+      const go = () => {
+        if (i <= rawCmd.length) {
+          cmdSpan.textContent = rawCmd.slice(0, i);
+          i++;
+          setTimeout(go, 45);
+        } else {
+          if (outSpan) {
+            outSpan.classList.remove("awaiting");
+            outSpan.classList.add("revealed");
+          }
+          if (cursor) cursor.style.display = "none";
+        }
+      };
+      go();
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          type();
+          io.unobserve(term);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    io.observe(term);
+
+    // Click to copy command
+    term.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(rawCmd);
+        term.classList.add("copied");
+        setTimeout(() => term.classList.remove("copied"), 1200);
+      } catch {}
+    });
+  });
+</script>
+
+<style is:global>
+  .terminal {
+    cursor: pointer;
+    position: relative;
+  }
+
+  .terminal::after {
+    content: "copied";
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+
+  .terminal.copied::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .terminal .type-out.awaiting {
+    opacity: 0;
+  }
+  .terminal .type-out.revealed {
+    opacity: 1;
+    transition: opacity 0.5s ease 0.1s;
+  }
+</style>

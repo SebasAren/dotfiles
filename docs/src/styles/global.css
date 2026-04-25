@@ -125,6 +125,28 @@ body {
   border-radius: 8px;
   padding: 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    800px circle at var(--sx, 50%) var(--sy, 50%),
+    rgba(88, 166, 255, 0.07),
+    transparent 40%
+  );
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tool-card:hover::before {
+  opacity: 1;
 }
 
 .tool-card h3 {
@@ -281,6 +303,30 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.25rem 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-step::before,
+.git-step::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    800px circle at var(--sx, 50%) var(--sy, 50%),
+    rgba(88, 166, 255, 0.07),
+    transparent 40%
+  );
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pipeline-step:hover::before,
+.git-step:hover::before {
+  opacity: 1;
 }
 
 .step-number {
@@ -536,6 +582,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.25rem 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
 .git-step h3 {
@@ -558,6 +606,34 @@ body {
   color: var(--accent-dim);
 }
 
+/* CRT overlay */
+.crt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  pointer-events: none;
+}
+
+.crt-overlay .scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.35) 3px,
+    rgba(0, 0, 0, 0.35) 6px
+  );
+  opacity: 0.06;
+}
+
+.crt-overlay .grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 @media (max-width: 640px) {
   .git-pipeline {
     flex-direction: column;
@@ -569,7 +645,92 @@ body {
   }
 }
 
-/* Responsive */
+/* Scroll progress */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: calc(var(--scroll, 0) * 100%);
+  background: linear-gradient(90deg, var(--accent), #a371f7);
+  z-index: 9999;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
+
+/* Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scroll-spy nav */
+.site-nav {
+  position: fixed;
+  top: 3px;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* SVG arrow draw */
+.arrow-svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--border);
+}
+
+.reveal.is-visible .arrow-svg path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: drawArrow 0.6s ease forwards;
+}
+
+@keyframes drawArrow {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.site-nav.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.site-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.site-nav a:hover,
+.site-nav a.is-active {
+  color: var(--accent);
+}
+
 @media (max-width: 640px) {
   body {
     padding: 1.5rem 1rem;
@@ -581,5 +742,14 @@ body {
 
   .hero .tagline {
     font-size: 1rem;
+  }
+
+  .site-nav {
+    gap: 0.6rem;
+    padding: 0.5rem;
+  }
+
+  .site-nav a {
+    font-size: 0.7rem;
   }
 }

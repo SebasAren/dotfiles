@@ -1,7 +1,8 @@
 ---
 import TerminalPrompt from "./TerminalPrompt.astro";
+import ArrowSvg from "./ArrowSvg.astro";
 ---
-<section class="git-loop">
+<section class="git-loop reveal" id="git">
   <h2>The Git Loop</h2>
   <p class="git-loop-intro">
     Underneath the agent loop runs a worktree-based git workflow that
@@ -20,7 +21,7 @@ import TerminalPrompt from "./TerminalPrompt.astro";
       </p>
     </div>
 
-    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-arrow"><ArrowSvg /></div>
 
     <div class="git-step">
       <span class="step-number">2</span>
@@ -32,7 +33,7 @@ import TerminalPrompt from "./TerminalPrompt.astro";
       </p>
     </div>
 
-    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-arrow"><ArrowSvg /></div>
 
     <div class="git-step">
       <span class="step-number">3</span>
