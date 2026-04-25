@@ -215,6 +215,81 @@ body {
   color: var(--text);
 }
 
+/* Workflow */
+.workflow {
+  max-width: var(--max-width);
+  margin: 0 auto 6rem;
+}
+
+.workflow h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.workflow-intro {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.pipeline-step {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.pipeline-step h3 {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.pipeline-step p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.pipeline-arrow {
+  color: var(--border);
+  font-size: 1.5rem;
+  padding-top: 2rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .pipeline {
+    flex-direction: column;
+  }
+  .pipeline-arrow {
+    padding-top: 0;
+    text-align: center;
+    transform: rotate(90deg);
+  }
+}
+
 /* Philosophy */
 .philosophy {
   max-width: var(--max-width);

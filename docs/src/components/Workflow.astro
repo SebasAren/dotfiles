@@ -1,0 +1,50 @@
+---
+import TerminalPrompt from "./TerminalPrompt.astro";
+---
+<section class="workflow">
+  <h2>The Workflow</h2>
+  <p class="workflow-intro">
+    Every feature starts the same way — not with code, but with questions.
+  </p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <span class="step-number">1</span>
+      <h3>Align</h3>
+      <p>
+        Before writing a single line, the AI interviews me — edge cases, trade-offs, dependencies.
+        Inspired by Frederick Brooks' <em>design concept</em>: the shared idea that exists
+        between two minds. Most "I don't know" answers surface here, not mid-implementation.
+      </p>
+    </div>
+
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step">
+      <span class="step-number">2</span>
+      <h3>Plan</h3>
+      <p>
+        The aligned idea gets routed to structured planning — TDD with red-green-refactor for
+        well-scoped features, or read-only plan mode for exploratory work. The plan is an
+        artifact, not a feeling. Steps are numbered. Acceptance criteria are explicit.
+      </p>
+    </div>
+
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step">
+      <span class="step-number">3</span>
+      <h3>Build &amp; Reflect</h3>
+      <p>
+        Implementation follows the plan step by step. When it's done, a reflection pass
+        captures gotchas and non-obvious findings as persistent rules for future sessions.
+        Every commit leaves the codebase smarter than it found it.
+      </p>
+    </div>
+  </div>
+
+  <TerminalPrompt
+    command="/skill:grill-me"
+    output={"Interviewing relentlessly...\n\n  ✓ 23 questions resolved\n  ✓ 4 open questions surfaced\n  ✓ Routed to: tdd-plan\n\n→ Alignment achieved. Planning begins."}
+  />
+</section>
