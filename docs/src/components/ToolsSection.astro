@@ -18,7 +18,7 @@ const intros: Record<string, { title: string; description: string }> = {
   "obsidian/agents": {
     title: "Personal Wiki",
     description:
-      "A hybrid search engine over a personal knowledge base — BM25 for keyword matches, vector embeddings for semantic queries, and Cohere reranking to surface the best results. Three agent skills (query, ingest, maintain) keep it alive and cross-referenced.",
+      "A persistent, compounding knowledge base with its own search engine. Raw sources go in immutable; an LLM incrementally builds, cross-references, and revises structured pages on every ingest. Under the hood: BM25 for keyword matching, 4096-dim vector embeddings for semantic queries, and Cohere reranking to surface the best results — all cached locally and rebuilt incrementally as the wiki changes.",
   },
   "nvim/readme": {
     title: "Neovim",
