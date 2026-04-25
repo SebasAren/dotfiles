@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Lint Python with ruff"
+set -euo pipefail
+
+echo "=== Linting Python (ruff) ==="
+ruff check .

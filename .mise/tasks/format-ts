@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Auto-format TypeScript with Prettier"
+set -euo pipefail
+
+echo "=== Formatting TypeScript (Prettier) ==="
+cd pi/.pi/agent/extensions
+prettier --write "**/*.{ts,tsx}"

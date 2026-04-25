@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Verify TypeScript formatting with Prettier"
+set -euo pipefail
+
+echo "=== Checking TypeScript formatting (Prettier) ==="
+cd pi/.pi/agent/extensions
+prettier --check "**/*.{ts,tsx}"

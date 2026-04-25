@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#MISE description="Bootstrap all dependencies"
+set -euo pipefail
+
+echo "=== Trust mise config ==="
+mise trust
+
+echo "=== Install tools ==="
+mise install
+
+echo "=== Install luacheck ==="
+luarocks install luacheck 2>/dev/null || true
+
+echo "=== Install Pi extension deps ==="
+cd pi/.pi/agent/extensions && bun install
+
+echo "=== Install wpi-tui deps ==="
+cd wt/.local/share/wpi-tui && bun install

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#MISE description="Full verification (format-check + lint + typecheck + test)"
+#MISE depends=["format-check", "lint", "typecheck", "test"]

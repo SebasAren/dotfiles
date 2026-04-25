@@ -21,64 +21,64 @@ vim.keymap.set("c", "<C-d>", "<End>")
 
 -- LSP key mappings (following Neovim defaults)
 vim.api.nvim_create_autocmd("LspAttach", {
-	group = vim.api.nvim_create_augroup("UserLspConfig", {}),
-	callback = function(ev)
-		local opts = { buffer = ev.buf }
+  group = vim.api.nvim_create_augroup("UserLspConfig", {}),
+  callback = function(ev)
+    local opts = { buffer = ev.buf }
 
-		-- Hover documentation
-		vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+    -- Hover documentation
+    vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
 
-		-- Go to definition/references
-		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-		vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+    -- Go to definition/references
+    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+    vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
 
-		-- Code actions
-		vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-		vim.keymap.set("v", "<leader>ca", vim.lsp.buf.code_action, opts)
+    -- Code actions
+    vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+    vim.keymap.set("v", "<leader>ca", vim.lsp.buf.code_action, opts)
 
-		-- Rename
-		vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+    -- Rename
+    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 
-		-- Diagnostics
-		vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
-		vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-		vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+    -- Diagnostics
+    vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
+    vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+    vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
 
-		-- Workspace operations
-		vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts)
-		vim.keymap.set("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts)
-		vim.keymap.set("n", "<leader>wl", function()
-			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-		end, opts)
-	end,
+    -- Workspace operations
+    vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts)
+    vim.keymap.set("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts)
+    vim.keymap.set("n", "<leader>wl", function()
+      print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+    end, opts)
+  end,
 })
 
 -- Git diff review command
 vim.api.nvim_create_user_command("GitDiffReview", function(opts)
-	require("git_diff_review").open(opts.args ~= "" and opts.args or nil)
+  require("git_diff_review").open(opts.args ~= "" and opts.args or nil)
 end, { nargs = "?", desc = "Open diff review session" })
 
 -- Code review keymaps
 vim.keymap.set("n", "<leader>ra", function()
-	require("review").add(vim.fn.line("."), vim.fn.line("."))
+  require("review").add(vim.fn.line("."), vim.fn.line("."))
 end, { desc = "Review: add comment" })
 vim.keymap.set("x", "<leader>ra", function()
-	local start = vim.fn.getpos("v")[2]
-	local stop = vim.fn.getpos(".")[2]
-	if start > stop then
-		start, stop = stop, start
-	end
-	vim.schedule(function()
-		require("review").add(start, stop)
-	end)
-	return " "
+  local start = vim.fn.getpos("v")[2]
+  local stop = vim.fn.getpos(".")[2]
+  if start > stop then
+    start, stop = stop, start
+  end
+  vim.schedule(function()
+    require("review").add(start, stop)
+  end)
+  return " "
 end, { desc = "Review: add comment on selection", expr = true })
 vim.keymap.set("n", "<leader>rd", function()
-	require("review").delete()
+  require("review").delete()
 end, { desc = "Review: delete comment" })
 vim.keymap.set("n", "<leader>rl", function()
-	require("review").list()
+  require("review").list()
 end, { desc = "Review: list comments" })
 vim.keymap.set("n", "<leader>rx", function()
-	require("review").clear()
+  require("review").clear()
 end, { desc = "Review: clear all" })

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Auto-format Lua with StyLua"
+set -euo pipefail
+
+echo "=== Formatting Lua (StyLua) ==="
+stylua nvim/.config/nvim/

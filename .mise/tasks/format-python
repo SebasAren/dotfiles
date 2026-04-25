@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Auto-format Python with ruff"
+set -euo pipefail
+
+echo "=== Formatting Python (ruff) ==="
+ruff format .

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Lint TypeScript with ESLint"
+set -euo pipefail
+
+echo "=== Linting TypeScript (ESLint) ==="
+cd pi/.pi/agent/extensions
+bunx eslint .

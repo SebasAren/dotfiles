@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Lint Lua with luacheck"
+set -euo pipefail
+
+echo "=== Linting Lua (luacheck) ==="
+luacheck --config nvim/.config/nvim/.luacheckrc nvim/.config/nvim/lua/ 2>/dev/null || true

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Verify Python formatting with ruff"
+set -euo pipefail
+
+echo "=== Checking Python formatting (ruff) ==="
+ruff format --check .

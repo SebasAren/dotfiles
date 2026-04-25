@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#MISE description="Lint all code"
+#MISE depends=["lint-lua", "lint-shell", "lint-python", "lint-ts"]

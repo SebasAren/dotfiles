@@ -39,7 +39,6 @@ pi/.pi/agent/auth.json
 .pi/npm/
 
 node_modules/
-.mise/
 .mise-local/
 .mise.toml.local
 .node-version

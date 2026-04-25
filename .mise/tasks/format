@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#MISE description="Auto-format all code"
+#MISE depends=["format-lua", "format-python", "format-ts"]

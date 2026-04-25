@@ -8,15 +8,15 @@ require("config.diagnostic")
 
 -- Code review setup
 require("review").setup({
-	keys = {
-		add = false,
-		delete = false,
-		list = false,
-		save = false,
-		clear = false,
-	},
+  keys = {
+    add = false,
+    delete = false,
+    list = false,
+    save = false,
+    clear = false,
+  },
 })
 
 pcall(function()
-	require("custom-settings")
+  require("custom-settings")
 end)

@@ -1,11 +1,11 @@
 return {
-	settings = {
-		basedpyright = {
-			analysis = {
-				diagnosticSeverityOverrides = {
-					reportUnusedCallResult = "none",
-				},
-			},
-		},
-	},
+  settings = {
+    basedpyright = {
+      analysis = {
+        diagnosticSeverityOverrides = {
+          reportUnusedCallResult = "none",
+        },
+      },
+    },
+  },
 }

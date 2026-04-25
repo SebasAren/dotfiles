@@ -24,26 +24,16 @@ ff = true          # Fast-forward when possible
 
 Worktrees are stored **inside the repo** at `.worktrees/` — not in `~/.worktrees/` — to avoid home directory clutter.
 
-## Commit Message Generation (`generate-commit-msg.sh`)
+## Hooks
 
-Called by `wt` to generate conventional commit messages via the pi agent.
+All hooks run through mise tasks (see root `AGENTS.md` for the full task list):
 
-Flow:
-1. Reads wt's built-in prompt from stdin (includes task, diff, context)
-2. Prepends conventional commit format instructions
-3. Runs `pi -p --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --thinking off`
-4. Uses `CHEAP_MODEL` env var if set (for speed)
-5. 30-second timeout
-6. Falls back to `chore: update N files` if pi fails
+| Lifecycle | Command |
+|-----------|---------|
+| pre-start | `mise run setup` |
+| post-start | `wt step copy-ignored` (inline) |
+| post-switch | `tmux rename-window` (inline) |
+| pre-commit | `mise run format` |
+| pre-merge | `mise run check` |
 
-## approvals.toml
-
-Pre-approved commands for worktree operations on this project. Lists formatting, linting, and testing commands that `wt` can run without prompting.
-
-## Shell Integration
-
-The `wt` binary can't change the parent shell's directory. The bash wrapper in `~/.bashrc.d/wt` uses a **directive file** pattern:
-- `wt` writes `cd` commands to a temp file
-- Shell wrapper sources it after `wt` exits
-
-Don't call the `wt` binary directly from scripts that need directory changes — use the shell wrapper.
+Project hook config is at `.config/wt.toml` in the repo root.

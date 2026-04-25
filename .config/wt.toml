@@ -1,17 +1,5 @@
 [[pre-start]]
-mise-trust = "mise trust"
-
-[[pre-start]]
-mise-install = "mise install"
-
-[[pre-start]]
-luacheck-install = "mise exec -- luarocks install luacheck 2>/dev/null || true"
-
-[[pre-start]]
-pi-install = "cd pi/.pi/agent/extensions && bun install"
-
-[[pre-start]]
-wpi-install = "cd wt/.local/share/wpi-tui && bun install"
+setup = "mise run setup"
 
 [post-start]
 copy = "wt step copy-ignored"
@@ -20,19 +8,7 @@ copy = "wt step copy-ignored"
 tmux = "[ -n \"$TMUX\" ] && tmux rename-window {{ branch | sanitize }}"
 
 [pre-commit]
-format-check = "scripts/hooks/format-check.sh"
+format = "mise run format"
 
 [[pre-merge]]
-typescript-check = "scripts/hooks/typescript-check.sh"
-
-[[pre-merge]]
-bun-test = "scripts/hooks/bun-test.sh"
-
-[[pre-merge]]
-lua-lint = "scripts/hooks/lua-lint.sh"
-
-[[pre-merge]]
-eslint-lint = "scripts/hooks/eslint-lint.sh"
-
-[[pre-merge]]
-python-lint = "scripts/hooks/python-lint.sh"
+check = "mise run check"

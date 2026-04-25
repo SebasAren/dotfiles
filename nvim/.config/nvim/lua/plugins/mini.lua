@@ -1,60 +1,60 @@
 return {
-	{
-		"echasnovski/mini.nvim",
-		version = false,
-		dependencies = {
-			"rafamadriz/friendly-snippets",
-		},
-		config = function()
-			-- Highlight the word under the cursor
-			require("mini.cursorword").setup({})
-			-- Disable cursorword for markdown (expensive scan on every cursor move in large files)
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "markdown",
-				callback = function()
-					vim.b.minicursorword_disable = true
-				end,
-			})
-			-- Automatically insert or delete pairs (e.g., brackets, quotes)
-			require("mini.pairs").setup({})
-			-- Highlight trailing whitespace
-			require("mini.trailspace").setup({})
-			-- Comment/uncomment lines with ease
-			require("mini.comment").setup({})
-			-- Move lines or visual selections with custom keybindings
-			require("mini.move").setup({
-				mappings = {
-					-- Move visual selection in Visual mode
-					left = "<C-M-h>",
-					right = "<C-M-l>",
-					down = "<C-M-j>",
-					up = "<C-M-k>",
+  {
+    "echasnovski/mini.nvim",
+    version = false,
+    dependencies = {
+      "rafamadriz/friendly-snippets",
+    },
+    config = function()
+      -- Highlight the word under the cursor
+      require("mini.cursorword").setup({})
+      -- Disable cursorword for markdown (expensive scan on every cursor move in large files)
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "markdown",
+        callback = function()
+          vim.b.minicursorword_disable = true
+        end,
+      })
+      -- Automatically insert or delete pairs (e.g., brackets, quotes)
+      require("mini.pairs").setup({})
+      -- Highlight trailing whitespace
+      require("mini.trailspace").setup({})
+      -- Comment/uncomment lines with ease
+      require("mini.comment").setup({})
+      -- Move lines or visual selections with custom keybindings
+      require("mini.move").setup({
+        mappings = {
+          -- Move visual selection in Visual mode
+          left = "<C-M-h>",
+          right = "<C-M-l>",
+          down = "<C-M-j>",
+          up = "<C-M-k>",
 
-					-- Move current line in Normal mode
-					line_left = "<C-M-h>",
-					line_right = "<C-M-l>",
-					line_down = "<C-M-j>",
-					line_up = "<C-M-k>",
-				},
-			})
-			-- Toggle between single-line and multi-line code blocks
-			require("mini.splitjoin").setup({
-				mappings = {
-					toggle = "<leader>J",
-				},
-			})
-			-- Display icons for file types and other UI elements
-			require("mini.icons").setup({})
-			-- Diff signs (disabled, using gitsigns instead)
-			require("mini.diff").setup({ source = require("mini.diff").gen_source.none() })
-			-- Snippet engine for code snippets
-			local gen_loader = require("mini.snippets").gen_loader
-			require("mini.snippets").setup({
-				snippets = {
-					gen_loader.from_lang(),
-				},
-			})
-			require("mini.surround").setup()
-		end,
-	},
+          -- Move current line in Normal mode
+          line_left = "<C-M-h>",
+          line_right = "<C-M-l>",
+          line_down = "<C-M-j>",
+          line_up = "<C-M-k>",
+        },
+      })
+      -- Toggle between single-line and multi-line code blocks
+      require("mini.splitjoin").setup({
+        mappings = {
+          toggle = "<leader>J",
+        },
+      })
+      -- Display icons for file types and other UI elements
+      require("mini.icons").setup({})
+      -- Diff signs (disabled, using gitsigns instead)
+      require("mini.diff").setup({ source = require("mini.diff").gen_source.none() })
+      -- Snippet engine for code snippets
+      local gen_loader = require("mini.snippets").gen_loader
+      require("mini.snippets").setup({
+        snippets = {
+          gen_loader.from_lang(),
+        },
+      })
+      require("mini.surround").setup()
+    end,
+  },
 }

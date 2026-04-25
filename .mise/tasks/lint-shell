@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#MISE description="Lint shell scripts with shellcheck"
+set -euo pipefail
+
+mapfile -t sh_files < <(find . -name "*.sh" -not -path "*/node_modules/*" -not -path "*/plugins/*" -not -path "*/.mise/*" -type f 2>/dev/null || true)
+
+if [ ${#sh_files[@]} -eq 0 ]; then
+    echo "No shell files found."
+    exit 0
+fi
+
+echo "=== Linting Shell (shellcheck) ==="
+shellcheck "${sh_files[@]}"
