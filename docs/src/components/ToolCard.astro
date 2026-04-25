@@ -1,0 +1,69 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  tool: { id: string; rendered?: { html: string } };
+}
+const { title, description, tool } = Astro.props;
+---
+<article class="tool-card" data-tool={tool.id}>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <details>
+    <summary>
+      <span class="summary-text">Dig deeper</span>
+      <span class="summary-arrow">▸</span>
+    </summary>
+    <div class="tool-content">
+      {tool.rendered ? <Fragment set:html={tool.rendered.html} /> : <p>No content</p>}
+    </div>
+  </details>
+</article>
+
+<script>
+  document.querySelectorAll<HTMLDetailsElement>("details").forEach((details) => {
+    const summary = details.querySelector("summary");
+    const content = details.querySelector(".tool-content");
+    if (!summary || !content) return;
+
+    summary.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isOpen = details.open;
+
+      if (isOpen) {
+        // Close: animate height to 0
+        content.style.height = `${content.scrollHeight}px`;
+        requestAnimationFrame(() => {
+          content.style.height = "0px";
+          content.style.opacity = "0";
+        });
+        content.addEventListener(
+          "transitionend",
+          () => {
+            details.open = false;
+            content.style.height = "";
+            content.style.opacity = "";
+          },
+          { once: true },
+        );
+      } else {
+        // Open: animate height from 0
+        details.open = true;
+        content.style.height = "0px";
+        content.style.opacity = "0";
+        requestAnimationFrame(() => {
+          content.style.height = `${content.scrollHeight}px`;
+          content.style.opacity = "1";
+        });
+        content.addEventListener(
+          "transitionend",
+          () => {
+            content.style.height = "";
+            content.style.opacity = "";
+          },
+          { once: true },
+        );
+      }
+    });
+  });
+</script>

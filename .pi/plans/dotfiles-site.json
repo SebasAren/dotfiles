@@ -1,0 +1,154 @@
+{
+  "title": "Dotfiles CV Static Site",
+  "slug": "dotfiles-site",
+  "context": "Astro site in docs/ for GitHub user SebasAren. Deploy to gh-pages branch via GitHub Actions on push to main. Content pulled from 5 source files via glob loader. Single-page with hero, tools, philosophy, links sections. Dark terminal aesthetic. Test with vitest for content collections, astro build for integration.",
+  "architecture": "docs/ is a self-contained Astro project with its own package.json. Content collections use glob() loader with base='../' to pull README/AGENTS.md files from the parent repo. Single Layout component wraps all sections. Components: Hero, TerminalPrompt, ToolsSection, ToolCard, Philosophy, Links. Global CSS handles theming. GitHub Actions builds and deploys to gh-pages branch.",
+  "created": "2026-04-24T23:40:18.109Z",
+  "updated": "2026-04-24T23:56:08.638Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Scaffold Astro project in docs/",
+      "red": {
+        "description": "Run astro build in docs/ — fails because no project exists",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create minimal Astro project in docs/ with package.json (packageManager field for bun), configured for static output. Verify astro build produces dist/ with a valid index.html",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Set site URL and base path in astro.config.mjs",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Content collection for source markdown",
+      "red": {
+        "description": "Write a vitest test that imports getCollection('tools') and asserts it returns entries for all 5 source files (AGENTS.md, nvim/README.md, tmux/README.md, bashrc/AGENTS.md, pi/.pi/README.md). Test fails because no collection is defined",
+        "status": "done"
+      },
+      "green": {
+        "description": "Define content collection in src/content.config.ts using glob() loader pointing to ../ with pattern matching the 5 README/AGENTS files. Minimal zod schema (id: string). Test passes",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Add a slug field derived from file path for cleaner component props",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "Hero section",
+      "red": {
+        "description": "index.astro imports and renders a Hero component that doesn't exist — astro build fails with module not found",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create src/components/Hero.astro with handle (SebasAren), tagline ('AI-augmented development environment managed with GNU Stow'), and a fake terminal prompt showing stow */ output. Build succeeds",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Extract the terminal prompt block into src/components/TerminalPrompt.astro for potential reuse",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 4,
+      "name": "Tools section with collapsible pulled content",
+      "red": {
+        "description": "index.astro imports a ToolsSection component that doesn't exist — astro build fails",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create src/components/ToolsSection.astro that iterates over the 'tools' content collection, renders each tool with a handwritten intro (hardcoded in a const map) and the pulled markdown body inside a <details>/<summary> collapsible. Build succeeds",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Extract the per-tool card (intro + collapsible) into src/components/ToolCard.astro",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 5,
+      "name": "Philosophy section",
+      "red": {
+        "description": "index.astro imports a Philosophy component that doesn't exist — astro build fails",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create src/components/Philosophy.astro with handcrafted content about craftsmanship, automation, AI-augmented workflows, and the conventions/anti-patterns approach. Build succeeds",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 6,
+      "name": "Links section",
+      "red": {
+        "description": "index.astro imports a Links component that doesn't exist — astro build fails",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create src/components/Links.astro with GitHub profile link (github.com/SebasAren). Build succeeds",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 7,
+      "name": "Dark theme and monospace styling",
+      "red": {
+        "description": "Page renders with Astro default styling (white bg, sans-serif) — no custom CSS exists",
+        "status": "done"
+      },
+      "green": {
+        "description": "Add global CSS (src/styles/global.css) with dark background, monospace font stack, modern spacing/layout, terminal-inspired code blocks, collapsible section styling. Import in Layout. Verify build and visual output",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Extract theme values into CSS custom properties for maintainability",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 8,
+      "name": "GitHub Actions deployment workflow",
+      "red": {
+        "description": "No deploy-site.yml workflow exists — GitHub Pages has no deployment pipeline for the site",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create .github/workflows/deploy-site.yml that: checks out repo, sets up bun, installs docs/ deps, runs astro build, deploys dist/ to gh-pages branch using actions/deploy-pages. Trigger on push to main. Workflow file is valid YAML",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [],
+  "design": {
+    "currentState": "No docs/ directory exists. No static site. No GitHub Pages deployment. Five README/AGENTS.md files exist (AGENTS.md, nvim/README.md, tmux/README.md, bashrc/AGENTS.md, pi/.pi/README.md) — all plain Markdown with no frontmatter, standard headings, triple-backtick code blocks. CI exists at .github/workflows/test.yml running bun tests for pi extensions and standalone CLIs. Repo uses mise for tool versions. GNU Stow manages symlinks.",
+    "desiredState": "docs/ contains a complete Astro project. Single-page site with: hero (handle + tagline + fake stow */ terminal prompt), tools section (handwritten intro per tool + collapsible pulled markdown from 5 source files), philosophy section (handcrafted craftsmanship narrative), links section (GitHub profile URL). Dark background, monospace font, modern layout. GitHub Actions workflow builds astro and deploys to GitHub Pages on push to main. Build output goes to docs/dist/ (or configured output) for Pages serving.",
+    "patterns": "Existing CI uses bun as runtime. Astro glob() loader can reference '../' relative paths from docs/ to reach repo root READMEs. No frontmatter in source markdown means Astro will parse body only — schema should be minimal (just id/body). The site is pure static HTML — no client-side JS framework needed. Convention: conventional commits, atomic changes.",
+    "decisions": "Location: docs/ directory (GitHub Pages convention). Tech: Astro, zero-JS output. Deployment: GitHub Actions on push to main. Aesthetic: dark bg + monospace + normal modern layout. Content: handwritten intros + pulled markdown in collapsible sections. Identity: handle only, no real name. Links: GitHub profile only.",
+    "questions": "GitHub username/handle for hero and links section? Should the GitHub Actions workflow deploy from docs/dist/ or from a gh-pages branch? Does mise.toml need a node/bun version entry for the docs/ directory or should the Astro project use its own package.json engines field?"
+  }
+}

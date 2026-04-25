@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+import ToolCard from "./ToolCard.astro";
+
+const tools = await getCollection("tools");
+
+// The glob loader lowercases IDs
+const intros: Record<string, { title: string; description: string }> = {
+  agents: {
+    title: "Architecture & Conventions",
+    description:
+      "The backbone of the entire setup — a unified set of conventions for Lua, Python, Shell, and TypeScript. GNU Stow manages symlinks so every tool config lives in the repo and reflects instantly.",
+  },
+  "nvim/readme": {
+    title: "Neovim",
+    description:
+      "A full-featured Neovim config with Lazy.nvim, 17 LSP servers, AI-assisted completion via Codestral, and integrated formatting/linting. The primary editor for all development work.",
+  },
+  "tmux/readme": {
+    title: "Tmux",
+    description:
+      "Terminal multiplexer with Alt-key pane navigation, TPM plugin management, and a tokyo-night theme. Designed for fast context switching between projects.",
+  },
+  "bashrc/agents": {
+    title: "Shell",
+    description:
+      "Modular .bashrc.d/ architecture with secrets managed via Proton Pass CLI, a Worktrunk wrapper for git worktree workflows, and a custom TUI for package installation.",
+  },
+  "pi/pi/readme": {
+    title: "AI Agent (Pi)",
+    description:
+      "Custom AI agent extensions including an explore subagent for codebase reconnaissance, a librarian for documentation research, and semantic search with Cohere reranking.",
+  },
+};
+
+const displayOrder = [
+  "agents",
+  "nvim/readme",
+  "tmux/readme",
+  "bashrc/agents",
+  "pi/pi/readme",
+];
+
+const sorted = displayOrder
+  .map((id) => tools.find((t) => t.id === id))
+  .filter(Boolean);
+---
+
+<section class="tools">
+  <h2>The Setup</h2>
+  {sorted.map((tool) => {
+    const meta = intros[tool!.id];
+    return <ToolCard title={meta.title} description={meta.description} tool={tool!} />;
+  })}
+</section>

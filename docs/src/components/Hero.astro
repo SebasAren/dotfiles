@@ -1,0 +1,11 @@
+---
+import TerminalPrompt from "./TerminalPrompt.astro";
+---
+<section class="hero">
+  <h1 class="handle">SebasAren</h1>
+  <p class="tagline">AI-augmented development environment managed with GNU Stow</p>
+  <TerminalPrompt
+    command="stow */"
+    output={"✔ nvim\n✔ tmux\n✔ bashrc\n✔ pi\n✔ mise\n✔ homebrew\n✔ scripts"}
+  />
+</section>

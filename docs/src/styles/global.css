@@ -1,0 +1,282 @@
+/* Reset */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-terminal: #010409;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-dim: #388bfd;
+  --border: #30363d;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono",
+    "Consolas", monospace;
+  --max-width: 48rem;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-mono);
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  padding: 2rem 1.5rem;
+}
+
+/* Hero */
+.hero {
+  max-width: var(--max-width);
+  margin: 4rem auto 6rem;
+}
+
+.hero .handle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.hero .tagline {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.terminal {
+  background: var(--bg-terminal);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.terminal .prompt {
+  color: var(--accent);
+}
+
+.terminal .output {
+  color: var(--text-muted);
+}
+
+/* Tools */
+.tools {
+  max-width: var(--max-width);
+  margin: 0 auto 6rem;
+}
+
+.tools h2 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  color: var(--text);
+}
+
+.tool-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tool-card h3 {
+  font-size: 1.25rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.tool-card p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.tool-card details {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.tool-card summary {
+  cursor: pointer;
+  color: var(--accent-dim);
+  font-size: 0.9rem;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.tool-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-card summary:hover {
+  color: var(--accent);
+}
+
+.tool-card details[open] .summary-arrow {
+  transform: rotate(90deg);
+}
+
+.summary-arrow {
+  transition: transform 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.tool-content {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  overflow: hidden;
+  transition: height 0.3s ease, opacity 0.2s ease;
+}
+
+.tool-content h1,
+.tool-content h2,
+.tool-content h3,
+.tool-content h4 {
+  color: var(--text);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tool-content h1 {
+  font-size: 1.3rem;
+}
+
+.tool-content h2 {
+  font-size: 1.15rem;
+}
+
+.tool-content h3,
+.tool-content h4 {
+  font-size: 1rem;
+}
+
+.tool-content code {
+  background: var(--bg-terminal);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.tool-content pre {
+  background: var(--bg-terminal);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.tool-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.tool-content ul,
+.tool-content ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.tool-content a {
+  color: var(--accent);
+}
+
+.tool-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+
+.tool-content th,
+.tool-content td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.tool-content th {
+  background: var(--bg-terminal);
+  color: var(--text);
+}
+
+/* Philosophy */
+.philosophy {
+  max-width: var(--max-width);
+  margin: 0 auto 6rem;
+}
+
+.philosophy h2 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+.philosophy h3 {
+  font-size: 1.15rem;
+  color: var(--accent);
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.philosophy p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.philosophy code {
+  background: var(--bg-terminal);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+/* Links */
+.links {
+  max-width: var(--max-width);
+  margin: 0 auto 4rem;
+}
+
+.links h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.links a {
+  color: var(--accent);
+  font-size: 1.1rem;
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  body {
+    padding: 1.5rem 1rem;
+  }
+
+  .hero .handle {
+    font-size: 1.8rem;
+  }
+
+  .hero .tagline {
+    font-size: 1rem;
+  }
+}
