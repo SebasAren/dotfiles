@@ -38,11 +38,12 @@ mock.module("child_process", () => ({
 
 mock.module("./getLastAssistantMessage", () => ({
   getLastAssistantMessage: (entries: any[]) => {
-    for (const entry of entries) {
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i];
       if (entry.type !== "message") continue;
       if (entry.message.role !== "assistant") continue;
       const textBlocks = entry.message.content.filter((b: any) => b.type === "text");
-      if (textBlocks.length === 0) return null;
+      if (textBlocks.length === 0) continue;
       return textBlocks.map((b: any) => b.text).join("\n");
     }
     return null;

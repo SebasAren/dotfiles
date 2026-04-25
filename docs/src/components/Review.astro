@@ -26,7 +26,7 @@
 
   <p>
     <strong>Exceptional testing discipline for a personal repo.</strong>
-    413 tests across 34 files, CI on every push, proper temp-directory
+    504 tests across 44 files, CI on every push, proper temp-directory
     fixtures, edge-case coverage. The testing rules file itself documents
     hard-won lessons (&ldquo;mock.module() cross-contamination,&rdquo;
     &ldquo;Bun virtualizes <code>process.cwd()</code>&rdquo;). Most company
@@ -58,10 +58,11 @@
   <h3>Where it could improve</h3>
 
   <p>
-    <strong>CI can catch more.</strong> ESLint is configured but not run in CI.
-    Shellcheck is documented as a tool but not enforced. Adding
-    <code>npx eslint .</code> and <code>shellcheck</code> to CI would close
-    those gaps cheaply.
+    <strong>CI pipeline is narrower than local checks.</strong> ESLint and
+    shellcheck are both enforced via <code>mise run lint</code> (and
+    pre-commit), but the CI workflow only runs typecheck and
+    <code>bun test</code>. Adding <code>mise run lint</code> to CI would
+    align remote validation with what contributors already run locally.
   </p>
 
   <p>
@@ -77,9 +78,10 @@
   </p>
 
   <p>
-    <strong>CONVENTIONS.md gap.</strong> The docs structure rule says
-    &ldquo;CONVENTIONS.md: Actionable rules with specific tool commands&rdquo;
-    &mdash; but none exist in the repo.
+    <strong>No integration tests.</strong> The 504 unit tests are thorough,
+    but nothing exercises the extensions end-to-end against a real agent
+    session. The subagent runner, tool registration, and pre-search
+    pipeline are tested in isolation but never wired together.
   </p>
 
   <h3>Bottom line</h3>
@@ -189,10 +191,10 @@
   </p>
 
   <p>
-    <strong>Shellcheck rule is documented but not enforced.</strong>
-    <code>global.md</code> calls out specific shellcheck warnings to fix
-    (SC2155, SC2162, SC2054), but there&rsquo;s no <code>shellcheck.sh</code>
-    in <code>scripts/hooks/</code>.
+    <strong>CI doesn&rsquo;t enforce lint.</strong> The <code>mise run lint</code>
+    task runs ESLint and shellcheck locally and in pre-commit, but the
+    GitHub workflow skips them entirely. A contributor who bypasses
+    pre-commit hooks can land lint violations on main.
   </p>
 
   <p>
@@ -203,7 +205,7 @@
 
   <p>
     <strong>Deepseek&rsquo;s &ldquo;<code>CONVENTIONS.md</code> gap&rdquo; is
-    wrong.</strong> An 85-line <code>CONVENTIONS.md</code> exists at the repo
+    wrong.</strong> A 112-line <code>CONVENTIONS.md</code> exists at the repo
     root.
   </p>
 
@@ -322,8 +324,8 @@
   </p>
 
   <p>
-    <strong>Tests make strong.</strong> Four hundred thirteen test. Me count
-    on fingers and toes and run out of toes. But number big. Means repo not
+    <strong>Tests make strong.</strong> Five hundred and four test. Me count
+    on fingers and toes and friends toes. Number very big. Means repo not
     break when wind blow. Solid like mammoth bone. Good.
   </p>
 
