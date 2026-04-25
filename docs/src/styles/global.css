@@ -85,7 +85,8 @@ body {
   overflow-x: auto;
   font-size: 0.9rem;
   line-height: 1.6;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .terminal .prompt {
@@ -746,12 +747,6 @@ body {
   }
 
   .terminal {
-    margin-left: -1rem;
-    margin-right: -1rem;
-    width: calc(100% + 2rem);
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
     padding: 1rem;
     font-size: 0.95rem;
   }
