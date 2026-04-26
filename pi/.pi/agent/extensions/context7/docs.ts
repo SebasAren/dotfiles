@@ -112,9 +112,9 @@ export async function executeDocs(
     };
   } catch (error: unknown) {
     if (error instanceof Context7Error) {
-      throw new Error(`Context7 documentation fetch failed: ${error.message}`);
+      throw new Error(`Context7 documentation fetch failed: ${error.message}`, { cause: error });
     }
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Context7 documentation fetch failed: ${errorMessage}`);
+    throw new Error(`Context7 documentation fetch failed: ${errorMessage}`, { cause: error });
   }
 }

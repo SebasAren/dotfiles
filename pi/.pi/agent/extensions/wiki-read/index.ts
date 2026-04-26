@@ -54,7 +54,7 @@ export function executeWikiRead(params: { path: string }) {
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`Failed to read wiki page: ${message}`);
+    throw new Error(`Failed to read wiki page: ${message}`, { cause: err });
   }
 }
 

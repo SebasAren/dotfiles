@@ -164,6 +164,6 @@ export async function executeWebFetch(
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Exa getContents failed: ${errorMessage}`);
+    throw new Error(`Exa getContents failed: ${errorMessage}`, { cause: error });
   }
 }
