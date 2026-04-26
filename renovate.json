@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Group all pi-related packages into a single PR",
+      "groupName": "pi monorepo",
+      "groupSlug": "pi-monorepo",
+      "matchPackageNames": [
+        "@mariozechner/pi-*",
+        "pi"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ]
+}
