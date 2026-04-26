@@ -67,7 +67,7 @@
         "playwright": "^1.50.0",
       },
       "peerDependencies": {
-        "@mariozechner/pi-coding-agent": "^0.69.0",
+        "@mariozechner/pi-coding-agent": "^0.70.2",
       },
     },
     "fuzzy-edit": {
@@ -106,8 +106,8 @@
         "web-tree-sitter": "^0.26.8",
       },
       "peerDependencies": {
-        "@mariozechner/pi-coding-agent": "^0.69.0",
-        "@mariozechner/pi-tui": "^0.69.0",
+        "@mariozechner/pi-coding-agent": "^0.70.2",
+        "@mariozechner/pi-tui": "^0.70.2",
       },
     },
     "tdd-tree": {
