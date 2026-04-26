@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "exa-js": "^1.0.0"
+    "exa-js": "^2.0.0"
   },
   "pi": {
     "extensions": ["./index.ts"]
