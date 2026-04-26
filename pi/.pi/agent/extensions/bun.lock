@@ -21,10 +21,6 @@
         "typescript-eslint": "^8.0.0",
       },
     },
-    "cache-control": {
-      "name": "@pi-ext/cache-control",
-      "version": "1.0.0",
-    },
     "cheap-clarify": {
       "name": "@pi-ext/cheap-clarify",
       "version": "1.0.0",
@@ -94,10 +90,6 @@
     },
     "plan-mode": {
       "name": "@pi-ext/plan-mode",
-      "version": "1.0.0",
-    },
-    "qwen-reasoning-fix": {
-      "name": "@pi-ext/qwen-reasoning-fix",
       "version": "1.0.0",
     },
     "shared": {
@@ -291,8 +283,6 @@
 
     "@mistralai/mistralai": ["@mistralai/mistralai@2.2.0", "", { "dependencies": { "ws": "^8.18.0", "zod": "^3.25.0 || ^4.0.0", "zod-to-json-schema": "^3.25.0" } }, "sha512-JQUGIXjFWnw/J9LpTSf/ZXwVW3Sh8FBAcfTo5QvAHqkl4CfSiIwnjRJhMoAFcP6ncCe84YPU1ncDGX+p3OXnfg=="],
 
-    "@pi-ext/cache-control": ["@pi-ext/cache-control@workspace:cache-control"],
-
     "@pi-ext/cheap-clarify": ["@pi-ext/cheap-clarify@workspace:cheap-clarify"],
 
     "@pi-ext/claude-rules": ["@pi-ext/claude-rules@workspace:claude-rules"],
@@ -310,8 +300,6 @@
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 
     "@pi-ext/plan-mode": ["@pi-ext/plan-mode@workspace:plan-mode"],
-
-    "@pi-ext/qwen-reasoning-fix": ["@pi-ext/qwen-reasoning-fix@workspace:qwen-reasoning-fix"],
 
     "@pi-ext/shared": ["@pi-ext/shared@workspace:shared"],
 
