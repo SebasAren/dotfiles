@@ -10,6 +10,6 @@
     "@mariozechner/pi-tui": "^0.70.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^25.0.0"
   }
 }
