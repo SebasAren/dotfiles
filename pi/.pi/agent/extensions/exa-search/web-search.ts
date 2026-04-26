@@ -239,6 +239,6 @@ export async function executeWebSearch(
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Exa search failed: ${errorMessage}`);
+    throw new Error(`Exa search failed: ${errorMessage}`, { cause: error });
   }
 }

@@ -101,9 +101,9 @@ export async function executeSearch(
     };
   } catch (error: unknown) {
     if (error instanceof Context7Error) {
-      throw new Error(`Context7 search failed: ${error.message}`);
+      throw new Error(`Context7 search failed: ${error.message}`, { cause: error });
     }
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Context7 search failed: ${errorMessage}`);
+    throw new Error(`Context7 search failed: ${errorMessage}`, { cause: error });
   }
 }

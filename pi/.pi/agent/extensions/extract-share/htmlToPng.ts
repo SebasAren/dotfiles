@@ -25,6 +25,7 @@ export async function htmlToPng(
       "Playwright Chromium not found. " +
         "Install it with: npx playwright install chromium\nOriginal error: " +
         (cause instanceof Error ? cause.message : String(cause)),
+      { cause },
     );
   }
 
