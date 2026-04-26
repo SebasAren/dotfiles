@@ -15,6 +15,7 @@ import type {
   ExtensionContext,
   ExtensionCommandContext,
 } from "@mariozechner/pi-coding-agent";
+import { BorderedLoader } from "@mariozechner/pi-coding-agent";
 import type { Component } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
 import { reuseOrCreateText } from "@pi-ext/shared";
@@ -193,17 +194,26 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
-    // Navigate with summarization
-    const result = await ctx.navigateTree(targetId, {
-      summarize: true,
-      customInstructions:
-        "Summarize the TDD step work that was done after the kickoff exploration. " +
-        "Focus on: what tests were written, what implementation was added, what was refactored. " +
-        "Keep it concise — this is a handoff to the next step.",
-      label: `tdd-step-done-${slug}`,
+    // Navigate with summarization, showing a spinner while the LLM summarizes
+    const result = await ctx.ui.custom<{ cancelled: boolean } | null>((tui, theme, _kb, done) => {
+      const loader = new BorderedLoader(tui, theme, `Navigating to kickoff "${slug}"...`);
+
+      ctx
+        .navigateTree(targetId, {
+          summarize: true,
+          customInstructions:
+            "Summarize the TDD step work that was done after the kickoff exploration. " +
+            "Focus on: what tests were written, what implementation was added, what was refactored. " +
+            "Keep it concise — this is a handoff to the next step.",
+          label: `tdd-step-done-${slug}`,
+        })
+        .then((r) => done(r))
+        .catch(() => done(null));
+
+      return loader;
     });
 
-    if (result.cancelled) {
+    if (!result || result.cancelled) {
       ctx.ui.notify("Navigation cancelled.", "info");
     } else {
       ctx.ui.notify(`Navigated to TDD kickoff for "${slug}". Starting fresh branch.`, "info");

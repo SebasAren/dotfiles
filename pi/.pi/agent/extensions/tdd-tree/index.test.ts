@@ -1,17 +1,8 @@
 import { describe, it, expect, mock } from "bun:test";
+import { piCodingAgentMock, piTuiMock } from "@pi-ext/shared/test-mocks";
 
-// Mock TUI so render tests work without a display and avoid ANSI noise
-mock.module("@mariozechner/pi-tui", () => ({
-  Text: class Text {
-    text: string;
-    constructor(text: string, _x: number, _y: number) {
-      this.text = text;
-    }
-    setText(t: string) {
-      this.text = t;
-    }
-  },
-}));
+mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
+mock.module("@mariozechner/pi-tui", piTuiMock);
 
 import ext from "./index";
 
@@ -42,6 +33,7 @@ function createExtension() {
     } = {},
   ) {
     const notifications: Array<{ message: string; level: string }> = [];
+    const customCalls: Array<{ message: string; component: any }> = [];
     const labelMap = new Map(labels);
     for (const e of opts.entries ?? []) {
       if (e.label) labelMap.set(e.id, e.label);
@@ -56,9 +48,21 @@ function createExtension() {
         notify: (message: string, level: string) => {
           notifications.push({ message, level });
         },
+        custom: <T>(cb: (tui: any, theme: any, kb: any, done: (val: T) => void) => any) => {
+          return new Promise<T>((resolve) => {
+            const component = cb({ requestRender: () => {} }, makeTheme(), {}, (val: T) =>
+              resolve(val),
+            );
+            // Capture the message from the BorderedLoader constructor arg
+            // (mock BorderedLoader is just `class {}`, so we capture via the
+            // string arg passed to the constructor)
+            customCalls.push({ message: "", component });
+          });
+        },
       },
       navigateTree: opts.navigateTree ?? (async () => ({ cancelled: false })),
       notifications,
+      customCalls,
     };
   }
 
@@ -236,6 +240,64 @@ describe("tdd-tree extension", () => {
       expect(ctx.notifications).toContainEqual({
         message: expect.stringContaining("No kickoff point found"),
         level: "error",
+      });
+    });
+  });
+
+  describe("navigation spinner", () => {
+    it("shows spinner via ctx.ui.custom during navigation", async () => {
+      const { commands, makeCtx } = createExtension();
+      const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
+      const navigateTree = mock(() => Promise.resolve({ cancelled: false }));
+      const ctx = makeCtx({
+        leafId: "current",
+        entries: [{ id: "target", type: "custom", label: "tdd-kickoff-plan" }],
+        navigateTree,
+      });
+      await cmd.handler("plan", ctx);
+      // custom was called (spinner was shown)
+      expect(ctx.customCalls.length).toBe(1);
+      // The callback returned a BorderedLoader instance
+      expect(ctx.customCalls[0].component).toBeDefined();
+      expect(ctx.customCalls[0].component.constructor.name).toBe("BorderedLoader");
+    });
+
+    it("no spinner when already at kickoff", async () => {
+      const { commands, makeCtx } = createExtension();
+      const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
+      const navigateTree = mock(() => Promise.resolve({ cancelled: false }));
+      const ctx = makeCtx({
+        leafId: "target",
+        entries: [{ id: "target", type: "custom", label: "tdd-kickoff-plan" }],
+        navigateTree,
+      });
+      await cmd.handler("plan", ctx);
+      expect(ctx.customCalls.length).toBe(0);
+    });
+
+    it("no spinner when kickoff not found", async () => {
+      const { commands, makeCtx } = createExtension();
+      const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
+      const ctx = makeCtx({ leafId: "current" });
+      await cmd.handler("missing", ctx);
+      expect(ctx.customCalls.length).toBe(0);
+    });
+
+    it("shows cancelled notification when navigateTree returns null", async () => {
+      const { commands, makeCtx } = createExtension();
+      const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
+      // Simulate navigateTree rejecting (error case)
+      const navigateTree = mock(() => Promise.reject(new Error("summarization failed")));
+      const ctx = makeCtx({
+        leafId: "current",
+        entries: [{ id: "target", type: "custom", label: "tdd-kickoff-plan" }],
+        navigateTree,
+      });
+      await cmd.handler("plan", ctx);
+      // The catch in custom callback resolves with null → "Navigation cancelled"
+      expect(ctx.notifications).toContainEqual({
+        message: "Navigation cancelled.",
+        level: "info",
       });
     });
   });
