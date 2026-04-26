@@ -3,7 +3,13 @@
   "extends": [
     "config:recommended"
   ],
+  "platformAutomerge": true,
   "packageRules": [
+    {
+      "description": "Auto-merge minor and patch updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    },
     {
       "description": "Group all pi-related packages into a single PR",
       "groupName": "pi monorepo",
