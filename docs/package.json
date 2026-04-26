@@ -11,6 +11,6 @@
     "test": "astro build"
   },
   "dependencies": {
-    "astro": "^5.7.10"
+    "astro": "^6.0.0"
   }
 }
