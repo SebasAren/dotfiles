@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "diff": "^8.0.2"
+    "diff": "^9.0.0"
   },
   "pi": {
     "extensions": ["./index.ts"]
