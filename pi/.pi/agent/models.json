@@ -1,23 +1,5 @@
 {
   "providers": {
-    "mistral": {
-      "modelOverrides": {
-        "mistral-small-latest": {
-          "reasoning": false,
-          "input": ["text", "image"],
-          "contextWindow": 256000,
-          "cost": {
-            "input": 0.12,
-            "output": 0.51,
-            "cacheRead": 0.012,
-            "cacheWrite": 0
-          },
-          "compat": {
-            "supportsReasoningEffort": true
-          }
-        }
-      }
-    },
     "ollama-cloud": {
       "baseUrl": "https://ollama.com/v1",
       "api": "openai-completions",
