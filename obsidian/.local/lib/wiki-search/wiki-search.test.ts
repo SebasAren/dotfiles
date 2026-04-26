@@ -23,6 +23,7 @@ import {
   hybridSearch,
   buildCache,
   walkMarkdown,
+  WIKI_DIR,
 } from "./index.ts";
 
 async function makeTmpDir(prefix: string): Promise<string> {
@@ -305,7 +306,6 @@ describe("rg", () => {
 // ── Unit tests: findCandidates ──
 
 describe("findCandidates", () => {
-  const WIKI_DIR = `${process.env.HOME}/Documents/wiki/wiki`;
   test("returns empty array for nonsense query", () => {
     const results = findCandidates("zzz_no_such_string_xyzzy_12345", WIKI_DIR);
     expect(results).toEqual([]);

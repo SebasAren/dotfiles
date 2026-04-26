@@ -1,0 +1,120 @@
+{
+  "title": "Obsidian Issue Tracker CLI",
+  "slug": "obsidian-issue-tracker",
+  "context": "Build a markdown-based issue tracker inside the personal wiki at ~/Documents/wiki/issues/. Dedicated CLI (issue new/list/move/block/close) with shared wiki-core library extracted from wiki-search. Dataview queries for Kanban views. Issues close into raw/inbox/ for wiki ingest pipeline. Frontmatter schema: type, status, tags, created, blocked-by, project. Project for this repo: sebbaflow.",
+  "architecture": "obsidian/.local/lib/wiki-core/ (shared: frontmatter parsing, file conventions, constants like WIKI_DIR), obsidian/.local/lib/issue/ (issue CRUD logic importing from wiki-core), obsidian/.local/bin/issue (CLI wrapper). Tests co-located in each lib directory. Bun runtime, bun:test for testing.",
+  "created": "2026-04-26T22:11:31.306Z",
+  "updated": "2026-04-26T22:56:47.880Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "wiki-core — constants, frontmatter, and file I/O",
+      "red": {
+        "description": "Write tests that (a) import WIKI_DIR and RAW_DIR and assert correct paths, (b) parse a markdown string with full YAML frontmatter into a typed IssueFrontmatter object, (c) serialize an IssueFrontmatter back to markdown preserving body, (d) readIssue/writeIssue round-trip to disk. All tests should fail since wiki-core doesn't exist yet.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create obsidian/.local/lib/wiki-core/ with constants.ts (WIKI_DIR, RAW_DIR), frontmatter.ts (IssueFrontmatter type, parseFrontmatter, stringifyFrontmatter), io.ts (readIssue, writeIssue with wikiDir param), and index.ts re-exporting all public APIs",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Ensure parseFrontmatter handles edge cases (missing blocked-by, empty tags array)",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Refactor wiki-search to use wiki-core WIKI_DIR",
+      "red": {
+        "description": "Update wiki-search/constants.ts to import WIKI_DIR from wiki-core instead of defining locally. Run existing wiki-search tests to confirm they still pass — this is the RED check (if import path is wrong, tests fail).",
+        "status": "done"
+      },
+      "green": {
+        "description": "Replace local WIKI_DIR definition with re-export from ../../wiki-core/constants.ts",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Grep wiki-search for any direct WIKI_DIR usage that bypasses constants.ts",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "Issue library — create and list",
+      "red": {
+        "description": "Write tests that (a) createIssue(slug, {project, tags}) writes a file at issues/<slug>.md with correct frontmatter (type=issue, status=backlog, created=today) and body template (## Description, ## Steps to Reproduce, ## Acceptance Criteria), (b) listIssues({status, project}) returns matching issues from the directory, (c) listIssues with no filters returns all issues",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create obsidian/.local/lib/issue/commands.ts implementing createIssue and listIssues, importing wiki-core for I/O and frontmatter. Create obsidian/.local/lib/issue/index.ts.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 4,
+      "name": "Issue library — move, block, close",
+      "red": {
+        "description": "Write tests that (a) moveIssue(slug, newStatus) updates status in frontmatter, (b) blockIssue(slug, blockedBySlug) sets blocked-by to [[wikilink]] and overwrites on re-call, (c) closeIssue(slug) moves file to raw/inbox/, (d) closeIssue(slug, {delete: true}) removes the file",
+        "status": "done"
+      },
+      "green": {
+        "description": "Implement moveIssue, blockIssue, closeIssue in commands.ts using readIssue/writeIssue from wiki-core, renameSync for inbox move, rmSync for delete",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 5,
+      "name": "CLI binary — all commands",
+      "red": {
+        "description": "Write tests for CLI main() with each subcommand: (a) main(['new', 'fix-stow-bug', '--project', 'sebbaflow', '--tags', 'bug,tmux']) creates issue, (b) main(['list', '--status', 'backlog', '--project', 'sebbaflow']) returns formatted output, (c) main(['move', 'fix-stow-bug', 'in-progress']) updates status, (d) main(['block', 'fix-stow-bug', '--by', 'other-issue']) sets blocked-by, (e) main(['close', 'fix-stow-bug']) moves to inbox, (f) main(['close', 'fix-stow-bug', '--delete']) deletes file",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create obsidian/.local/bin/issue (#!/usr/bin/env bun wrapper) and obsidian/.local/lib/issue/cli.ts with main(args, env) function using parseArgs. Implement all subcommands as thin wrappers calling the issue library functions.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "Extract shared argument validation and error formatting into helpers",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 6,
+      "name": "Integration — Dataview queries and directory bootstrap",
+      "red": {
+        "description": "Test that createIssue works when issues/ directory doesn't exist (should auto-create). Verify the directory is created.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Add mkdirSync({recursive: true}) to createIssue. Create obsidian/dataview-queries.md with three Kanban-style Dataview queries (one per status column: backlog, in-progress, done) grouped by project.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [],
+  "design": {
+    "currentState": "The wiki-search CLI at obsidian/.local/lib/wiki-search/ implements hybrid search for the personal wiki. It has its own constants (WIKI_DIR path), types, and text processing. There is no shared library — wiki-search is self-contained. No issue tracking infrastructure exists. The wiki directory has: analysis/, concepts/, entities/, sources/, synthesis/, overview.md. No issues/ directory yet. CLI binaries live in obsidian/.local/bin/ and are Bun TypeScript scripts that import from ../lib/<tool>/.",
+    "desiredState": "Three new modules: (1) wiki-core shared library with frontmatter parsing/writing, WIKI_DIR constant, and file I/O utilities. (2) issue library with CRUD operations on markdown files in wiki/issues/. (3) issue CLI binary with commands: new, list, move, block, close. Issue files have frontmatter (type, status, tags, created, blocked-by, project) and a body with Description, Steps to Reproduce, Acceptance Criteria headings. Status flow: backlog → in-progress → done. close moves file to raw/inbox/ (or deletes with --delete). wiki-search is refactored to import WIKI_DIR from wiki-core instead of its own constants.",
+    "patterns": "Binary pattern: #!/usr/bin/env bun shebang, imports main() from ../lib/<tool>/cli.ts, handles exit codes. CLI pattern: main(args, env) → Promise<string>, uses parseArgs from node:util, returns string output. Test pattern: co-located *.test.ts, bun:test with describe/test/expect, mkdtempSync for isolated temp dirs. Module pattern: index.ts re-exports all public APIs. Naming: snake_case functions, PascalCase types. Constants in constants.ts, types in types.ts.",
+    "decisions": "Issues live in ~/Documents/wiki/wiki/issues/<slug>.md. Frontmatter fields: type (always 'issue'), status (backlog|in-progress|done), tags (array), created (ISO date), blocked-by (optional, wikilink string), project (string, e.g. 'sebbaflow'). Body template: Description, Steps to Reproduce, Acceptance Criteria — fixed, not tag-dependent. Dependencies: single-direction blocked-by, inverse derived via search. Lifecycle: close → move to raw/inbox/ for ingest, or --delete to remove directly. wiki-core is shared between wiki-search and issue CLI — contains ONLY frontmatter parsing/writing and shared constants (WIKI_DIR, RAW_DIR). wiki-search refactored to import WIKI_DIR from wiki-core. No status transition validation — any status can move to any other freely.",
+    "questions": "Should wiki-core also extract the text processing utilities (tokenize, stripMarkdown) from wiki-search, or just frontmatter and constants? Should the issue CLI validate that status transitions are legal (e.g., can't go from done back to backlog)?"
+  }
+}

@@ -1,5 +1,6 @@
-export const WIKI_DIR = `${process.env.HOME}/Documents/wiki/wiki`;
+import { WIKI_DIR } from "../wiki-core/constants.ts";
 
+export { WIKI_DIR };
 export const RERANK_MODEL = "cohere/rerank-4-fast";
 export const RERANK_URL = "https://openrouter.ai/api/v1/rerank";
 export const EMBED_URL = "https://openrouter.ai/api/v1/embeddings";

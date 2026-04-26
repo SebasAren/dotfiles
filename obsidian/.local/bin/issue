@@ -1,0 +1,20 @@
+#!/usr/bin/env bun
+// Obsidian Issue Tracker CLI
+// Usage: issue new <slug> --project <project> [--tags <tags>]
+//        issue list [--status <status>] [--project <project>]
+//        issue move <slug> <status>
+//        issue block <slug> --by <blocker>
+//        issue close <slug> [--delete]
+
+import { main } from "../lib/issue/cli.ts";
+
+const result = await main(
+  process.argv.slice(2),
+  process.env as Record<string, string | undefined>,
+);
+
+if (result.startsWith("Error:")) {
+  console.error(result);
+  process.exit(1);
+}
+console.log(result);

@@ -7,3 +7,4 @@
 --ignore=CONVENTIONS.md
 --ignore=mise.toml
 --ignore=docs
+--ignore=dataview-queries.md
