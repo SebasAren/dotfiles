@@ -54,6 +54,5 @@ Create `nvim/.config/nvim/lua/custom-settings.lua` (gitignored) for machine-spec
 nvim/.config/nvim/
 ├── lua/config/      # Core config (LSP, keymaps, diagnostics)
 ├── lua/plugins/     # Plugin specs (Lazy.nvim)
-├── lsp/             # Per-server LSP configs
-└── lua/prompts/     # AI prompt templates
+└── lsp/             # Per-server LSP configs
 ```

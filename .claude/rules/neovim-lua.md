@@ -13,7 +13,7 @@ description: Neovim Lua conventions
 
 ## Neovim Version Gate
 
-- **`vim.lsp.config()` / `vim.lsp.enable()` require Neovim 0.11+**. If a config uses these APIs, document the minimum version in `nvim/AGENTS.md`.
+- **`vim.lsp.config()` / `vim.lsp.enable()` require Neovim 0.11+**. If a config uses these APIs, document the minimum version in `nvim/README.md`.
 
 ## Plugin Loading
 
