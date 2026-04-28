@@ -1,6 +1,6 @@
 # Neovim Configuration
 
-Lazy.nvim-based Neovim config with 17 LSP servers, AI-assisted completion, and extensive plugin suite.
+Lazy.nvim-based Neovim config with 15 LSP servers, AI-assisted completion, and extensive plugin suite.
 
 ## Setup
 
@@ -21,7 +21,7 @@ LSP servers are managed by Mason (`:Mason` in Neovim). The config auto-installs 
 
 ### LSP
 
-17 servers managed via `nvim-lspconfig` + Mason. Per-server configs in `lsp/*.lua`. Key servers:
+15 servers managed via `nvim-lspconfig` + Mason. Per-server configs in `lsp/*.lua`. Key servers:
 
 | Server | Language |
 |--------|----------|

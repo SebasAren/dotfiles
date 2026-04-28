@@ -119,7 +119,7 @@ Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) 
 | **claude-rules** | `.claude/rules/` parser with picomatch glob matching |
 | **cache-control** | LLM cache hint injection |
 | **cheap-clarify** | Cheap-model clarification subagent |
-| **qwen-reasoning-fix** | Workaround for Qwen reasoning format issues |
+| **extract-share** | Extract and share assistant messages as PNG or markdown |
 
 ### Explore Subagent Architecture
 
@@ -260,7 +260,7 @@ mise run lint-shell     # Lint shell scripts with shellcheck
 
 ### Testing
 
-The TypeScript surface (Pi agent extensions and two standalone CLIs) is covered by **459 tests across 36 files**, all running under [`bun test`](https://bun.sh/docs/cli/test) and executed on every push by GitHub Actions (see [`.github/workflows/test.yml`](.github/workflows/test.yml)).
+The TypeScript surface (Pi agent extensions and two standalone CLIs) is covered by **471 tests across 45 files**, all running under [`bun test`](https://bun.sh/docs/cli/test) and executed on every push by GitHub Actions (see [`.github/workflows/test.yml`](.github/workflows/test.yml)).
 
 | Location | Tests | Style |
 |----------|-------|-------|
