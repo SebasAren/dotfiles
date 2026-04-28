@@ -5,4 +5,3 @@ source ~/.bashenv
 # fzf key bindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 source /usr/share/fzf/shell/key-bindings.bash 2>/dev/null || true
 
-source <(linear completions bash)

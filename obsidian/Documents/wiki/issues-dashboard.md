@@ -1,7 +1,4 @@
-# Issue Tracker — Dataview Queries
-
-Reference copy of the queries used in `issues-dashboard.md`.
-The live dashboard is stowed from `obsidian/Documents/wiki/issues-dashboard.md` → `~/Documents/wiki/issues-dashboard.md`.
+# Issues Dashboard
 
 ## Backlog
 

@@ -45,7 +45,7 @@ export function createIssue(
     project: options.project,
   };
 
-  const body = "\n## Description\n\n## Steps to Reproduce\n\n## Acceptance Criteria\n";
+  const body = "\n## Description\n\n## Steps to Address\n\n## Acceptance Criteria\n";
 
   writeIssue(wikiDir, slug, frontmatter, body);
 }

@@ -37,7 +37,7 @@ describe("createIssue", () => {
     expect(content).toContain("tags: [bug, stow]");
     expect(content).toContain("created:");
     expect(content).toContain("## Description");
-    expect(content).toContain("## Steps to Reproduce");
+    expect(content).toContain("## Steps to Address");
     expect(content).toContain("## Acceptance Criteria");
   });
 
