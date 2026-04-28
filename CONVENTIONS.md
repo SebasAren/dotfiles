@@ -27,7 +27,7 @@
 ### TypeScript/JavaScript
 - Typecheck with `mise run typecheck` (per-package `tsc --noEmit`)
 - Format with `mise run format-ts` (prettier) or prettierd in Neovim
-- Avoid `as any` and `@ts-ignore`
+- Avoid `as any` and `@ts-ignore`. SDK-specific unavoidable casts (e.g., Pi extension `renderResult` callbacks) are documented in `.claude/rules/pi-extensions.md`.
 - For Bun gotchas (`spawnSync`, `mkdtempSync`), see `.claude/rules/global.md`.
 
 ## Git Workflow

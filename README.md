@@ -13,8 +13,8 @@ Includes [Pi agent extensions](#pi-agent-extensions) that delegate codebase expl
 
 | Directory | Tool | Purpose |
 |-----------|------|---------|
-| `pi/` | **Pi Agent** | Coding assistant with 20+ custom extensions (explore subagent, librarian, wiki integration, fuzzy edit, and more) |
-| `nvim/` | Neovim | Lazy.nvim, 17 LSP servers, blink.cmp completion, CodeCompanion → [details](nvim/README.md) |
+| `pi/` | **Pi Agent** | Coding assistant with 18 custom extensions (explore subagent, librarian, wiki integration, fuzzy edit, and more) |
+| `nvim/` | Neovim | Lazy.nvim, 15 LSP servers, blink.cmp completion, CodeCompanion → [details](nvim/README.md) |
 | `tmux/` | Tmux | Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
@@ -201,7 +201,7 @@ Running the main model (e.g. Claude) to grep through files burns tokens on outpu
 
 → **[Full details in `nvim/README.md`](nvim/README.md)**
 
-Lazy.nvim with 17 LSP servers, blink.cmp completion (Codestral + Minuet-AI), conform.nvim formatting, nvim-dap debugging, and CodeCompanion.nvim AI coding.
+Lazy.nvim with 15 LSP servers, blink.cmp completion (Codestral + Minuet-AI), conform.nvim formatting, nvim-dap debugging, and CodeCompanion.nvim AI coding.
 
 ### Tmux
 
@@ -262,12 +262,13 @@ mise run lint-shell     # Lint shell scripts with shellcheck
 
 ### Testing
 
-The TypeScript surface (Pi agent extensions and two standalone CLIs) is covered by **471 tests across 45 files**, all running under [`bun test`](https://bun.sh/docs/cli/test) and executed on every push by GitHub Actions (see [`.github/workflows/test.yml`](.github/workflows/test.yml)).
+The TypeScript surface (Pi agent extensions and standalone CLIs) is covered by **535 tests across 49 files**, all running under [`bun test`](https://bun.sh/docs/cli/test) and executed on every push by GitHub Actions (see [`.github/workflows/test.yml`](.github/workflows/test.yml)).
 
 | Location | Tests | Style |
 |----------|-------|-------|
-| `pi/.pi/agent/extensions/**/*.test.ts` | 413 | Unit tests co-located with source; `integration.test.ts` per extension covers load/register cycles |
+| `pi/.pi/agent/extensions/**/*.test.ts` | 471 | Unit tests co-located with source; `integration.test.ts` per extension covers load/register cycles |
 | `pi/.local/bin/tdd-plan.test.ts` | 5 | End-to-end CLI tests via `execSync` against the `tdd-plan` binary |
+| `pi/.local/bin/store-memory*.test.ts` | 18 | CLI tests for the `store-memory` skill binary |
 | `obsidian/.local/lib/wiki-search/wiki-search.test.ts` | 41 | Unit tests with real filesystem fixtures for the `wiki-search` CLI |
 
 **Run locally:**
@@ -294,7 +295,7 @@ Run `mise run pre-commit` before committing — it executes format + lint + type
 ```
 .
 ├── pi/.pi/                      # Pi agent
-│   ├── agent/extensions/        # 20+ custom extensions
+│   ├── agent/extensions/        # 18 custom extensions
 │   └── README.md                # Extension documentation
 ├── nvim/.config/nvim/           # Neovim
 │   ├── lua/config/              # Core config (LSP, keymaps, diagnostics)

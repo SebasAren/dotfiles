@@ -79,16 +79,4 @@ globs:
 4. Add to workspace `package.json` `workspaces` array
 5. Verify tests pass and types check
 
-## Explore Pre-Search Architecture (key patterns)
-
-- **Synthetic documents for rerankers** — Build from `path | description | exports | symbols` (50–150 chars), not raw file content (first 500 chars are mostly imports).
-- **No snippet injection** — First 50 lines of TS/JS are imports; reranker-ordered tier list is sufficient signal.
-- **Tier thresholds** — `≥0.60` (Highly), `≥0.30` (Probably), `≥0.10` (Mentioned).
-- **Ripgrep fallback** — If index is empty or repo has <10 source files, fall back to `rg -l` via `spawnSync` (no shell).
-- **No shell escaping** — Both `enumerateFiles` and `fallbackRipgrep` use `spawnSync` with array args, not `spawn("sh", ["-c", ...])`.
-- **Index cache bounded** — `indexCache` capped at 5 entries with LRU eviction.
-- **Build timeout** — `FileIndex.build()` truncates after 5s, surfaces `hitBuildCap` in results.
-- **Synthetic reranker requires `OPENROUTER_API_KEY`** — Uses `cohere/rerank-4-fast` via `openrouter.ai/api/v1/rerank`. Without the env var the reranking step cannot run.
-- **System prompt stays declarative** — No ALL CAPS, no NEVER/MANDATORY/ABSOLUTE register; the output format is stated once, positively. Escalating to imperative invites churn (model resists → contributor adds emphasis → escalates further).
-- **Barrel imports are invisible to proximity scoring** — `resolveImport` only resolves `.`-relative imports; `@pi-ext/shared`-style imports build no graph edges. The description-entity boost partially compensates, but cross-package callers won't surface via the importedBy graph.
-- **`ExploreDetails` index signature is load-bearing** — `[key: string]: unknown` must stay on the interface for `renderSubagentResult` (`SubagentResultDetails`) compatibility. Removing it requires a coordinated change to the shared library.
+> Explore pre-search architecture (synthetic documents, tier thresholds, index caching, reranker config) is fully documented in [`pi/.pi/README.md`](../../pi/.pi/README.md).

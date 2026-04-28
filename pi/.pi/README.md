@@ -47,7 +47,6 @@ These spawn a separate (cheaper/faster) model to handle reconnaissance, research
 | **tdd-tree** | TDD kickoff point labeling in the session tree for structured plan execution |
 | **cache-control** | LLM cache hint injection for cost optimization |
 | **claude-rules** | `.claude/rules/` parser with picomatch glob matching and path-scoped rule loading |
-| **qwen-reasoning-fix** | Workaround for Qwen reasoning format issues in non-standard API responses |
 
 ### Shared Library
 

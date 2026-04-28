@@ -26,10 +26,12 @@ LSP servers are managed by Mason (`:Mason` in Neovim). The config auto-installs 
 | Server | Language |
 |--------|----------|
 | basedpyright | Python |
-| vtsls | TypeScript |
 | lua_ls | Lua |
-| rust_analyzer | Rust |
-| gopls | Go |
+| eslint | JavaScript / TypeScript |
+| svelte | Svelte |
+| vue_ls | Vue |
+
+TypeScript/Vue is primarily handled by [typescript-tools.nvim](https://github.com/pmizio/typescript-tools.nvim) (configured in `lua/plugins/lsp.lua`), not a standalone `lsp/*.lua` server.
 
 ### Formatting & Linting
 

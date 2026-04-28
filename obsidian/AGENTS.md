@@ -13,7 +13,6 @@ Stowed scripts for the personal wiki at `~/Documents/wiki/`, based on [Andrej Ka
 | `.local/lib/wiki-core/` | Shared frontmatter, I/O, and constants for wiki tools |
 | `Documents/wiki/templates/issue.md` | Templater template for creating issues from Obsidian |
 | `Documents/wiki/issues-dashboard.md` | Dataview dashboard for issue tracking |
-| `dataview-queries.md` | Reference copy of Dataview queries (not stowed) |
 
 ## Search Engine (`wiki-search`)
 

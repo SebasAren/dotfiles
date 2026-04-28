@@ -20,7 +20,7 @@ pi/.pi/agent/extensions/
     └── integration.test.ts  # Load + register cycle
 ```
 
-## Tests (413 tests across 34 files)
+## Tests (471 tests across 45 files)
 
 - **Unit tests**: `*.test.ts` next to the source file (e.g., `fuzzy-edit/fuzzy-match.test.ts`).
 - **Integration tests**: one `integration.test.ts` per extension — verifies the extension loads, registers its tools/commands, and handles missing API keys gracefully.

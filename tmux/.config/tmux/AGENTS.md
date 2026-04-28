@@ -54,9 +54,4 @@ Worktree management via tmux popups. All scripts source `wt-common.sh` which:
 
 ## Gotchas
 
-- **Popup PATH**: `display-popup` starts a non-login shell. linuxbrew tools (`wt`, `fzf`) need explicit PATH setup — handled by `wt-common.sh`.
-- **`-d` vs `-c`**: `display-popup -d` sets start directory. `-c` is `target-client` and causes errors if used with a path.
-- **fzf arrays**: When building fzf args with special characters (Unicode prompts like `▸`), use bash arrays not `echo + $(...)` — word splitting breaks them.
-- **`wt-common.sh` error swallowing**: `_wt_worktree_list()` does `2>/dev/null || echo "[]"` — empty list might mean `wt` failed, not "no worktrees."
-- **fzf free-text input**: Use `--disabled` flag when using fzf for text entry (not selection) — otherwise typing text causes exit code 1 when filtering yields 0 matches.
-- **`wt switch --create` in scripts**: Needs `--no-cd` in subprocesses — `wt switch` tries to `cd` the calling shell, which doesn't propagate through bash subprocesses.
+See `.claude/rules/tmux.md` for full tmux gotchas (popup PATH, `display-popup -d` vs `-c`, fzf bash arrays, `wt-common.sh` error swallowing, fzf `--disabled`, `wt switch --no-cd`).
