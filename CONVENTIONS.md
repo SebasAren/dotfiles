@@ -28,7 +28,7 @@
 - Typecheck with `mise run typecheck` (per-package `tsc --noEmit`)
 - Format with `mise run format-ts` (prettier) or prettierd in Neovim
 - Avoid `as any` and `@ts-ignore`
-- Use `spawnSync` with array args (no shell escaping needed). `Bun.escapeShellArg` is undefined in Bun 1.3.x; `Bun.makeTempDir` does not exist — use `mkdtempSync` from `node:fs` instead.
+- For Bun gotchas (`spawnSync`, `mkdtempSync`), see `.claude/rules/global.md`.
 
 ## Git Workflow
 
@@ -41,11 +41,7 @@
 
 ## Stow Package Management
 
-- Use GNU Stow for all configuration symlinks
-- Each tool gets its own top-level directory
-- Config files go in their standard XDG location within the tool directory: `tool-name/.config/tool/`
-- Edit files in the repo, never in the symlink target
-- Avoid hard-coded paths that assume a specific username or machine
+See `.claude/rules/global.md` for stow conventions (auto-injected on every session).
 
 
 ## Neovim
