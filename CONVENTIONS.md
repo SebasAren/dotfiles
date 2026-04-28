@@ -4,22 +4,22 @@
 
 ### Lua
 - 2-space indentation
-- Format with [StyLua](https://github.com/JohnnyMorganz/StyLua) (`stylua .`)
-- Lint with [luacheck](https://github.com/mpeterv/luacheck) (`luacheck .`)
+- Format with [StyLua](https://github.com/JohnnyMorganz/StyLua) (`mise run format-lua`)
+- Lint with [luacheck](https://github.com/mpeterv/luacheck) (`mise run lint-lua`)
 - Use `---@type` annotations for LuaLS
 - Use `snake_case` for functions and variables
 - Prefer `require().setup()` over `vim.cmd()` for plugin configuration
 
 ### Python
 - 4-space indentation
-- Lint with [ruff](https://github.com/astral-sh/ruff) (`ruff check .`)
-- Format with [ruff](https://github.com/astral-sh/ruff) (`ruff format .`)
+- Lint with [ruff](https://github.com/astral-sh/ruff) (`mise run lint-python`)
+- Format with [ruff](https://github.com/astral-sh/ruff) (`mise run format-python`)
 - `snake_case` for functions and variables
 - `PascalCase` for classes
 
 ### Shell
 - Use `#!/usr/bin/env bash` and `set -euo pipefail`
-- Lint with [shellcheck](https://github.com/koalaman/shellcheck) (`shellcheck **/*.sh`)
+- Lint with [shellcheck](https://github.com/koalaman/shellcheck) (`mise run lint-shell`)
 - Format with [shfmt](https://github.com/mvdan/sh) (`shfmt -w .`)
 - Lowercase filenames with hyphens for multi-word names
 - One concern per file (see `.bashrc.d/` structure)

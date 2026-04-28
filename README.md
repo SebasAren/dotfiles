@@ -175,7 +175,7 @@ Stow is minimal and transparent — it just creates symlinks. No daemons, no com
 
 ### Why mise instead of asdf/nvm/pyenv?
 
-[mise](https://mise.jdx.dev/) is a single tool that replaces multiple version managers (nvm, pyenv, rbenv, etc.). It's fast, supports `.tool-versions` compatibility, and has built-in task running (`mise run stylua`).
+[mise](https://mise.jdx.dev/) is a single tool that replaces multiple version managers (nvm, pyenv, rbenv, etc.). It's fast, supports `.tool-versions` compatibility, and has built-in task running (`mise run format-lua`).
 
 ### Why Proton Pass for secrets?
 
@@ -251,10 +251,11 @@ Git worktree management. Config at `wt/.config/worktrunk/config.toml`.
 Run via mise tasks:
 
 ```bash
-mise run stylua       # Format Lua
-mise run luacheck     # Lint Lua
-mise run ruff         # Lint + format Python
-mise run shellcheck   # Lint shell scripts
+mise run format-lua     # Format Lua with StyLua
+mise run lint-lua       # Lint Lua with luacheck
+mise run format-python  # Format Python with ruff
+mise run lint-python    # Lint Python with ruff
+mise run lint-shell     # Lint shell scripts with shellcheck
 ```
 
 ### Testing
