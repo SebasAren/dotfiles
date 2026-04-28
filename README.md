@@ -19,6 +19,8 @@ Includes [Pi agent extensions](#pi-agent-extensions) that delegate codebase expl
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
 | `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
+| `obsidian/` | Obsidian | Wiki search, issue tracker, and wiki maintenance tools |
+| `bluefin-bashrc/` | Bash | Bluefin base `.bashrc` with inlined bling |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
 
 ## Prerequisites

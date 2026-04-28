@@ -22,6 +22,8 @@ tmux/.config/tmux/         # Tmux               → tmux/README.md
 wt/.config/worktrunk/      # Worktrunk
 pi/.pi/                    # Pi agent           → pi/.pi/README.md
 homebrew/                  # brew-sync CLI      → homebrew/AGENTS.md
+obsidian/                  # Wiki & issue tools  → obsidian/AGENTS.md
+bluefin-bashrc/            # Bluefin base bashrc → bluefin-bashrc/AGENTS.md
 mise.toml                  # Runtime versions
 .mise/tasks/              # Mise tasks (lint, format, check, etc.)
 ```
