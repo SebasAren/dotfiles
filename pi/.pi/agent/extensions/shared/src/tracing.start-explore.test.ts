@@ -9,6 +9,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, mock } from "bun
 
 // Track startObservation calls from the mocked @langfuse/tracing
 const startObservationCalls: Array<{ name: string; attrs: Record<string, unknown> }> = [];
+const propagateAttributesCalls: Array<{ attrs: Record<string, unknown> }> = [];
 
 // Create a reusable mock observation span
 const testObservation = {
@@ -45,9 +46,13 @@ mock.module("@langfuse/tracing", () => ({
     startObservationCalls.push({ name, attrs });
     return testObservation;
   },
+  propagateAttributes: (attrs: Record<string, unknown>, fn: () => void) => {
+    propagateAttributesCalls.push({ attrs });
+    fn();
+  },
 }));
 
-import { startExploreTrace } from "./tracing";
+import { startExploreTrace, startSubagentTrace } from "./tracing";
 
 describe("startExploreTrace", () => {
   beforeAll(() => {
@@ -64,6 +69,7 @@ describe("startExploreTrace", () => {
 
   beforeEach(() => {
     startObservationCalls.length = 0;
+    propagateAttributesCalls.length = 0;
   });
 
   it("creates a root observation named 'explore' with query, cwd, model, and branch", () => {
@@ -107,11 +113,87 @@ describe("startExploreTrace", () => {
     expect(typeof childSpan.startObservation).toBe("function");
   });
 
+  it("propagates sessionId via propagateAttributes when provided", () => {
+    startExploreTrace("find auth logic", "/repo/src", "gpt-4o-mini", "session-abc-123");
+
+    expect(propagateAttributesCalls.length).toBe(1);
+    expect(propagateAttributesCalls[0].attrs).toMatchObject({
+      sessionId: "session-abc-123",
+    });
+
+    // startObservation should still have been called
+    expect(startObservationCalls.length).toBe(1);
+    expect(startObservationCalls[0].name).toBe("explore");
+  });
+
+  it("does not call propagateAttributes when sessionId is omitted", () => {
+    startExploreTrace("find auth logic", "/repo/src", "gpt-4o-mini");
+
+    expect(propagateAttributesCalls.length).toBe(0);
+    expect(startObservationCalls.length).toBe(1);
+    expect(startObservationCalls[0].name).toBe("explore");
+  });
+
   it("resolves branch from git rev-parse --abbrev-ref HEAD", () => {
     startExploreTrace("test query", "/tmp/cwd", "test-model");
 
     expect(startObservationCalls.length).toBe(1);
     const metadata = startObservationCalls[0].attrs.metadata as Record<string, unknown>;
     expect(metadata.branch).toBe("feature-branch");
+  });
+});
+
+describe("startSubagentTrace", () => {
+  beforeAll(() => {
+    process.env.LANGFUSE_PUBLIC_KEY = "pk-test-key";
+    process.env.LANGFUSE_SECRET_KEY = "sk-test-key";
+    process.env.LANGFUSE_HOST = "https://example.com";
+  });
+
+  afterAll(() => {
+    delete process.env.LANGFUSE_PUBLIC_KEY;
+    delete process.env.LANGFUSE_SECRET_KEY;
+    delete process.env.LANGFUSE_HOST;
+  });
+
+  beforeEach(() => {
+    startObservationCalls.length = 0;
+    propagateAttributesCalls.length = 0;
+  });
+
+  it("creates a root observation with the given name", () => {
+    startSubagentTrace("librarian", "react hooks", "/repo/src", "gpt-4o-mini");
+
+    expect(startObservationCalls.length).toBe(1);
+    expect(startObservationCalls[0].name).toBe("librarian");
+
+    const attrs = startObservationCalls[0].attrs;
+    expect(attrs).toMatchObject({
+      input: { query: "react hooks" },
+      metadata: {
+        cwd: "/repo/src",
+        model: "gpt-4o-mini",
+        branch: "feature-branch",
+      },
+    });
+  });
+
+  it("propagates sessionId via propagateAttributes when provided", () => {
+    startSubagentTrace("librarian", "test", "/tmp", "model", "sess-xyz");
+
+    expect(propagateAttributesCalls.length).toBe(1);
+    expect(propagateAttributesCalls[0].attrs).toMatchObject({
+      sessionId: "sess-xyz",
+    });
+
+    expect(startObservationCalls.length).toBe(1);
+    expect(startObservationCalls[0].name).toBe("librarian");
+  });
+
+  it("does not call propagateAttributes when sessionId is omitted", () => {
+    startSubagentTrace("librarian", "test", "/tmp", "model");
+
+    expect(propagateAttributesCalls.length).toBe(0);
+    expect(startObservationCalls.length).toBe(1);
   });
 });

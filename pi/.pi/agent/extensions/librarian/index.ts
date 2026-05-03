@@ -19,7 +19,7 @@ import {
 import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
 
-import { resolveRealCwd, runSubagent, getModel } from "@pi-ext/shared";
+import { resolveRealCwd, runSubagent, getModel, startSubagentTrace } from "@pi-ext/shared";
 
 import { LIBRARIAN_SYSTEM_PROMPT } from "./constants";
 import { renderCall, renderResult } from "./render";
@@ -172,62 +172,104 @@ export default function (pi: ExtensionAPI) {
 
     async execute(_toolCallId, params, signal, onUpdate, ctx) {
       const realCwd = resolveRealCwd(ctx.cwd);
-      // Build a focused query incorporating library and focus if provided
-      let query = params.query;
-      if (params.library) {
-        query = `Research the ${params.library} library: ${query}`;
-      }
-      if (params.focus) {
-        query += ` Focus on ${params.focus}.`;
-      }
-      query +=
-        `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
-        `## Sources, ## Documentation, ## Key Findings, and ## Recommendations sections. ` +
-        `Stop calling tools once you have enough information and write the summary. ` +
-        `A final turn with only tool calls is a failed response.]`;
+      const modelName = getModel() || "unknown";
+      const sessionId = ctx.sessionManager?.getSessionId?.();
+      const { observation, child } = startSubagentTrace(
+        "librarian",
+        params.query,
+        realCwd,
+        modelName,
+        sessionId,
+      );
 
-      const maxToolCalls = params.maxToolCalls ?? 60;
-      const timeoutMs = params.timeoutMs ?? 240_000;
+      try {
+        // Build a focused query incorporating library and focus if provided
+        let query = params.query;
+        if (params.library) {
+          query = `Research the ${params.library} library: ${query}`;
+        }
+        if (params.focus) {
+          query += ` Focus on ${params.focus}.`;
+        }
+        query +=
+          `\n\n[CRITICAL: Your final assistant turn MUST contain a plain-text message with ` +
+          `## Sources, ## Documentation, ## Key Findings, and ## Recommendations sections. ` +
+          `Stop calling tools once you have enough information and write the summary. ` +
+          `A final turn with only tool calls is a failed response.]`;
 
-      const result = await runSubagent({
-        cwd: realCwd,
-        query,
-        systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
-        createSession: createLibrarianSession,
-        timeoutMs,
-        signal,
-        onUpdate: onUpdate
-          ? (update) => {
-              onUpdate({
-                content: [{ type: "text", text: update.text }],
-                details: {
-                  model: getModel(),
-                  query: params.query,
-                  recentCalls: update.recentCalls,
+        const maxToolCalls = params.maxToolCalls ?? 60;
+        const timeoutMs = params.timeoutMs ?? 240_000;
+
+        const result = await runSubagent({
+          cwd: realCwd,
+          query,
+          systemPrompt: LIBRARIAN_SYSTEM_PROMPT,
+          createSession: createLibrarianSession,
+          timeoutMs,
+          signal,
+          onUpdate: onUpdate
+            ? (update) => {
+                onUpdate({
+                  content: [{ type: "text", text: update.text }],
+                  details: {
+                    model: getModel(),
+                    query: params.query,
+                    recentCalls: update.recentCalls,
+                  },
+                });
+              }
+            : undefined,
+          onToolCall: (info) => {
+            const toolSpan = child(info.toolName, {
+              input: { argsSummary: info.argsSummary },
+              metadata: { success: info.success, durationMs: info.durationMs },
+            });
+            toolSpan.end();
+          },
+          loopDetection: true,
+          maxToolCalls,
+        });
+
+        const isError = result.exitCode !== 0 || !!result.errorMessage;
+
+        observation.update({
+          output: {
+            usage: {
+              input: result.usage.input,
+              output: result.usage.output,
+              turns: result.usage.turns,
+              cost: result.usage.cost,
+              contextTokens: result.usage.contextTokens,
+            },
+            success: !isError,
+          },
+        });
+
+        if (isError) {
+          const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
+          // Provide helpful error for missing API keys
+          if (errorMsg.includes("EXA_API_KEY") || errorMsg.includes("CONTEXT7_API_KEY")) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text:
+                    `Librarian requires API keys. Set environment variables:\n` +
+                    `  export EXA_API_KEY='your-key'          # For web search\n` +
+                    `  export CONTEXT7_API_KEY='your-key'     # For library docs\n` +
+                    `\nOriginal error: ${errorMsg}`,
                 },
-              });
-            }
-          : undefined,
-        loopDetection: true,
-        maxToolCalls,
-      });
-
-      const isError = result.exitCode !== 0 || !!result.errorMessage;
-      if (isError) {
-        const errorMsg = result.errorMessage || result.stderr || result.output || "(no output)";
-        // Provide helpful error for missing API keys
-        if (errorMsg.includes("EXA_API_KEY") || errorMsg.includes("CONTEXT7_API_KEY")) {
-          return {
-            content: [
-              {
-                type: "text",
-                text:
-                  `Librarian requires API keys. Set environment variables:\n` +
-                  `  export EXA_API_KEY='your-key'          # For web search\n` +
-                  `  export CONTEXT7_API_KEY='your-key'     # For library docs\n` +
-                  `\nOriginal error: ${errorMsg}`,
+              ],
+              details: {
+                model: getModel(),
+                query: params.query,
+                usage: result.usage,
+                success: false,
               },
-            ],
+            };
+          }
+          return {
+            content: [{ type: "text", text: `Librarian failed: ${errorMsg}` }],
             details: {
               model: getModel(),
               query: params.query,
@@ -236,28 +278,21 @@ export default function (pi: ExtensionAPI) {
             },
           };
         }
+
         return {
-          content: [{ type: "text", text: `Librarian failed: ${errorMsg}` }],
+          content: [{ type: "text", text: result.output || "(no output)" }],
           details: {
             model: getModel(),
+            usedModel: result.model,
             query: params.query,
+            library: params.library,
+            focus: params.focus,
             usage: result.usage,
-            success: false,
           },
         };
+      } finally {
+        observation.end();
       }
-
-      return {
-        content: [{ type: "text", text: result.output || "(no output)" }],
-        details: {
-          model: getModel(),
-          usedModel: result.model,
-          query: params.query,
-          library: params.library,
-          focus: params.focus,
-          usage: result.usage,
-        },
-      };
     },
 
     renderCall(args, theme, context) {

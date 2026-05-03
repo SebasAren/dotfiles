@@ -17,7 +17,12 @@ export type { RunSubagentOptions } from "./subagent";
 export { splitIntoSentences, formatAsBulletList } from "./sentences";
 export type { SentenceFragment } from "./sentences";
 export type { SubagentResult, UsageStats } from "./types";
-export { initTracing, startExploreTrace } from "./tracing";
-export type { TracingInstance, ObservationLike, ExploreTraceResult } from "./tracing";
+export { initTracing, startExploreTrace, startSubagentTrace } from "./tracing";
+export type {
+  TracingInstance,
+  ObservationLike,
+  ExploreTraceResult,
+  SubagentTraceResult,
+} from "./tracing";
 export { initTreeSitter, getParser, extractSymbols } from "./treesitter";
 export type { SymbolKind, CodeSymbol, SymbolOutline } from "./treesitter";

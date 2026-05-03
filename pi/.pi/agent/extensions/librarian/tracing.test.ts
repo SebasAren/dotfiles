@@ -1,8 +1,8 @@
 /**
- * Tests for explore tracing integration — verifies that execute() correctly
- * wires startExploreTrace, pre-search child spans, and onToolCall child spans.
+ * Tests for librarian tracing integration — verifies that execute() correctly
+ * wires startSubagentTrace and onToolCall child spans.
  *
- * Uses mock.module to control @pi-ext/shared and ./pre-search so we can
+ * Uses mock.module to control @pi-ext/shared and local modules so we can
  * assert on the tracing call chain without actually running a subagent.
  */
 
@@ -26,8 +26,8 @@ const mockObservation = {
   startObservation: mockChild,
 };
 
-const mockStartExploreTrace = mock(
-  (_query: string, _cwd: string, _model: string, _sessionId?: string) => ({
+const mockStartSubagentTrace = mock(
+  (_name: string, _query: string, _cwd: string, _model: string, _sessionId?: string) => ({
     observation: mockObservation,
     child: mockChild,
   }),
@@ -39,7 +39,7 @@ const mockRunSubagent = mock(async (options: any) => {
   capturedRunSubagentOptions = options;
   return {
     exitCode: 0,
-    output: "## Summary\nTest result output.",
+    output: "## Documentation\nTest result output.",
     model: "test-model",
     usage: {
       input: 50,
@@ -51,35 +51,19 @@ const mockRunSubagent = mock(async (options: any) => {
   };
 });
 
-const mockPreSearch = mock(async () => ({
-  text: "\n\n[PRE-SEARCH RESULTS]\nQuery analysis: architecture | entities: auth, user | scope: src",
-  stats: {
-    indexSize: 10,
-    queryTimeMs: 5,
-    filesSurfaced: 3,
-    fallbackToRipgrep: false,
-    hitBuildCap: false,
-    rerankUsed: false,
-  },
-}));
-
 // Set up all mocks (order: shared mocks first, then external deps, then local modules)
 mock.module("@pi-ext/shared", () => ({
   resolveRealCwd: (cwd: string) => cwd,
   runSubagent: mockRunSubagent,
   getModel: () => "test-model",
-  startExploreTrace: mockStartExploreTrace,
-}));
-mock.module("./pre-search", () => ({
-  preSearch: mockPreSearch,
-  invalidateFilePath: () => {},
+  startSubagentTrace: mockStartSubagentTrace,
 }));
 mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
 mock.module("@mariozechner/pi-tui", piTuiMock);
 mock.module("typebox", typeboxMock);
 
 // Import the extension after mocks are set up
-import exploreExtension from "./index";
+import librarianExtension from "./index";
 
 // ── Test helpers ───────────────────────────────────────────────────────────
 
@@ -90,89 +74,46 @@ function setup() {
       registeredTools.push(tool);
     },
     registerCommand: mock(() => {}),
-    on: mock(() => {}),
   };
-  exploreExtension(mockApi as any);
+  librarianExtension(mockApi as any);
   return { execute: registeredTools[0].execute };
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
-describe("explore tracing integration", () => {
+describe("librarian tracing integration", () => {
   beforeEach(() => {
     // Clear all mocks between tests
-    mockStartExploreTrace.mockClear();
+    mockStartSubagentTrace.mockClear();
     mockChild.mockClear();
     mockObservation.update.mockClear();
     mockObservation.end.mockClear();
     mockRunSubagent.mockClear();
-    mockPreSearch.mockClear();
     capturedRunSubagentOptions = null;
   });
 
-  it("calls startExploreTrace with query, cwd, and model", async () => {
+  it("calls startSubagentTrace with name 'librarian', query, cwd, and model", async () => {
     const { execute } = setup();
 
-    await execute("call-1", { query: "find auth module" }, undefined, undefined, {
+    await execute("call-1", { query: "react hooks docs" }, undefined, undefined, {
       cwd: "/test/repo",
       sessionManager: { getSessionId: () => "test-session-id" },
     });
 
-    expect(mockStartExploreTrace).toHaveBeenCalledTimes(1);
-    expect(mockStartExploreTrace).toHaveBeenCalledWith(
-      "find auth module",
+    expect(mockStartSubagentTrace).toHaveBeenCalledTimes(1);
+    expect(mockStartSubagentTrace).toHaveBeenCalledWith(
+      "librarian",
+      "react hooks docs",
       "/test/repo",
       "test-model",
       "test-session-id",
     );
   });
 
-  it("creates child spans for pre-search step", async () => {
-    const { execute } = setup();
-
-    await execute("call-1", { query: "find auth" }, undefined, undefined, {
-      cwd: "/test/repo",
-      sessionManager: { getSessionId: () => "test-session-id" },
-    });
-
-    // At minimum, a "pre-search" child span should be created
-    const childNames = mockChild.mock.calls.map((c) => c[0] as string);
-    expect(childNames.length).toBeGreaterThan(0);
-    expect(childNames.some((n) => n.includes("pre-search") || n.includes("search"))).toBe(true);
-  });
-
-  it("records pre-search results in the pre-search span", async () => {
-    const { execute } = setup();
-
-    await execute("call-1", { query: "find auth" }, undefined, undefined, {
-      cwd: "/test/repo",
-      sessionManager: { getSessionId: () => "test-session-id" },
-    });
-
-    // Find the pre-search child span call
-    const preSearchCallIdx = mockChild.mock.calls.findIndex((c: any) => c[0] === "pre-search");
-    expect(preSearchCallIdx).toBeGreaterThanOrEqual(0);
-
-    const preSearchSpan = mockChild.mock.results[preSearchCallIdx]?.value;
-    expect(preSearchSpan).toBeDefined();
-    expect(preSearchSpan.update).toHaveBeenCalledTimes(1);
-
-    const updateArg = preSearchSpan.update.mock.calls[0][0];
-    expect(updateArg.output.stats).toEqual({
-      indexSize: 10,
-      queryTimeMs: 5,
-      filesSurfaced: 3,
-      fallbackToRipgrep: false,
-      hitBuildCap: false,
-      rerankUsed: false,
-    });
-    expect(updateArg.output.text).toContain("[PRE-SEARCH RESULTS]");
-  });
-
   it("passes onToolCall to runSubagent that creates child spans", async () => {
     const { execute } = setup();
 
-    await execute("call-1", { query: "find auth" }, undefined, undefined, {
+    await execute("call-1", { query: "react hooks" }, undefined, undefined, {
       cwd: "/test/repo",
       sessionManager: { getSessionId: () => "test-session-id" },
     });
@@ -187,16 +128,16 @@ describe("explore tracing integration", () => {
     const toolCallChildCount = mockChild.mock.calls.length;
 
     onToolCall({
-      toolName: "read",
-      argsSummary: "read: src/auth.ts",
-      durationMs: 150,
+      toolName: "web_search",
+      argsSummary: "search: react hooks",
+      durationMs: 250,
       success: true,
     });
 
     // A new child span should have been created for this tool call
     expect(mockChild.mock.calls.length).toBeGreaterThan(toolCallChildCount);
     const newCalls = mockChild.mock.calls.slice(toolCallChildCount);
-    const toolSpanArg = newCalls.find((c: any) => c[0] === "read");
+    const toolSpanArg = newCalls.find((c: any) => c[0] === "web_search");
     expect(toolSpanArg).toBeDefined();
 
     // The returned span should have been ended
@@ -208,7 +149,7 @@ describe("explore tracing integration", () => {
   it("sets output on the root observation and ends it", async () => {
     const { execute } = setup();
 
-    await execute("call-1", { query: "find auth" }, undefined, undefined, {
+    await execute("call-1", { query: "react hooks" }, undefined, undefined, {
       cwd: "/test/repo",
       sessionManager: { getSessionId: () => "test-session-id" },
     });
@@ -225,16 +166,17 @@ describe("explore tracing integration", () => {
     expect(mockObservation.end).toHaveBeenCalledTimes(1);
   });
 
-  it("calls startExploreTrace without sessionId when sessionManager is unavailable", async () => {
+  it("calls startSubagentTrace without sessionId when sessionManager is unavailable", async () => {
     const { execute } = setup();
 
-    await execute("call-1", { query: "find auth" }, undefined, undefined, {
+    await execute("call-1", { query: "react hooks" }, undefined, undefined, {
       cwd: "/test/repo",
     });
 
-    expect(mockStartExploreTrace).toHaveBeenCalledTimes(1);
-    expect(mockStartExploreTrace).toHaveBeenCalledWith(
-      "find auth",
+    expect(mockStartSubagentTrace).toHaveBeenCalledTimes(1);
+    expect(mockStartSubagentTrace).toHaveBeenCalledWith(
+      "librarian",
+      "react hooks",
       "/test/repo",
       "test-model",
       undefined,

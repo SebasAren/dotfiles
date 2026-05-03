@@ -15,7 +15,10 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { startObservation as langfuseStartObservation } from "@langfuse/tracing";
+import {
+  propagateAttributes,
+  startObservation as langfuseStartObservation,
+} from "@langfuse/tracing";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 
@@ -134,11 +137,9 @@ function getBranch(cwd: string): string {
 
 // ── Public API ────────────────────────────────────────────────────────────
 
-/**
- * Return type of startExploreTrace().
- */
-export interface ExploreTraceResult {
-  /** The root observation span for the explore call. */
+/** Return type of subagent trace helpers. */
+export interface SubagentTraceResult {
+  /** The root observation span for the subagent call. */
   observation: ObservationLike;
   /**
    * Create a child observation under the root.
@@ -148,29 +149,67 @@ export interface ExploreTraceResult {
 }
 
 /**
- * Create a root explore trace observation.
+ * Create a root trace observation for any subagent.
  *
  * Calls initTracing() internally, resolves the git branch, and creates a
- * root span named "explore" with the query, cwd, model, and branch as
- * attributes. Returns the observation and a child helper.
+ * root span with the given name. The query, cwd, model, and branch are
+ * attached as attributes. Returns the observation and a child helper.
  *
- * The branch is resolved from `git rev-parse --abbrev-ref HEAD` and
- * cached per cwd so that multiple repos in one process each get the
- * correct branch.
+ * When `sessionId` is provided, the observation is created inside a
+ * Langfuse session so that parallel calls are grouped together in the
+ * Langfuse UI.
  */
-export function startExploreTrace(query: string, cwd: string, model: string): ExploreTraceResult {
+export function startSubagentTrace(
+  name: string,
+  query: string,
+  cwd: string,
+  model: string,
+  sessionId?: string,
+): SubagentTraceResult {
   const tracing = initTracing();
   const branch = getBranch(cwd);
 
-  const observation = tracing.startObservation("explore", {
+  const attrs = {
     input: { query },
     metadata: { cwd, model, branch },
-  });
+  };
 
-  const child = (name: string, attrs?: Record<string, unknown>): ObservationLike =>
-    observation.startObservation(name, attrs);
+  let observation!: ObservationLike;
+  if (sessionId) {
+    propagateAttributes({ sessionId }, () => {
+      observation = tracing.startObservation(name, attrs);
+    });
+  } else {
+    observation = tracing.startObservation(name, attrs);
+  }
+
+  const child = (childName: string, childAttrs?: Record<string, unknown>): ObservationLike =>
+    observation.startObservation(childName, childAttrs);
 
   return { observation, child };
+}
+
+/**
+ * Return type of startExploreTrace().
+ *
+ * @deprecated Use {@link SubagentTraceResult} instead.
+ */
+export type ExploreTraceResult = SubagentTraceResult;
+
+/**
+ * Create a root explore trace observation.
+ *
+ * Convenience wrapper around {@link startSubagentTrace} that hardcodes the
+ * span name to "explore". When `sessionId` is provided, the observation is
+ * created inside a Langfuse session.
+ */
+export function startExploreTrace(
+  query: string,
+  cwd: string,
+  model: string,
+  sessionId?: string,
+): ExploreTraceResult {
+  return startSubagentTrace("explore", query, cwd, model, sessionId);
 }
 
 /**

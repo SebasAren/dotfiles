@@ -181,12 +181,19 @@ export default function (pi: ExtensionAPI) {
 
       // Initialize tracing
       const modelName = getModel() || "unknown";
-      const { observation, child } = startExploreTrace(params.query, cwd, modelName);
+      const sessionId = ctx.sessionManager?.getSessionId?.();
+      const { observation, child } = startExploreTrace(params.query, cwd, modelName, sessionId);
 
       try {
         // Pre-search: run intelligent pre-search before spawning the subagent
         const preSpan = child("pre-search", { input: { query: params.query } });
         const preSearchResult = await preSearch(cwd, params.query);
+        preSpan.update({
+          output: {
+            stats: preSearchResult.stats,
+            text: preSearchResult.text,
+          },
+        });
         preSpan.end();
 
         // Build query with constraints and optional focus files
