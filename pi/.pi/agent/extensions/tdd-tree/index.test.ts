@@ -14,6 +14,7 @@ function createExtension() {
   const storedEntries: Array<{ type: string; data?: any }> = [];
   const labels = new Map<string, string>();
   const events = new Map<string, (...args: any[]) => any>();
+  const sentUserMessages: Array<{ content: string; options?: any }> = [];
 
   const pi = {
     registerTool: (def: any) => tools.push(def),
@@ -21,6 +22,9 @@ function createExtension() {
     on: (event: string, handler: any) => events.set(event, handler),
     appendEntry: (type: string, data: any) => storedEntries.push({ type, data }),
     setLabel: (id: string, label: string) => labels.set(id, label),
+    sendUserMessage: (content: string, options?: any) => {
+      sentUserMessages.push({ content, options });
+    },
   };
 
   ext(pi as any);
@@ -66,7 +70,7 @@ function createExtension() {
     };
   }
 
-  return { tools, commands, storedEntries, labels, events, makeCtx };
+  return { tools, commands, storedEntries, labels, events, makeCtx, sentUserMessages };
 }
 
 function makeTheme() {
@@ -192,7 +196,7 @@ describe("tdd-tree extension", () => {
     });
 
     it("short-circuits when already at kickoff", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
       const navigateTree = mock(() => Promise.resolve({ cancelled: false }));
       const ctx = makeCtx({
@@ -206,10 +210,11 @@ describe("tdd-tree extension", () => {
         message: "Already at the kickoff point.",
         level: "info",
       });
+      expect(sentUserMessages).toHaveLength(0);
     });
 
     it("falls back to label scan when cached entry is stale", async () => {
-      const { commands, events, makeCtx } = createExtension();
+      const { commands, events, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
 
       // Populate cache via session_start
@@ -230,10 +235,11 @@ describe("tdd-tree extension", () => {
         message: expect.stringContaining("No kickoff point found"),
         level: "error",
       });
+      expect(sentUserMessages).toHaveLength(0);
     });
 
     it("reports error when no kickoff is found", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
       const ctx = makeCtx({ leafId: "current" });
       await cmd.handler("missing", ctx);
@@ -241,12 +247,13 @@ describe("tdd-tree extension", () => {
         message: expect.stringContaining("No kickoff point found"),
         level: "error",
       });
+      expect(sentUserMessages).toHaveLength(0);
     });
   });
 
   describe("navigation spinner", () => {
     it("shows spinner via ctx.ui.custom during navigation", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
       const navigateTree = mock(() => Promise.resolve({ cancelled: false }));
       const ctx = makeCtx({
@@ -260,6 +267,11 @@ describe("tdd-tree extension", () => {
       // The callback returned a BorderedLoader instance
       expect(ctx.customCalls[0].component).toBeDefined();
       expect(ctx.customCalls[0].component.constructor.name).toBe("BorderedLoader");
+      // Continuation message sent after successful navigation
+      expect(sentUserMessages).toHaveLength(1);
+      expect(sentUserMessages[0].content).toBe(
+        'Continue implementing the "plan" plan.',
+      );
     });
 
     it("no spinner when already at kickoff", async () => {
@@ -284,7 +296,7 @@ describe("tdd-tree extension", () => {
     });
 
     it("shows cancelled notification when navigateTree returns null", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "tdd-go-kickoff")!.def;
       // Simulate navigateTree rejecting (error case)
       const navigateTree = mock(() => Promise.reject(new Error("summarization failed")));
@@ -299,12 +311,14 @@ describe("tdd-tree extension", () => {
         message: "Navigation cancelled.",
         level: "info",
       });
+      // No continuation message on cancellation
+      expect(sentUserMessages).toHaveLength(0);
     });
   });
 
   describe("/kickoff command", () => {
     it("uses activeSlug when no argument given", async () => {
-      const { commands, events, makeCtx } = createExtension();
+      const { commands, events, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "kickoff")!.def;
 
       const entries = [
@@ -321,10 +335,14 @@ describe("tdd-tree extension", () => {
       const ctx = makeCtx({ leafId: "current", entries, navigateTree });
       await cmd.handler("", ctx);
       expect(navigateTree).toHaveBeenCalledWith("target", expect.anything());
+      expect(sentUserMessages).toHaveLength(1);
+      expect(sentUserMessages[0].content).toBe(
+        'Continue implementing the "plan" plan.',
+      );
     });
 
     it("navigates with explicit slug", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "kickoff")!.def;
       const navigateTree = mock(() => Promise.resolve({ cancelled: false }));
       const ctx = makeCtx({
@@ -334,10 +352,14 @@ describe("tdd-tree extension", () => {
       });
       await cmd.handler("plan", ctx);
       expect(navigateTree).toHaveBeenCalledWith("target", expect.anything());
+      expect(sentUserMessages).toHaveLength(1);
+      expect(sentUserMessages[0].content).toBe(
+        'Continue implementing the "plan" plan.',
+      );
     });
 
     it("errors when no activeSlug and no entries", async () => {
-      const { commands, makeCtx } = createExtension();
+      const { commands, makeCtx, sentUserMessages } = createExtension();
       const cmd = commands.find((c) => c.name === "kickoff")!.def;
       const ctx = makeCtx();
       await cmd.handler("", ctx);
@@ -345,6 +367,7 @@ describe("tdd-tree extension", () => {
         message: expect.stringContaining("No kickoff points found"),
         level: "error",
       });
+      expect(sentUserMessages).toHaveLength(0);
     });
   });
 });

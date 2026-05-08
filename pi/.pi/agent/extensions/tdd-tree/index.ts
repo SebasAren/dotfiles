@@ -217,6 +217,7 @@ export default function (pi: ExtensionAPI) {
       ctx.ui.notify("Navigation cancelled.", "info");
     } else {
       ctx.ui.notify(`Navigated to TDD kickoff for "${slug}". Starting fresh branch.`, "info");
+      pi.sendUserMessage(`Continue implementing the "${slug}" plan.`);
     }
   }
 
