@@ -203,6 +203,58 @@ function createMockSessionWithBehaviors(configs: MockSessionConfig[]) {
 }
 
 /**
+ * Create a mock AgentSession whose `prompt()` never resolves.
+ * Used for testing timeout and abort signal handling.
+ */
+/** Hanging session whose prompt never resolves. Used for timeout tests. */
+function createHangingSession(): any {
+  const listeners: Array<(event: any) => void> = [];
+  return {
+    subscribe: (cb: (event: any) => void) => {
+      listeners.push(cb);
+      return () => {
+        const idx = listeners.indexOf(cb);
+        if (idx >= 0) listeners.splice(idx, 1);
+      };
+    },
+    prompt: async (_query: string) => {
+      await new Promise(() => {}); // never resolves
+    },
+    abort: async () => {},
+    steer: async () => {},
+    dispose: () => {},
+    agent: { waitForIdle: async () => {} },
+  } as any;
+}
+
+/** Hanging session whose prompt resolves when abort() is called. Used for abort signal tests. */
+function createAbortableHangingSession(): any {
+  const listeners: Array<(event: any) => void> = [];
+  let _resolveAbort: (() => void) | undefined;
+  const abortHandled = new Promise<void>((resolve) => {
+    _resolveAbort = resolve;
+  });
+  return {
+    subscribe: (cb: (event: any) => void) => {
+      listeners.push(cb);
+      return () => {
+        const idx = listeners.indexOf(cb);
+        if (idx >= 0) listeners.splice(idx, 1);
+      };
+    },
+    prompt: async (_query: string) => {
+      await abortHandled;
+    },
+    abort: async () => {
+      _resolveAbort?.();
+    },
+    steer: async () => {},
+    dispose: () => {},
+    agent: { waitForIdle: async () => {} },
+  } as any;
+}
+
+/**
  * Create a `createSession` factory that cycles through a sequence of mock
  * session configs. Each call to the factory produces the next config's session.
  * If the factory is called more times than configs provided, it reuses the
@@ -555,5 +607,395 @@ describe("onToolCall callback", () => {
     );
 
     expect(calls.length).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// onToolCall error swallowing
+// ---------------------------------------------------------------------------
+
+describe("onToolCall error handling", () => {
+  it("swallows errors from onToolCall callback", async () => {
+    const session = createMockSession({
+      output: "done",
+      toolCalls: [{ toolName: "read", args: { path: "file.ts" } }],
+    });
+
+    // onToolCall that throws should not crash the subagent
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        onToolCall: () => {
+          throw new Error("callback error");
+        },
+      }),
+    );
+
+    expect(result.output).toBe("done");
+    expect(result.errorMessage).toBeUndefined();
+  });
+
+  it("covers pendingToolCalls push and argsSummary code point truncation", async () => {
+    const calls: Array<{ argsSummary: string }> = [];
+
+    // Use a `path` arg (not truncated by formatRecentCall) long enough to exceed 100 code points.
+    // "read: " (6) + 95 x's = 101 > 100 → truncated to 97 chars + "..."
+    const longPath = "x".repeat(95);
+    const session = createMockSession({
+      output: "done",
+      toolCalls: [
+        { toolName: "read", args: { path: longPath } },
+        { toolName: "noargs", args: {} },
+      ],
+    });
+
+    await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        onToolCall: (info) => calls.push({ argsSummary: info.argsSummary }),
+      }),
+    );
+
+    expect(calls.length).toBe(2);
+    // The callLine = "read: xxxx...xxx" (6 + 95 = 101 > 100) → truncated to 97 chars + "..."
+    expect(calls[0].argsSummary).toMatch(/^read: x+\.{3}$/);
+    expect(calls[0].argsSummary.length).toBe(100);
+    // noargs has no recognized arg key → argsSummary = "noargs"
+    expect(calls[1].argsSummary).toBe("noargs");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Budget exhaustion (maxToolCalls)
+// ---------------------------------------------------------------------------
+
+describe("budget exhaustion", () => {
+  it("steers on budget exhaustion (exceeds maxToolCalls)", async () => {
+    // maxToolCalls=3, TOOL_CALL_GRACE_BUFFER=5 → steering at 4th call
+    const toolCalls = [
+      { toolName: "read", args: { path: "a.ts" } },
+      { toolName: "read", args: { path: "b.ts" } },
+      { toolName: "read", args: { path: "c.ts" } },
+      { toolName: "read", args: { path: "d.ts" } }, // 4th → triggers steering
+    ];
+    const session = createMockSession({
+      output: "final result",
+      toolCalls,
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        maxToolCalls: 3,
+      }),
+    );
+
+    // Should complete normally, output should contain the budget exhaustion message
+    expect(result.output).toContain("Budget exhausted");
+    expect(result.output).toContain("final result");
+  });
+
+  it("hard aborts when tool calls exceed budget + grace buffer", async () => {
+    const toolCalls = [
+      { toolName: "read", args: { path: "a.ts" } },
+      { toolName: "read", args: { path: "b.ts" } },
+      { toolName: "read", args: { path: "c.ts" } },
+      { toolName: "read", args: { path: "d.ts" } }, // 4th → steering
+      { toolName: "read", args: { path: "e.ts" } },
+      { toolName: "read", args: { path: "f.ts" } },
+      { toolName: "read", args: { path: "g.ts" } },
+      { toolName: "read", args: { path: "h.ts" } },
+      { toolName: "read", args: { path: "i.ts" } }, // 9th > 3+5=8 → hard abort
+    ];
+    const session = createMockSession({
+      output: "won't reach",
+      toolCalls,
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        maxToolCalls: 3,
+      }),
+    );
+
+    expect(result.output).toContain("Stopped: exceeded");
+    // The prompt output should be before the budget messages since events fire
+    // synchronously during prompt, and stop on hard abort.
+    expect(result.output).toContain("budget was 3");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Loop detection
+// ---------------------------------------------------------------------------
+
+describe("loop detection", () => {
+  it("aborts on kill-level loop (4+ consecutive identical calls)", async () => {
+    // 4 identical calls → detectLoop returns severity "kill"
+    const toolCalls = [
+      { toolName: "grep", args: { pattern: "test" } },
+      { toolName: "grep", args: { pattern: "test" } },
+      { toolName: "grep", args: { pattern: "test" } },
+      { toolName: "grep", args: { pattern: "test" } }, // 4th → kill
+    ];
+    const session = createMockSession({
+      output: "won't reach",
+      toolCalls,
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        loopDetection: true,
+      }),
+    );
+
+    expect(result.output).toContain("Stopped: Loop detected");
+    expect(result.output).toContain("grep called 4 times");
+  });
+
+  it("does not hard-abort on warn-level loop (3 identical) — continues to output", async () => {
+    const toolCalls = [
+      { toolName: "grep", args: { pattern: "test" } },
+      { toolName: "grep", args: { pattern: "test" } },
+      { toolName: "grep", args: { pattern: "test" } }, // 3rd → warn, but don't abort
+    ];
+    const session = createMockSession({
+      output: "continued after warning",
+      toolCalls,
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        loopDetection: true,
+      }),
+    );
+
+    // Warn-level doesn't stop execution, so we get the full output
+    expect(result.output).toContain("continued after warning");
+    // No stopped message
+    expect(result.output).not.toContain("Stopped");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timeout
+// ---------------------------------------------------------------------------
+
+describe("timeout handling", () => {
+  it("returns timeout error when prompt exceeds timeoutMs", async () => {
+    // A session whose prompt never resolves
+    const session = createHangingSession();
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        timeoutMs: 50,
+        _retryDelayMs: 0,
+      }),
+    );
+
+    expect(result.errorMessage).toContain("timed out");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Abort signal
+// ---------------------------------------------------------------------------
+
+describe("abort signal handling", () => {
+  it("throws on external abort signal", async () => {
+    const controller = new AbortController();
+    const session = createAbortableHangingSession();
+
+    const promise = runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        signal: controller.signal,
+        timeoutMs: 1000, // long enough not to race with the abort, but quick fail if abort doesn't work
+        _retryDelayMs: 0,
+      }),
+    );
+
+    // Fire abort after the function starts
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    controller.abort();
+
+    await expect(promise).rejects.toThrow("Subagent was aborted");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prompt error propagation
+// ---------------------------------------------------------------------------
+
+describe("prompt error handling", () => {
+  it("captures unexpected prompt errors in stderr", async () => {
+    // A session whose prompt rejects with an unexpected error
+    const listeners: Array<(event: any) => void> = [];
+    const session = {
+      subscribe: (cb: (event: any) => void) => {
+        listeners.push(cb);
+        return () => {
+          const idx = listeners.indexOf(cb);
+          if (idx >= 0) listeners.splice(idx, 1);
+        };
+      },
+      prompt: async (_query: string) => {
+        // Emit turn_end first so output is set (prevents timeout from being the only error)
+        for (const listener of listeners) {
+          listener({
+            type: "turn_end",
+            message: {
+              role: "assistant",
+              content: [],
+              usage: {
+                input: 1,
+                output: 0,
+                cacheRead: 0,
+                cacheWrite: 0,
+                cost: { total: 0 },
+                totalTokens: 1,
+              },
+            },
+          });
+        }
+        throw new Error("Unexpected prompt failure");
+      },
+      abort: async () => {},
+      steer: async () => {},
+      dispose: () => {},
+      agent: { waitForIdle: async () => {} },
+    } as any;
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        _retryDelayMs: 0,
+        maxRetries: 0, // no retry so we see the prompt error
+      }),
+    );
+
+    // The error should be captured in stderr
+    expect(result.stderr).toContain("Unexpected prompt failure");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// No-output fallback
+// ---------------------------------------------------------------------------
+
+describe("no-output fallback", () => {
+  it("synthesizes fallback output when no text is produced and no tool calls ran", async () => {
+    const session = createMockSession({
+      output: "", // empty output
+      toolCalls: [],
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        _retryDelayMs: 0,
+      }),
+    );
+
+    expect(result.output).toContain("Subagent exited without producing any output");
+  });
+
+  it("synthesizes fallback output with tool call activity when tool calls ran but no text produced", async () => {
+    const session = createMockSession({
+      output: "", // empty output
+      toolCalls: [
+        { toolName: "read", args: { path: "file.ts" } },
+        { toolName: "grep", args: { pattern: "function" } },
+      ],
+    });
+
+    const result = await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        _retryDelayMs: 0,
+      }),
+    );
+
+    expect(result.output).toContain("The subagent ran 2 tool calls");
+    expect(result.output).toContain("1. read: file.ts");
+    expect(result.output).toContain("2. grep: function");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Flush pending tool calls on early exit
+// ---------------------------------------------------------------------------
+
+describe("flush pending tool calls", () => {
+  it("flushes pending onToolCall entries when no tool_execution_end fires", async () => {
+    const calls: Array<{ toolName: string; success: boolean }> = [];
+
+    // Session that fires tool_execution_start but NO tool_execution_end
+    // This simulates the case where the prompt resolves but end events never fired.
+    const listeners: Array<(event: any) => void> = [];
+    const session = {
+      subscribe: (cb: (event: any) => void) => {
+        listeners.push(cb);
+        return () => {
+          const idx = listeners.indexOf(cb);
+          if (idx >= 0) listeners.splice(idx, 1);
+        };
+      },
+      prompt: async (_query: string) => {
+        // Fire tool_execution_start but NOT tool_execution_end
+        for (const listener of listeners) {
+          listener({
+            type: "tool_execution_start",
+            toolName: "read",
+            args: { path: "file.ts" },
+          });
+        }
+        for (const listener of listeners) {
+          listener({
+            type: "tool_execution_start",
+            toolName: "bash",
+            args: { command: "test" },
+          });
+        }
+        // Emit turn_end
+        for (const listener of listeners) {
+          listener({
+            type: "turn_end",
+            message: {
+              role: "assistant",
+              content: [{ type: "text", text: "done" }],
+              usage: {
+                input: 1,
+                output: 0,
+                cacheRead: 0,
+                cacheWrite: 0,
+                cost: { total: 0 },
+                totalTokens: 1,
+              },
+            },
+          });
+        }
+      },
+      abort: async () => {},
+      steer: async () => {},
+      dispose: () => {},
+      agent: { waitForIdle: async () => {} },
+    } as any;
+
+    await runSubagent(
+      baseOptions({
+        createSession: async () => session,
+        onToolCall: (info) => calls.push({ toolName: info.toolName, success: info.success }),
+      }),
+    );
+
+    // Both tool calls should be flushed with success=false
+    expect(calls.length).toBe(2);
+    expect(calls.every((c) => c.success === false)).toBe(true);
+    expect(calls.map((c) => c.toolName).sort()).toEqual(["bash", "read"]);
   });
 });

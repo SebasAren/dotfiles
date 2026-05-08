@@ -124,4 +124,116 @@ describe("renderSearchResult", () => {
     expect((text as any).text).toContain("page1.md");
     expect((text as any).text).toContain("page2.md");
   });
+
+  it("shows error no details with text content", () => {
+    const text = renderSearchResult(
+      makeResult(undefined, "Something broke"),
+      { expanded: false, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("Something broke");
+  });
+
+  it("shows generic error no details without text content", () => {
+    const text = renderSearchResult(makeResult(), { expanded: false, isPartial: false }, theme);
+    expect((text as any).text).toContain("Wiki search failed");
+  });
+
+  it("shows semantic flag in results", () => {
+    const text = renderSearchResult(
+      makeResult({
+        query: "test",
+        resultCount: 3,
+        reranked: true,
+        semantic: true,
+        ...baseDetails,
+      }),
+      { expanded: false, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("[semantic]");
+  });
+
+  it("shows no rerank flag in results", () => {
+    const text = renderSearchResult(
+      makeResult({
+        query: "test",
+        resultCount: 3,
+        reranked: false,
+        semantic: false,
+        ...baseDetails,
+      }),
+      { expanded: false, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("(no rerank)");
+  });
+
+  it("shows truncation when more than 20 relevant lines", () => {
+    // Generate 25 lines starting with "───"
+    const manyLines = Array.from({ length: 25 }, (_, i) => `─── page${i + 1}.md`).join("\n");
+    const text = renderSearchResult(
+      makeResult(
+        {
+          ...baseDetails,
+          query: "test",
+          resultCount: 25,
+          reranked: true,
+          semantic: false,
+          paths: [],
+        },
+        manyLines,
+      ),
+      { expanded: true, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("(more results)");
+  });
+
+  it("shows singular result label", () => {
+    const text = renderSearchResult(
+      makeResult({
+        query: "test",
+        resultCount: 1,
+        reranked: true,
+        semantic: false,
+        ...baseDetails,
+      }),
+      { expanded: false, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("1 result");
+  });
+
+  it("shows === lines in expanded view with muted style", () => {
+    const text = renderSearchResult(
+      makeResult(
+        {
+          ...baseDetails,
+          query: "test",
+          resultCount: 1,
+          reranked: true,
+          semantic: false,
+          paths: [],
+        },
+        "=== summary line\n─── result.md",
+      ),
+      { expanded: true, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toContain("summary line");
+    expect((text as any).text).toContain("result.md");
+  });
+
+  it("expanded view with no text content does not crash", () => {
+    const text = renderSearchResult(
+      {
+        content: [{ type: "image", text: "img.png" }],
+        details: { query: "test", resultCount: 0, reranked: true, semantic: false, ...baseDetails },
+      },
+      { expanded: true, isPartial: false },
+      theme,
+    );
+    expect((text as any).text).toBeDefined();
+  });
 });

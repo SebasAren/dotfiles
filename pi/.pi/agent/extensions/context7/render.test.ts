@@ -72,6 +72,72 @@ describe("renderSearchResult", () => {
     );
     expect(result.text).toContain("5 libraries");
   });
+
+  it("shows error no details with text content", () => {
+    const result = renderSearchResult(
+      { content: [{ type: "text", text: "Network error" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Network error");
+  });
+
+  it("shows generic error no details without text content", () => {
+    const result = renderSearchResult(
+      { content: [{ type: "image", text: "img.png" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Context7 search failed");
+  });
+
+  it("shows expanded view with relevant lines", () => {
+    const result = renderSearchResult(
+      {
+        content: [
+          {
+            type: "text",
+            text: "### React\n- **ID**: /facebook/react\n### Vue\n- **ID**: /vuejs/vue\n",
+          },
+        ],
+        details: { query: "hooks", libraryName: "react", resultCount: 2 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("React");
+    expect(result.text).toContain("/facebook/react");
+    expect(result.text).toContain("Vue");
+    expect(result.text).toContain("/vuejs/vue");
+  });
+
+  it("shows truncation when more than 20 relevant lines", () => {
+    const manyLines = Array.from(
+      { length: 25 },
+      (_, i) => `### Library ${i + 1}\n- **ID**: /lib/${i + 1}`,
+    ).join("\n");
+    const result = renderSearchResult(
+      {
+        content: [{ type: "text", text: manyLines }],
+        details: { query: "hooks", libraryName: "react", resultCount: 25 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("(more results)");
+  });
+
+  it("expanded view with non-text content does not crash", () => {
+    const result = renderSearchResult(
+      {
+        content: [{ type: "image", text: "img.png" }],
+        details: { query: "hooks", libraryName: "react", resultCount: 1 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toBeDefined();
+  });
 });
 
 describe("renderDocsCall", () => {
@@ -83,6 +149,15 @@ describe("renderDocsCall", () => {
     );
     expect(result.text).toContain("/facebook/react");
     expect(result.text).toContain("hooks");
+  });
+
+  it("reuses context.lastComponent", () => {
+    const { Text } = require("@mariozechner/pi-tui");
+    const existing = new Text("old", 0, 0);
+    const result = renderDocsCall({ libraryId: "/facebook/react", query: "hooks" }, makeTheme(), {
+      lastComponent: existing,
+    });
+    expect(result).toBe(existing);
   });
 });
 
@@ -118,5 +193,71 @@ describe("renderDocsResult", () => {
       makeTheme(),
     );
     expect(result.text).toContain("No docs");
+  });
+
+  it("shows error no details with text content", () => {
+    const result = renderDocsResult(
+      { content: [{ type: "text", text: "API error" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("API error");
+  });
+
+  it("shows generic error no details without text content", () => {
+    const result = renderDocsResult(
+      { content: [{ type: "image", text: "img.png" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Context7 docs failed");
+  });
+
+  it("shows expanded view with relevant lines", () => {
+    const result = renderDocsResult(
+      {
+        content: [
+          {
+            type: "text",
+            text: "### React hooks\n```tsx\nconst [count, setCount] = useState(0);\n```\n### Vue hooks\n```ts\nconst count = ref(0);\n```\n",
+          },
+        ],
+        details: { libraryId: "/facebook/react", query: "hooks", snippetCount: 2 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("React hooks");
+    expect(result.text).toContain("Vue hooks");
+    expect(result.text).toContain("```tsx");
+    expect(result.text).toContain("```ts");
+  });
+
+  it("shows truncation when more than 15 relevant lines", () => {
+    const manyLines = Array.from(
+      { length: 18 },
+      (_, i) => `### Snippet ${i + 1}\n\`\`\`\ncode\n\`\`\``,
+    ).join("\n");
+    const result = renderDocsResult(
+      {
+        content: [{ type: "text", text: manyLines }],
+        details: { libraryId: "/facebook/react", query: "hooks", snippetCount: 18 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("(more snippets)");
+  });
+
+  it("expanded view with non-text content does not crash", () => {
+    const result = renderDocsResult(
+      {
+        content: [{ type: "image", text: "img.png" }],
+        details: { libraryId: "/facebook/react", query: "hooks", snippetCount: 1 },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("1 snippets");
   });
 });

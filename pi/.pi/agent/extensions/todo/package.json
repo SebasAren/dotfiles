@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@pi-ext/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.70.6 || ^0.72.0 || ^0.73.0"
   }
 }

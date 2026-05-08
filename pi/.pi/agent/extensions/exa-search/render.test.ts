@@ -96,6 +96,153 @@ describe("renderSearchResult", () => {
     );
     expect(result.text).toContain("truncated");
   });
+
+  it("shows error no details with text content", () => {
+    const result = renderSearchResult(
+      { content: [{ type: "text", text: "API error" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("API error");
+  });
+
+  it("shows generic error no details without text content", () => {
+    const result = renderSearchResult(
+      { content: [{ type: "image", text: "img.png" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Search failed");
+  });
+
+  it("shows expanded view with relevant lines", () => {
+    const result = renderSearchResult(
+      {
+        content: [
+          {
+            type: "text",
+            text: "### Result 1\nURL: https://example.com\nPublished: 2024-01-01\n### Result 2\nURL: https://other.com\n",
+          },
+        ],
+        details: { query: "test", resultCount: 2, truncated: false },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Result 1");
+    expect(result.text).toContain("https://example.com");
+    expect(result.text).toContain("Published: 2024-01-01");
+    expect(result.text).toContain("Result 2");
+  });
+
+  it("shows truncation when more than 30 relevant lines", () => {
+    const manyLines = Array.from(
+      { length: 35 },
+      (_, i) => `### Result ${i + 1}\nURL: https://example.com/${i + 1}`,
+    ).join("\n");
+    const result = renderSearchResult(
+      {
+        content: [{ type: "text", text: manyLines }],
+        details: { query: "test", resultCount: 35, truncated: false },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("(more results)");
+  });
+
+  it("expanded view with non-text content does not crash", () => {
+    const result = renderSearchResult(
+      {
+        content: [{ type: "image", text: "img.png" }],
+        details: { query: "test", resultCount: 1, truncated: false },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("1 results");
+  });
+});
+
+describe("renderFetchResult", () => {
+  it("shows error no details with text content", () => {
+    const result = renderFetchResult(
+      { content: [{ type: "text", text: "Timeout" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Timeout");
+  });
+
+  it("shows generic error no details without text content", () => {
+    const result = renderFetchResult(
+      { content: [{ type: "image", text: "img.png" }], details: undefined },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Fetch failed");
+  });
+
+  it("shows truncated indicator", () => {
+    const result = renderFetchResult(
+      {
+        content: [{ type: "text", text: "Content" }],
+        details: {
+          urls: ["url1"],
+          format: "text",
+          successCount: 1,
+          errorCount: 0,
+          truncated: true,
+        },
+      },
+      { expanded: false, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("truncated");
+  });
+
+  it("shows expanded view with relevant lines", () => {
+    const result = renderFetchResult(
+      {
+        content: [
+          {
+            type: "text",
+            text: "## Page 1\nURL: https://example.com/page1\n## Page 2\nURL: https://example.com/page2\n",
+          },
+        ],
+        details: {
+          urls: ["url1", "url2"],
+          format: "text",
+          successCount: 2,
+          errorCount: 0,
+          truncated: false,
+        },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("Page 1");
+    expect(result.text).toContain("https://example.com/page1");
+    expect(result.text).toContain("Page 2");
+  });
+
+  it("expanded view with non-text content does not crash", () => {
+    const result = renderFetchResult(
+      {
+        content: [{ type: "image", text: "img.png" }],
+        details: {
+          urls: ["url1"],
+          format: "text",
+          successCount: 1,
+          errorCount: 0,
+          truncated: false,
+        },
+      },
+      { expanded: true, isPartial: false },
+      makeTheme(),
+    );
+    expect(result.text).toContain("1/1 fetched");
+  });
 });
 
 describe("renderFetchCall", () => {
@@ -118,6 +265,13 @@ describe("renderFetchCall", () => {
   it("shows format when not 'text'", () => {
     const result = renderFetchCall({ urls: ["url1"], format: "highlights" }, makeTheme(), {});
     expect(result.text).toContain("[highlights]");
+  });
+
+  it("reuses context.lastComponent", () => {
+    const { Text } = require("@mariozechner/pi-tui");
+    const existing = new Text("old", 0, 0);
+    const result = renderFetchCall({ urls: ["url1"] }, makeTheme(), { lastComponent: existing });
+    expect(result).toBe(existing);
   });
 });
 

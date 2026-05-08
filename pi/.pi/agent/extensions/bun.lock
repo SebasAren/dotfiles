@@ -80,6 +80,9 @@
     "git-checkpoint": {
       "name": "git-checkpoint",
       "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
     },
     "librarian": {
       "name": "@pi-ext/librarian",
@@ -142,6 +145,12 @@
     "todo": {
       "name": "@pi-ext/todo",
       "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+      "peerDependencies": {
+        "@mariozechner/pi-coding-agent": "^0.70.6 || ^0.72.0 || ^0.73.0",
+      },
     },
     "wiki-lint": {
       "name": "@pi-ext/wiki-lint",

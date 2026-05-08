@@ -26,12 +26,14 @@ function createMockApi() {
   const shortcuts: RegisteredShortcut[] = [];
   const flags: { name: string; def: any }[] = [];
   let activeTools: string[] | undefined;
+  const eventHandlers: Record<string, Function> = {};
 
   return {
     commands,
     shortcuts,
     flags,
     activeTools,
+    eventHandlers,
     api: {
       registerCommand: mock((name: string, def: any) => {
         commands.push({ name, def });
@@ -45,7 +47,10 @@ function createMockApi() {
       setActiveTools: mock((tools: string[]) => {
         activeTools = tools;
       }),
-      on: mock(() => {}),
+      sendUserMessage: mock(() => {}),
+      on: mock((event: string, handler: Function) => {
+        eventHandlers[event] = handler;
+      }),
       getFlag: mock(() => false),
     } as any,
   };
@@ -162,6 +167,199 @@ describe("plan mode extension", () => {
 
       expect(api.setActiveTools).toHaveBeenCalledWith(["read", "bash", "edit", "write"]);
       expect(mockCtx.compact).toHaveBeenCalled();
+    });
+  });
+
+  describe("/plan command handler notifications", () => {
+    it("sends notification when enabling plan mode", async () => {
+      const { api, commands } = createMockApi();
+      planModeExtension(api);
+
+      const planCmd = commands.find((c) => c.name === "plan")!;
+      const notifyMock = mock(() => {});
+      const setStatusMock = mock(() => {});
+      const mockCtx = {
+        ui: {
+          notify: notifyMock,
+          setStatus: setStatusMock,
+          theme: { fg: (_c: string, t: string) => t },
+        },
+      };
+
+      await planCmd.def.handler([], mockCtx);
+
+      expect(notifyMock).toHaveBeenCalledWith("Plan mode enabled. Read-only tools only.");
+      expect(setStatusMock).toHaveBeenCalledWith("plan-mode", "⏸ plan");
+    });
+
+    it("sends notification when disabling plan mode", async () => {
+      const { api, commands } = createMockApi();
+      planModeExtension(api);
+
+      const planCmd = commands.find((c) => c.name === "plan")!;
+      const notifyMock = mock(() => {});
+      const setStatusMock = mock(() => {});
+      const mockCtx = {
+        ui: {
+          notify: notifyMock,
+          setStatus: setStatusMock,
+          theme: { fg: (_c: string, t: string) => t },
+        },
+      };
+
+      // Toggle on first
+      await planCmd.def.handler([], mockCtx);
+      // Then toggle off
+      await planCmd.def.handler([], mockCtx);
+
+      expect(notifyMock).toHaveBeenCalledWith("Plan mode disabled. Full access restored.");
+      expect(setStatusMock).toHaveBeenCalledWith("plan-mode", undefined);
+    });
+  });
+
+  describe("shortcut handler", () => {
+    it("toggles plan mode when Ctrl+Alt+P is pressed", async () => {
+      const { api, shortcuts } = createMockApi();
+      planModeExtension(api);
+
+      const shortcut = shortcuts.find((s) => s.key === "ctrl-alt-p")!;
+      const mockCtx = {
+        ui: {
+          notify: mock(() => {}),
+          setStatus: mock(() => {}),
+          theme: { fg: (_c: string, t: string) => t },
+        },
+      };
+
+      await shortcut.def.handler(mockCtx);
+
+      expect(api.setActiveTools).toHaveBeenCalledWith([
+        "read",
+        "bash",
+        "grep",
+        "find",
+        "ls",
+        "explore",
+        "librarian",
+      ]);
+    });
+  });
+
+  describe("before_agent_start event handler", () => {
+    it("returns undefined when plan mode is disabled", async () => {
+      const { api, eventHandlers } = createMockApi();
+      planModeExtension(api);
+
+      const handler = eventHandlers["before_agent_start"];
+      const result = await handler({});
+
+      expect(result).toBeUndefined();
+    });
+
+    it("returns plan mode message when plan mode is enabled via toggle", async () => {
+      const { api, commands, eventHandlers } = createMockApi();
+      planModeExtension(api);
+
+      // First enable plan mode via /plan command
+      const planCmd = commands.find((c) => c.name === "plan")!;
+      await planCmd.def.handler([], {
+        ui: {
+          notify: mock(() => {}),
+          setStatus: mock(() => {}),
+          theme: { fg: (_c: string, t: string) => t },
+        },
+      });
+
+      const handler = eventHandlers["before_agent_start"];
+      const result = await handler({});
+
+      expect(result).toBeDefined();
+      expect(result!.message.content).toContain("PLAN MODE ACTIVE");
+      expect(result!.message.display).toBe(false);
+    });
+  });
+
+  describe("session_start event handler", () => {
+    it("enables plan mode when --plan flag is set", async () => {
+      const { api, eventHandlers } = createMockApi();
+      api.getFlag = mock((name: string) => {
+        if (name === "plan") return true;
+        return false;
+      });
+      planModeExtension(api);
+
+      const handler = eventHandlers["session_start"];
+      const statusMock = mock(() => {});
+      await handler(
+        {},
+        {
+          ui: {
+            setStatus: statusMock,
+            theme: { fg: (_c: string, t: string) => t },
+          },
+        },
+      );
+
+      expect(api.setActiveTools).toHaveBeenCalledWith([
+        "read",
+        "bash",
+        "grep",
+        "find",
+        "ls",
+        "explore",
+        "librarian",
+      ]);
+      expect(statusMock).toHaveBeenCalledWith("plan-mode", "⏸ plan");
+    });
+
+    it("does not enable plan mode when --plan flag is not set", async () => {
+      const { api, eventHandlers } = createMockApi();
+      planModeExtension(api);
+
+      const handler = eventHandlers["session_start"];
+      const toolsSpy = mock(() => {});
+      api.setActiveTools = toolsSpy;
+
+      await handler(
+        {},
+        {
+          ui: {
+            setStatus: mock(() => {}),
+            theme: { fg: (_c: string, t: string) => t },
+          },
+        },
+      );
+
+      expect(toolsSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("/plan-execute command handler onComplete", () => {
+    it("sends steer message after compaction completes", async () => {
+      const { api, commands } = createMockApi();
+      planModeExtension(api);
+
+      const execCmd = commands.find((c) => c.name === "plan-execute")!;
+      let onCompleteCallback: (() => void) | undefined;
+      const compactMock = mock((opts: { onComplete: () => void }) => {
+        onCompleteCallback = opts.onComplete;
+      });
+
+      await execCmd.def.handler([], {
+        ui: {
+          notify: mock(() => {}),
+          setStatus: mock(() => {}),
+        },
+        compact: compactMock,
+      });
+
+      expect(onCompleteCallback).toBeDefined();
+      onCompleteCallback!();
+
+      expect(api.sendUserMessage).toHaveBeenCalledWith(
+        expect.stringContaining("I have a plan I want to execute"),
+        { deliverAs: "steer" },
+      );
     });
   });
 });

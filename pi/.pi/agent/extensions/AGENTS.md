@@ -24,7 +24,7 @@ pi/.pi/agent/extensions/
 
 - **Unit tests**: `*.test.ts` next to the source file (e.g., `fuzzy-edit/fuzzy-match.test.ts`).
 - **Integration tests**: one `integration.test.ts` per extension — verifies the extension loads, registers its tools/commands, and handles missing API keys gracefully.
-- **Runner**: `bun test` from this directory (recurses into all workspace packages). No Jest, no Vitest.
+- **Runner**: `bun test --parallel` from this directory (recurses into all workspace packages). No Jest, no Vitest. **Always use `--parallel`** — without it, tests share a single process and env var / mock state leaks between files, causing false failures.
 
 **Shared mocks live in [`shared/src/test-mocks.ts`](shared/src/test-mocks.ts).** Use them for consistency — each factory (`piTuiMock`, `piCodingAgentMock`, `typeboxMock`) covers all exports an extension needs.
 
