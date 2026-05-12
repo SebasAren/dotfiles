@@ -1,4 +1,4 @@
 #!/bin/bash
-export FALLBACK_MODEL="minimax/MiniMax-M2.7"
-export CHEAP_MODEL="mistral/mistral-small-latest"
+export FALLBACK_MODEL="mistral/mistral-small-latest"
+export CHEAP_MODEL="openrouter/inception/mercury-2"
 export SUBAGENT_MAX_RETRIES=3
