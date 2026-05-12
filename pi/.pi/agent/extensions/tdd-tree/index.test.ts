@@ -269,9 +269,7 @@ describe("tdd-tree extension", () => {
       expect(ctx.customCalls[0].component.constructor.name).toBe("BorderedLoader");
       // Continuation message sent after successful navigation
       expect(sentUserMessages).toHaveLength(1);
-      expect(sentUserMessages[0].content).toBe(
-        'Continue implementing the "plan" plan.',
-      );
+      expect(sentUserMessages[0].content).toBe('Continue implementing the "plan" plan.');
     });
 
     it("no spinner when already at kickoff", async () => {
@@ -336,9 +334,7 @@ describe("tdd-tree extension", () => {
       await cmd.handler("", ctx);
       expect(navigateTree).toHaveBeenCalledWith("target", expect.anything());
       expect(sentUserMessages).toHaveLength(1);
-      expect(sentUserMessages[0].content).toBe(
-        'Continue implementing the "plan" plan.',
-      );
+      expect(sentUserMessages[0].content).toBe('Continue implementing the "plan" plan.');
     });
 
     it("navigates with explicit slug", async () => {
@@ -353,9 +349,7 @@ describe("tdd-tree extension", () => {
       await cmd.handler("plan", ctx);
       expect(navigateTree).toHaveBeenCalledWith("target", expect.anything());
       expect(sentUserMessages).toHaveLength(1);
-      expect(sentUserMessages[0].content).toBe(
-        'Continue implementing the "plan" plan.',
-      );
+      expect(sentUserMessages[0].content).toBe('Continue implementing the "plan" plan.');
     });
 
     it("errors when no activeSlug and no entries", async () => {
