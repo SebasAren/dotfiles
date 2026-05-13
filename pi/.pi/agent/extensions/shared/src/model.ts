@@ -40,6 +40,8 @@ const FALLBACK_ERROR_PATTERNS = [
   /ECONNREFUSED/i,
   /ECONNRESET/i,
   /ETIMEDOUT/i,
+  /upstream[\s_]+(?:\w+[\s_]+)?error/i,
+  /server had an error/i,
 ];
 
 /**

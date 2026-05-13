@@ -72,6 +72,16 @@ describe("shouldUseFallback", () => {
     expect(shouldUseFallback("timed out")).toBe(true);
   });
 
+  it("matches upstream errors from providers (e.g. OpenRouter)", () => {
+    expect(shouldUseFallback("Upstream error from Inception: The server had an error while processing your request.")).toBe(true);
+    expect(shouldUseFallback("upstream_error")).toBe(true);
+    expect(shouldUseFallback("Upstream service error")).toBe(true);
+  });
+
+  it("matches 'server had an error' messages", () => {
+    expect(shouldUseFallback("The server had an error while processing your request.")).toBe(true);
+  });
+
   it("does not match non-transient errors", () => {
     expect(shouldUseFallback("Invalid API key")).toBe(false);
     expect(shouldUseFallback("Permission denied")).toBe(false);

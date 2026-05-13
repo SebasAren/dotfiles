@@ -5,7 +5,7 @@ description: Plan and implement features using TDD (Red-Green-Refactor). Creates
 
 # TDD Plan & Implement
 
-Plan a feature using strict TDD discipline, then execute the plan step-by-step. Every step follows the Red-Green-Refactor cycle: establish a failing condition (test, type error, compilation error, etc.), make it pass with minimal code, then refactor.
+Plan a feature using strict TDD discipline, then execute the plan step-by-step. Most steps follow the Red-Green-Refactor cycle: establish a failing condition (test, type error, compilation error, etc.), make it pass with minimal code, then refactor. Some steps are **structural** (schema changes, config, scaffolding) where RED doesn't apply — these go straight to implementation + validation.
 
 ## Process
 
@@ -92,7 +92,12 @@ RED: Write test that generates a JWT with correct claims (sub, iat, exp) and exp
 GREEN: Implement token generation with jsonwebtoken library
 REFACTOR:
 ---
-STEP 2: Auth middleware
+STEP 2: Add phone_number column to users table
+RED: none
+GREEN: Add migration to add phone_number column, run schema generation to validate
+REFACTOR:
+---
+STEP 3: Auth middleware
 RED: Write test that middleware rejects requests without valid JWT
 GREEN: Implement auth middleware that validates Bearer tokens
 REFACTOR: Extract token validation into reusable helper
@@ -101,6 +106,7 @@ REFACTOR: Extract token validation into reusable helper
 Rules:
 - `STEP N:` starts a new step (N is optional, auto-incremented)
 - `RED:` / `GREEN:` / `REFACTOR:` labels the phase description
+- `RED: none` declares a **structural step** — no failing condition, just implement and validate. Use for schema changes, config updates, scaffolding, or any change that is structural rather than behavioral.
 - `REFACTOR:` can be empty (no refactoring for this step)
 - `---` is an optional separator between steps
 - Lines starting with `#` are comments
@@ -115,7 +121,12 @@ RED: Write test that generates a JWT with correct claims (sub, iat, exp) and exp
 GREEN: Implement token generation with jsonwebtoken library
 REFACTOR:
 ---
-STEP 2: Auth middleware
+STEP 2: Add phone_number column to users table
+RED: none
+GREEN: Add migration to add phone_number column, run schema generation to validate
+REFACTOR:
+---
+STEP 3: Auth middleware
 RED: Write test that middleware rejects requests without valid JWT
 GREEN: Implement auth middleware that validates Bearer tokens
 REFACTOR: Extract token validation into reusable helper" \
@@ -166,7 +177,12 @@ RED: Write test that generates a JWT with correct claims (sub, iat, exp) and exp
 GREEN: Implement token generation with jsonwebtoken library
 REFACTOR:
 ---
-STEP 2: Auth middleware
+STEP 2: Add phone_number column to users table
+RED: none
+GREEN: Add migration to add phone_number column, run schema generation to validate
+REFACTOR:
+---
+STEP 3: Auth middleware
 RED: Write test that middleware rejects requests without valid JWT
 GREEN: Implement auth middleware that validates Bearer tokens
 REFACTOR: Extract token validation into reusable helper" \
@@ -187,7 +203,7 @@ tdd-plan create user-auth \
 
 ### Planning Rules
 
-1. **RED first, always.** Never describe implementation without first describing the failing condition that demands it. This can be a failing test, a type error, a compilation error, or another automated validation failure when those are the primary mechanism for the codebase.
+1. **RED first, unless structural.** Most steps must start with a failing condition (test, type error, compilation error). Use `RED: none` only for structural changes — schema migrations, config updates, scaffolding, dependency additions — where no meaningful failing condition exists. The GREEN phase must still specify a validation command (compile, schema generation, typecheck) to confirm correctness.
 2. **Small steps.** Each step should be completable in 5-10 minutes. Break large features into many small steps.
 3. **One concept per step.** Don't test two things in one step. Split concerns.
 4. **Minimal GREEN.** The "make it pass" section should be the simplest code that works. Save abstractions for refactor.
@@ -218,7 +234,8 @@ High-level overview of the components involved.
 
 ### Steps
 1. **Step Name** — 🔴 [test desc] → 🟢 [impl desc] → 🔵 [refactor desc]
-2. ...
+2. **Step Name** — ⚙️ structural → 🟢 [impl + validation desc]
+3. ...
 
 ### Notes
 - Edge cases, integration points, things to watch out for
@@ -270,9 +287,24 @@ Starting fresh is especially useful when:
 
 ### Red-Green-Refactor Cycle
 
-For each step in the plan, execute these three phases **in strict order**:
+For each step in the plan, check if it has `RED: none` (structural) or a RED description (behavioral), then follow the appropriate flow:
+
+#### ⚙️ Structural steps (`RED: none`)
+
+If the step declares `RED: none`, skip directly to implementation:
+
+- **Update progress:** `tdd-plan phase <slug> <step> red skip`
+- Read the step's GREEN description from `tdd-plan show <slug>`, which must include both the implementation and the validation command.
+- Implement the structural change (migration, config, scaffolding, etc.).
+- Run the validation command specified in GREEN (schema generation, compilation, typecheck, etc.) to **confirm it passes**.
+- If validation fails, fix the implementation and re-run. Do not proceed until validation passes.
+- **Update progress:** `tdd-plan phase <slug> <step> green done`
+- **Commit via `/skill:commit`** to checkpoint.
+- Skip to the [User Verification](#user-verification) section.
 
 #### 🔴 RED — Establish the failing condition
+
+For behavioral steps, establish the failing condition:
 
 - **Update progress:** `tdd-plan phase <slug> <step> red start`
 - Read the step's RED description from `tdd-plan show <slug>`.
@@ -342,11 +374,11 @@ If **archive**, run `tdd-plan archive <slug>`.
 
 ## Rules
 
-1. **Never skip RED.** Do not write implementation before writing and confirming a failing validation (test, type error, compilation error, etc.).
+1. **Never skip RED unless the step declares `RED: none`.** For behavioral steps, always establish a failing validation before implementing. For structural steps (schema, config, scaffolding), `RED: none` is acceptable — the GREEN phase must still specify a validation command to confirm correctness.
 2. **Never skip GREEN.** Do not move to the next step until the current validation passes.
 3. **Minimal GREEN only.** The implementation should be the simplest code that passes. Resist the urge to add error handling, abstractions, or features not demanded by the test.
 4. **Real refactoring only.** Only refactor when the plan explicitly calls for it. Do not "improve" code that the plan doesn't flag.
-5. **Run validation after every phase.** RED → run validation → GREEN → run validation → commit → REFACTOR → run full validation.
+5. **Run validation after every phase.** RED → run validation → GREEN → run validation → commit → REFACTOR → run full validation. For structural steps: implement → run validation → commit.
 6. **Stop on unexpected failure.** If a validation fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
