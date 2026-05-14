@@ -88,7 +88,7 @@ Tokyo Night (Storm), matching the previous tmux-tokyo-night + Ghostty Catppuccin
 ## Known Differences vs tmux
 
 - **No session persistence**: Closing the kitty window kills all tabs. Use `nohup`, `systemd --user`, or `screen` for long-running background processes.
-- **No popup overlays**: `display-popup` is tmux-only. Worktree pickers (if used) run inline or in a new tab.
+- **No popup overlays**: `display-popup` is tmux-only. Interactive pickers run inline or in a new tab.
 - **Vi selection via kitten**: Kitty has no *built-in* vi copy mode, but the third-party `kitty_grab` kitten provides lightweight vim-like keyboard selection (`Alt+[`). For browsing full scrollback, `Ctrl+Shift+h` opens `less`.
 - **No tab swap**: Kitty doesn't have `swap-window`. Drag mouse or use remote-control script.
 
