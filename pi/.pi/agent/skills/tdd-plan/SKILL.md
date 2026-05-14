@@ -7,6 +7,8 @@ description: Plan and implement features using TDD (Red-Green-Refactor). Creates
 
 Plan a feature using strict TDD discipline, then execute the plan step-by-step. Most steps follow the Red-Green-Refactor cycle: establish a failing condition (test, type error, compilation error, etc.), make it pass with minimal code, then refactor. Some steps are **structural** (schema changes, config, scaffolding) where RED doesn't apply — these go straight to implementation + validation.
 
+Uses **jj** for version control. Each step creates a new jj revision with `jj new`, commits with `jj commit`, and at plan end all step revisions are squashed into a single feature commit.
+
 ## Process
 
 When this skill is invoked, determine the mode from the user's input:
@@ -247,7 +249,7 @@ After the user confirms the plan, proceed to [Implementation](#implementation).
 
 ## Implementation
 
-Execute an existing plan step-by-step. Each step follows the strict Red-Green-Refactor discipline.
+Execute an existing plan step-by-step using jj for version control. Each step gets its own jj revision: `jj new` at step start, `jj commit -m "<conventional commit>"` at step end.
 
 ### Setup
 
@@ -287,7 +289,15 @@ Starting fresh is especially useful when:
 
 ### Red-Green-Refactor Cycle
 
-For each step in the plan, check if it has `RED: none` (structural) or a RED description (behavioral), then follow the appropriate flow:
+For each step in the plan, check if it has `RED: none` (structural) or a RED description (behavioral), then follow the appropriate flow.
+
+**At step start**, always create a new jj revision:
+
+```bash
+jj new
+```
+
+This creates an empty revision on top of the current one. All changes made during RED + GREEN + REFACTOR will accumulate in this revision.
 
 #### ⚙️ Structural steps (`RED: none`)
 
@@ -299,7 +309,12 @@ If the step declares `RED: none`, skip directly to implementation:
 - Run the validation command specified in GREEN (schema generation, compilation, typecheck, etc.) to **confirm it passes**.
 - If validation fails, fix the implementation and re-run. Do not proceed until validation passes.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
-- **Commit via `/skill:commit`** to checkpoint.
+- **Commit:** Generate a conventional commit message and commit the revision:
+
+```bash
+jj commit -m "<conventional commit message>"
+```
+
 - Skip to the [User Verification](#user-verification) section.
 
 #### 🔴 RED — Establish the failing condition
@@ -323,7 +338,11 @@ For behavioral steps, establish the failing condition:
 - If the validation still fails, iterate on the implementation — but stay minimal. Do not add extra features.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
 - Output the passing result for the user to see.
-- **Commit via `/skill:commit`** to checkpoint the minimal implementation and trigger commit hooks (lint, typecheck, etc.) before any refactoring.
+- **Commit:** Generate a conventional commit message and commit the revision. The git pre-commit hook runs `mise run pre-commit` automatically:
+
+```bash
+jj commit -m "<conventional commit message>"
+```
 
 #### 🔵 REFACTOR — Clean up (if applicable)
 
@@ -331,14 +350,18 @@ For behavioral steps, establish the failing condition:
 - **Update progress:** `tdd-plan phase <slug> <step> refactor start` (or `skip` if no refactoring needed)
 - Apply the described refactoring while keeping all validations green.
 - Run the **full** validation command (not just the current test) to confirm nothing broke.
-- If any validation fails, revert the refactoring and try again.
+- If any validation fails, revert the refactoring and try again. Use `jj undo` to revert if needed.
 - **Update progress:** `tdd-plan phase <slug> <step> refactor done` (or `skip` was already called)
 - Output the full validation result.
-- If refactoring produced significant changes, **commit again via `/skill:commit`** to preserve the refactored state.
+- If refactoring produced significant changes, **amend the commit** with the refactored state:
+
+```bash
+jj describe -m "<updated conventional commit message>"
+```
 
 ### User Verification
 
-After committing after GREEN (to trigger hooks on the minimal implementation) and completing the full Red-Green-Refactor cycle, **mark the step complete**:
+After committing and completing the full Red-Green-Refactor cycle, **mark the step complete**:
 
 ```bash
 tdd-plan complete <slug> <step>
@@ -346,10 +369,9 @@ tdd-plan complete <slug> <step>
 
 Show:
 
-1. A brief summary of what was done (validation established, implementation added, refactoring applied, commits made).
+1. A brief summary of what was done (validation established, implementation added, refactoring applied, commit made).
 2. The final validation output.
-3. The commit(s) that were made (after GREEN and/or after REFACTOR).
-
+3. The jj revision that was created.
 
 **Then stop and ask the user what to do next.** The user will naturally say things like:
 - "Continue to next step" → proceed to the next step
@@ -359,14 +381,35 @@ Show:
 
 ### Finish
 
-After all steps are complete, show the final summary and ask what to do:
+After all steps are complete, **squash all step revisions into one** feature commit:
 
-> All steps complete! What would you like to do?
+1. Review the revision stack:
+
+```bash
+jj log
+```
+
+2. Squash all step revisions into a single commit. Use `jj squash` to combine them:
+
+```bash
+# Squash all step revisions (adjust revision ranges as needed)
+jj squash --from <first-step-rev>..<last-step-rev>
+```
+
+Or use `jj move` / `jj absorb` depending on the specific jj version's idioms.
+
+3. Set the final commit message describing the full feature:
+
+```bash
+jj describe -m "feat(<scope>): <feature description>"
+```
+
+4. Show the final summary and ask what to do:
+
+> All steps complete! Feature commit ready. What would you like to do?
 >
 > - **Archive the plan** — Move to `.pi/plans/archive/`
 > - **Keep the plan** — Leave it for reference
-
-If **archive**, run `tdd-plan archive <slug>`.
 
 If **archive**, run `tdd-plan archive <slug>`.
 
@@ -382,16 +425,18 @@ If **archive**, run `tdd-plan archive <slug>`.
 6. **Stop on unexpected failure.** If a validation fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after GREEN and after the full step.** Commit via `/skill:commit` after GREEN to trigger hooks on the minimal implementation, then again after completing the full Red-Green-Refactor cycle (if REFACTOR produced meaningful changes).
+9. **Commit after GREEN.** Commit via `jj commit -m "<message>"` after GREEN to trigger the pre-commit hook on the minimal implementation. After REFACTOR, amend the description if significant changes were made.
 10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/kickoff` (or `/tdd-go-kickoff <slug>`) to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
 11. **Kickoff gate.** Never begin Step 1 (🔴 RED) without first confirming the kickoff point is set. Do not write any test or implementation code until the kickoff is confirmed.
+12. **`jj new` at step start.** Always create a new jj revision before starting any RED/GREEN work. This ensures each step is a separate revision in the stack.
+13. **Squash at plan end.** After all steps are complete, squash all step revisions into a single feature commit before pushing.
 
 ## Error Handling
 
 - **Validation framework not found:** Stop and ask the user to install or configure the test framework, type checker, compiler, or other validation tool.
 - **Unexpected validation pass in RED:** The validation may not be asserting the right thing, or the feature may already exist. Report and ask.
 - **Cannot make GREEN pass after 3 attempts:** Stop and explain. Suggest simplifying the validation or splitting the step.
-- **Refactoring breaks validation:** Revert immediately. Report and ask whether to skip the refactoring or take a different approach.
+- **Refactoring breaks validation:** Use `jj undo` to revert immediately. Report and ask whether to skip the refactoring or take a different approach.
 
 ## Usage
 

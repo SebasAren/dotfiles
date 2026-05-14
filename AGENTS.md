@@ -21,7 +21,8 @@ bashrc/                    # Bash config        → bashrc/AGENTS.md
 tmux/.config/tmux/         # Tmux (deprecated, kept for fallback)
 ghostty/.config/ghostty/   # Ghostty (deprecated, kept for fallback)
 kitty/.config/kitty/       # Kitty             → kitty/README.md
-wt/.config/worktrunk/      # Worktrunk
+wt/.config/worktrunk/      # Worktrunk (deprecated, replaced by jj)
+jj/.config/jj/             # jj (jujutsu) version control
 pi/.pi/                    # Pi agent           → pi/.pi/README.md
 homebrew/                  # brew-sync CLI      → homebrew/AGENTS.md
 obsidian/                  # Wiki & issue tools  → obsidian/AGENTS.md
@@ -55,8 +56,8 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 | Mise tasks | `.mise/tasks/` |
 | Ghostty config | `ghostty/.config/ghostty/config.ghostty` |
 | Ghostty docs | `ghostty/README.md` |
-| Worktrunk config | `wt/.config/worktrunk/config.toml` |
-| Pre-commit checks | `mise run pre-commit` (defined in `.mise/tasks/pre-commit`) |
+| jj config | `jj/.config/jj/config.toml` |
+| Pre-commit checks | `.git/hooks/pre-commit` runs `mise run pre-commit` |
 | Pi extensions | `pi/.pi/agent/extensions/` (see its `AGENTS.md`) |
 | Pi extension docs | `pi/.pi/README.md` |
 | Tests | `pi/.pi/agent/extensions/**/*.test.ts`, `pi/.local/bin/tdd-plan.test.ts`, `obsidian/.local/lib/wiki-search/wiki-search.test.ts` |

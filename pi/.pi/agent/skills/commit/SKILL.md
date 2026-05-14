@@ -1,11 +1,11 @@
 ---
 name: commit
-description: Reflects on session findings, updates .claude/rules/ if needed, then commits using wt step commit. Use when asked to commit, when the user says "commit", or after completing a set of changes.
+description: Reflects on session findings, updates .claude/rules/ if needed, then commits using jj. Use when asked to commit, when the user says "commit", or after completing a set of changes.
 ---
 
 # Commit with Reflection
 
-Before committing, reflect on the session and persist any valuable findings. Then create a clean commit using `wt step commit`.
+Before committing, reflect on the session and persist any valuable findings. Then create a clean commit using jj.
 
 ## Step 1: Reflect on Findings
 
@@ -93,29 +93,60 @@ description: What this rule covers
 
 Rules age out. When editing an existing rule file, scan it for entries that have decayed into implementation detail (the code now obviously expresses them) or contradict the current code, and delete them in the same commit. A pruned rule file is more valuable than a comprehensive one — every stale bullet costs context on every load.
 
-## Step 3: Stage and Commit with wt
+## Step 3: Generate Commit Message and Commit with jj
 
-Use `wt step commit` which:
-- Stages all changes automatically
-- Runs `pre-commit` hooks (lua-format, shell-lint as defined in `.config/wt.toml`)
-- Generates a conventional commit message
-- Commits with the generated message
+### Generate the commit message
+
+Use the Pi LLM to generate a conventional commit message from the diff:
 
 ```bash
-wt step commit --yes
+jj diff | pi -p --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --thinking off "IMPORTANT: Your output is used directly as the git commit message.
+You MUST use Conventional Commits format: <type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+Do NOT wrap output in code fences. Output ONLY the commit message, nothing else.
+
+$(jj diff)"
 ```
 
-The `--yes` flag is required in non-interactive environments (like AI agents) to auto-approve hook commands.
+If the CHEAP_MODEL env var is set, pass `--model "$CHEAP_MODEL"` to pi.
 
-If there are unrelated changes you don't want to commit, stage selectively first:
+### Fallback
+
+If the LLM fails to generate a message, use a simple fallback:
 
 ```bash
-git add <specific-files>
-wt step commit --yes
+files_changed=$(jj diff --stat | wc -l)
+if [[ $files_changed -eq 0 ]]; then
+  echo "chore: update"
+elif [[ $files_changed -eq 1 ]]; then
+  filename=$(jj diff --stat | head -1 | awk '{print $1}')
+  echo "chore: update $filename"
+else
+  echo "chore: update $files_changed files"
+fi
+```
+
+### Commit
+
+```bash
+jj commit -m "<generated message>"
+```
+
+This moves working copy changes into the current revision with the generated message. The git pre-commit hook runs `mise run pre-commit` automatically.
+
+### Committing selectively
+
+If there are unrelated changes you don't want to commit together, use jj's splitting or partial commit:
+
+```bash
+# Split specific files into a new change before committing
+jj split --paths <specific-files>
+jj commit -m "<message for selected files>"
 ```
 
 ## Usage
 
 ```
-/commit                           # Reflect, update rules, then commit via wt
+/commit                           # Reflect, update rules, then commit via jj
 ```

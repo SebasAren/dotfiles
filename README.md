@@ -18,8 +18,8 @@ Includes [Pi agent extensions](#pi-agent-extensions) that delegate codebase expl
 | `nvim/` | Neovim | Lazy.nvim, 15 LSP servers, blink.cmp completion, CodeCompanion → [details](nvim/README.md) |
 | `tmux/` | Tmux | (Legacy) Alt-based keybindings, Tokyo Night theme → [details](tmux/README.md) |
 | `ghostty/` | Ghostty | (Legacy) GPU-accelerated terminal. Replaced by Kitty |
-| `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise, worktrunk integration |
-| `wt/` | Worktrunk | Git worktree management with AI-generated commit messages |
+| `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise |
+| `wt/` | *(Deprecated)* | Worktrunk — replaced by jj. See `wt/DEPRECATED.md` |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
 | `obsidian/` | Obsidian | Wiki search, issue tracker, and wiki maintenance tools |
 | `bluefin-bashrc/` | Bash | Bluefin base `.bashrc` with inlined bling |
@@ -86,7 +86,7 @@ cp bashrc/.secrets.tpl ~/.secrets.tpl
 # Edit to add your API keys
 ```
 
-Secrets are only resolved when tools like `pi`, `nvim`, or `wt` actually need them — not on shell startup.
+Secrets are only resolved when tools like `pi` or `nvim` actually need them — not on shell startup.
 
 ### 5. Install (legacy) Tmux plugins
 
@@ -121,7 +121,6 @@ Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) 
 | **context7** | Up-to-date library documentation lookup |
 | **exa-search** | Web search and page fetch via Exa API |
 | **git-checkpoint** | Git stash checkpoints at each turn |
-| **worktree-scope** | Enforces git worktree boundaries |
 | **claude-rules** | `.claude/rules/` parser with picomatch glob matching |
 | **cache-control** | LLM cache hint injection |
 | **cheap-clarify** | Cheap-model clarification subagent |
@@ -152,19 +151,19 @@ Supports parallel exploration (up to 4×), scout-then-deepen patterns, and real-
 **Example:**
 
 ```
-> explore "how does the worktree scope extension detect worktree boundaries?"
+> explore "how does the explore extension build its file index?"
 
 [PRE-SEARCH RESULTS]
-Query analysis: arch | entities: worktree, scope, extension | scope: extensions/worktree-scope
+Query analysis: arch | entities: explore, extension, index | scope: extensions/explore
 
 ## Highly Relevant (read these first)
-1. `./worktree-scope/index.ts` — score 92% — exact entity: worktree, path entity: scope
+1. `./explore/index.ts` — score 92% — exact entity: explore
 2. `./shared/src/subagent.ts` — score 67% — import proximity
 
 ## Summary
-The worktree-scope extension detects a git worktree by checking for a `.git` file
-(rather than directory) at the repo root, then injects a system prompt snippet
-enforcing write boundaries...
+The explore extension builds an in-memory file index using `git ls-files`,
+extracts symbols via Tree-sitter AST parsing, and builds a reverse import graph
+for proximity scoring...
 ```
 
 See [`pi/.pi/README.md`](pi/.pi/README.md) for the full architecture deep-dive, design decisions, and development guide.
@@ -187,13 +186,14 @@ Stow is minimal and transparent — it just creates symlinks. No daemons, no com
 
 Secrets should never be committed to git. Proton Pass CLI provides encrypted secret injection via templates (`~/.secrets.tpl`). The lazy resolution pattern in `.bashrc.d/secrets` means API keys are only fetched when a tool actually needs them, keeping shell startup fast.
 
-### Why worktrunk (wt)?
+### Why jj (jujutsu)?
 
-Git worktrees let you work on multiple branches simultaneously without stashing or switching. Worktrunk wraps this workflow with:
-- Automatic worktree creation/cleanup
-- AI-generated conventional commit messages (via pi)
-- Pre-commit hooks for formatting and linting
-- Squash-merge by default for clean history
+[jj](https://jj-vcs.dev/) is a version control system that works as extra porcelain on top of git. It provides:
+- Automatic operation logging with `jj undo`
+- Immutable history with automatic commit evolution (no manual rebasing)
+- Simpler mental model — revisions instead of branches
+- Conventional commits generated via Pi LLM
+- Pre-commit hook runs `mise run pre-commit` automatically
 
 ### Why subagents for exploration and research?
 
@@ -211,7 +211,7 @@ Lazy.nvim with 15 LSP servers, blink.cmp completion (Codestral + Minuet-AI), con
 
 → **[Full details in `tmux/README.md`](tmux/README.md)**
 
-Alt-based daily keybindings (no prefix for common ops), vi copy mode with `wl-copy`, Tokyo Night theme, worktrunk popup integration.
+Alt-based daily keybindings (no prefix for common ops), vi copy mode with `wl-copy`, Tokyo Night theme.
 
 ### Kitty
 
@@ -230,11 +230,10 @@ Modular config in `bashrc/.bashrc.d/`. Each file handles one concern:
 | `mise` | Activate mise runtime manager |
 | `secrets` | Lazy Proton Pass integration |
 | `tmux` | Auto-attach/create tmux sessions (skipped inside Kitty) |
-| `wt` | Worktrunk shell integration (directive file pattern) |
-| `wpi` | Worktree + Pi agent workflow |
+
 | `fnox` | fnox reencryption helper |
 
-**Key pattern — `wt` shell integration**: Worktrunk commands like `wt switch` need to change the shell's working directory. Since subprocesses can't modify their parent shell, `wt` writes a "directive file" that the shell wrapper sources after the command exits.
+
 
 ### Homebrew
 
@@ -248,13 +247,13 @@ brew-sync full        # both: regenerate + install
 
 On Bluefin, system packages from `/usr/share/ublue-os/homebrew/*.Brewfile` are excluded automatically.
 
-### Worktrunk (wt)
+### jj (jujutsu)
 
-Git worktree management. Config at `wt/.config/worktrunk/config.toml`.
+Version control as extra porcelain on top of git. Config at `jj/.config/jj/config.toml`.
 
-**Commit messages**: Generated by pi (AI agent) via `generate-commit-msg.sh`. The hook feeds the diff to pi with conventional commit format instructions, falls back to a simple `chore: update N files` if pi fails.
+**Commit messages**: Generated by the Pi LLM via the commit skill, which feeds the diff to pi with conventional commit format instructions. Falls back to a simple `chore: update N files` if pi fails.
 
-**Merge workflow**: Squash-merge with rebase by default. `wt merge` verifies and cleans up the worktree after merging.
+**Workflow**: `jj new` per TDD step, `jj commit` at step end, squash all revisions into one feature commit at plan end.
 
 ## Development
 
@@ -298,7 +297,7 @@ bun test obsidian/.local/lib/wiki-search/wiki-search.test.ts
 
 ### Pre-commit Checks
 
-Run `mise run pre-commit` before committing — it executes format + lint + typecheck + tests. No git hook is auto-installed; the `wt step commit` workflow invokes it.
+Run `mise run pre-commit` before committing — it executes format + lint + typecheck + tests. The git pre-commit hook (`.git/hooks/pre-commit`) invokes it automatically on `jj commit`.
 
 ## Repository Structure
 
@@ -315,13 +314,13 @@ Run `mise run pre-commit` before committing — it executes format + lint + type
 │   └── lsp/                     # Per-server LSP configs
 ├── tmux/.config/tmux/           # Tmux (legacy)
 │   ├── tmux.conf                # Main config
-│   └── scripts/                 # Popup scripts (wt integration)
 ├── ghostty/.config/ghostty/     # Ghostty (legacy)
 │   └── config.ghostty           # Ghostty config
 ├── bashrc/                      # Bash
 │   ├── .bashenv                 # Global env vars
 │   └── .bashrc.d/               # Modular sourced scripts
-├── wt/.config/worktrunk/        # Worktrunk
+├── jj/.config/jj/               # jj (jujutsu) config
+├── wt/                         # Worktrunk (deprecated)
 ├── homebrew/                    # brew-sync CLI + Brewfile
 ├── mise.toml                    # Runtime versions
 ├── .mise/tasks/                 # mise tasks (pre-commit, format, lint, test, etc.)

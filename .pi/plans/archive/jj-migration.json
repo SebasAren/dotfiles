@@ -1,0 +1,137 @@
+{
+  "title": "Migrate from git+wt to jj",
+  "slug": "jj-migration",
+  "context": "Replace git worktree-based workflow (Worktrunk/wt) with jj as extra porcelain over git. Keep conventional commits, pre-commit checks, AI-generated commit messages. Remove wt skill, worktree-scope extension+rule, tmux wt integration. Add jj stow package, git pre-commit hook, global APPEND_SYSTEM.md, rewrite commit and tdd-plan skills for jj.",
+  "architecture": "jj operates as extra porcelain on top of git. One jj revision per TDD step, squashed into one commit at plan end. Pre-commit hook via git hooks. Commit skill generates message then calls jj commit. TDD-plan skill uses jj new/commit/squash.",
+  "created": "2026-05-14T18:59:47.753Z",
+  "updated": "2026-05-14T19:57:46.554Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Create jj stow package and git pre-commit hook",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create jj/.config/jj/config.toml with default jj config (default log format, user name/email from git). Create .git/hooks/pre-commit that runs mise run pre-commit and is executable. Validate: stow -n -d /var/home/sebas/dotfiles jj shows correct symlinks; .git/hooks/pre-commit is executable; mise run pre-commit passes.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Create global APPEND_SYSTEM.md for Pi agent",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Create pi/.pi/agent/APPEND_SYSTEM.md informing the Pi agent that this project uses jj as extra porcelain over git. Include: use jj commands instead of git for commits/logs, conventional commits required, jj new per TDD step + jj commit at step end, squash at plan end, pre-commit hook handles checks. Validate: file exists at pi/.pi/agent/APPEND_SYSTEM.md and contains jj instructions.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "Remove worktree-scope extension, wt skill, and worktree-scope rule",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Delete pi/.pi/agent/extensions/worktree-scope/ entirely. Remove worktree-scope from package.json workspaces array. Delete pi/.pi/agent/skills/wt/ entirely. Delete .claude/rules/worktree-scope.md. Run bun install in extensions dir to update lockfile. Validate: cd pi/.pi/agent/extensions && bun install && for dir in */; do [ -f \"$dir/tsconfig.json\" ] && npx tsc --noEmit -p \"$dir/tsconfig.json\"; done succeeds; bun test --parallel passes.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 4,
+      "name": "Rewrite commit skill for jj",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Rewrite pi/.pi/agent/skills/commit/SKILL.md: keep Step 1 (reflect on findings) and Step 2 (update/create rules) unchanged. Replace Step 3 (wt step commit) with: generate conventional commit message via Pi LLM (same prompt as generate-commit-msg.sh), then run jj commit -m \"<message>\". Remove wt step commit references. Keep --yes note for non-interactive. Validate: file is well-formed markdown, no wt references remain.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 5,
+      "name": "Rewrite tdd-plan skill for jj",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Rewrite pi/.pi/agent/skills/tdd-plan/SKILL.md: replace worktree-based workflow with jj. Implementation section: jj new at step start instead of working in worktree, jj commit -m \"<message>\" at step end. Remove all wt skill references. Remove worktree kickoff gate (no worktrees). Keep Red-Green-Refactor cycle, design artifact, and planning sections structurally the same. Add note about squashing all step revisions at plan end. Validate: file is well-formed markdown, no wt/worktree-scope references remain.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 6,
+      "name": "Deprecate wt stow package and remove tmux-worktree integration",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Remove or add DEPRECATED.md to wt/ directory. Remove tmux popup scripts: tmux/.config/tmux/scripts/wt-common.sh, wt-create.sh, wt-switch.sh, wt-remove.sh, wt-open-create.sh. Remove tmux/.config/tmux/plugins/tmux-worktree/ entirely. Remove prefix+W/w/X keybindings from tmux.conf. Validate: tmux.conf has no wt references; no wt-*.sh scripts remain in scripts/.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    },
+    {
+      "index": 7,
+      "name": "Update all documentation and rules",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Update root README.md: remove wt from structure table, remove Why worktrunk section, remove worktree-scope from extension catalog, remove wt from Key patterns, remove wt from repo tree. Update root AGENTS.md: remove wt from structure table and task table. Update pi/.pi/README.md: remove worktree-scope from extension catalog. Update .claude/rules/tmux.md: remove wt-specific gotchas. Update bashrc/AGENTS.md: remove wt wrapper and wpi sections. Update tmux/AGENTS.md: remove worktree keybindings and popup scripts table. Update docs/src/components/Review.astro: remove worktree-scope.md reference. Validate: grep -ri 'worktree-scope' across repo returns no results; grep -ri 'worktrunk' across repo returns no results except DEPRECATED.md if present.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "done"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [],
+  "design": {
+    "currentState": "Git workflow using Worktrunk (wt) for parallel worktrees. wt step commit stages all + generates conventional commit messages via Pi LLM. Pre-commit checks (format+lint+typecheck+test) invoked by wt step commit, not by a git hook. Pi agent has worktree-scope extension (blocks writes outside worktree), wt skill, commit skill (calls wt step commit), and tdd-plan skill (assumes worktrees). Tmux has popup scripts for wt create/switch/remove. Bashrc has wt wrapper and wpi TUI.",
+    "desiredState": "jj as extra porcelain over git. Single working directory (no worktrees). Git pre-commit hook runs mise run pre-commit. Commit skill generates conventional commit messages via Pi LLM then calls jj commit. TDD-plan skill uses jj new per step, jj commit at step end, manual squash at plan end. No worktree-scope extension, no wt skill, no tmux wt popups. Global APPEND_SYSTEM.md informs Pi agent about jj. jj stow package for config.",
+    "patterns": "Stow packages follow pattern: tool/.config/tool/config-file → ~/.config/tool/config-file. Skills are markdown files at pi/.pi/agent/skills/name/SKILL.md. Extensions are TypeScript packages at pi/.pi/agent/extensions/name/. Pre-commit hook should be a git hook (.git/hooks/pre-commit) — not stowable, installed via script or manually.",
+    "decisions": "jj as extra porcelain (not replacing git). Remove wt entirely. One jj revision per TDD step, squashed at plan end. Git pre-commit hook runs mise run pre-commit. Default jj log format. Global APPEND_SYSTEM.md at pi/.pi/agent/APPEND_SYSTEM.md. Manual squash via jj squash. Commit skill keeps reflection/rules learning part.",
+    "questions": "How to handle the pre-commit hook installation — manual, script, or stow? The .git/hooks directory isn't stowable since it's inside .git."
+  }
+}

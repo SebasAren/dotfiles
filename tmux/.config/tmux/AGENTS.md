@@ -23,9 +23,6 @@ Most bindings use `Alt` directly — no prefix needed.
 | `Alt+H/J/K` | Resize panes (5 cells) |
 | `Alt+Shift+H/J/K` | Resize panes |
 | `prefix+r` | Reload config |
-| `prefix+W` | Create worktree (popup) |
-| `prefix+w` | Switch worktree (popup) |
-| `prefix+X` | Remove worktree (popup) |
 | `prefix+J` | Join pane from another window |
 
 Vi copy mode: `v` to select, `y` to yank to clipboard (`wl-copy`).
@@ -39,19 +36,6 @@ Vi copy mode: `v` to select, `y` to yank to clipboard (`wl-copy`).
 
 Install/update: `prefix+I`
 
-## Popup Scripts (`scripts/`)
-
-Worktree management via tmux popups. All scripts source `wt-common.sh` which:
-- Ensures linuxbrew is in PATH (`/home/linuxbrew/.linuxbrew/bin/brew shellenv`) — `wt` binary won't be found inside `display-popup` otherwise
-- Sets Tokyo Night fzf colors
-
-| Script | Trigger | What it does |
-|--------|---------|--------------|
-| `wt-create.sh` | `prefix+W` | fzf branch picker → creates worktree → opens tmux window |
-| `wt-switch.sh` | `prefix+w` | fzf worktree list → opens tmux window at worktree path |
-| `wt-remove.sh` | `prefix+X` | fzf worktree list → removes worktree → kills tmux window |
-| `wt-open-create.sh` | (called by wt-create.sh) | Runs `wt switch --create` inside new window |
-
 ## Gotchas
 
-See `.claude/rules/tmux.md` for full tmux gotchas (popup PATH, `display-popup -d` vs `-c`, fzf bash arrays, `wt-common.sh` error swallowing, fzf `--disabled`, `wt switch --no-cd`).
+See `.claude/rules/tmux.md` for full tmux gotchas (popup PATH, `display-popup -d` vs `-c`, fzf bash arrays, fzf `--disabled`).
