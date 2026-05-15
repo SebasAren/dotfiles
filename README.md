@@ -21,6 +21,7 @@ Includes [Pi agent extensions](#pi-agent-extensions) that delegate codebase expl
 | `bashrc/` | Bash | Modular shell config: aliases, secrets, fzf, mise |
 | `wt/` | *(Deprecated)* | Worktrunk — replaced by jj. See `wt/DEPRECATED.md` |
 | `homebrew/` | Homebrew | `brew-sync` CLI + Brewfile for personal packages |
+| `jj/` | **jj** | Jujutsu version control — jj porcelain on git, conventional commits, pre-commit hook |
 | `obsidian/` | Obsidian | Wiki search, issue tracker, and wiki maintenance tools |
 | `bluefin-bashrc/` | Bash | Bluefin base `.bashrc` with inlined bling |
 | `mise/` | mise | Runtime version manager (Python, Lua, Node, Bun) |
