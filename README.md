@@ -192,7 +192,7 @@ Secrets should never be committed to git. Proton Pass CLI provides encrypted sec
 - Immutable history with automatic commit evolution (no manual rebasing)
 - Simpler mental model — revisions instead of branches
 - Conventional commits generated via Pi LLM
-- Bash shell wrapper runs `.git/hooks/pre-commit` before `jj commit`/`jj ci`
+- Bash shell wrapper runs `.githooks/pre-commit` (via `core.hooksPath`) before `jj commit`/`jj ci`
 
 ### Why subagents for exploration and research?
 
@@ -296,7 +296,7 @@ bun test obsidian/.local/lib/wiki-search/wiki-search.test.ts
 
 ### Pre-commit Checks
 
-Run `mise run pre-commit` before committing — it executes format + lint + typecheck + tests. The git pre-commit hook (`.git/hooks/pre-commit`) invokes it via a bash shell wrapper in `~/.bashrc.d/alias` that intercepts `jj commit`/`jj ci`.
+Run `mise run pre-commit` before committing — it executes format + lint + typecheck + tests. The version-controlled hook at `.githooks/pre-commit` invokes it via `core.hooksPath` (set by `mise run setup`). A bash shell wrapper in `~/.bashrc.d/alias` intercepts `jj commit`/`jj ci` since jj has no native hook support.
 
 ## Repository Structure
 

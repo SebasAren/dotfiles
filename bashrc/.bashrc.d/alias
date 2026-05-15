@@ -9,7 +9,7 @@ alias .....="cd ../../../.."
 alias brewfile="nvim ~/dotfiles/homebrew/Brewfile"
 
 # Run pre-commit hook before jj commit (jj ignores git hooks natively)
-# Handles vanilla .git/hooks/, husky v9's core.hooksPath, and jj's own aliases (ci, com)
+# Resolves hooks dir via core.hooksPath or .git/hooks; jj's only commit alias is 'ci'
 jj() {
   if [[ "$1" == @(commit|ci) ]]; then
     local hooks_dir

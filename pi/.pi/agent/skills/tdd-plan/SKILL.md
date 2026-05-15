@@ -338,7 +338,7 @@ For behavioral steps, establish the failing condition:
 - If the validation still fails, iterate on the implementation — but stay minimal. Do not add extra features.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
 - Output the passing result for the user to see.
-- **Commit:** Generate a conventional commit message and commit the revision. A bash shell wrapper (`.bashrc.d/alias`) runs the pre-commit hook before `jj commit`:
+- **Commit:** Generate a conventional commit message and commit the revision. A bash shell wrapper (`.bashrc.d/alias`) intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/` (via `core.hooksPath`):
 
 ```bash
 jj commit -m "<conventional commit message>"
@@ -425,7 +425,7 @@ If **archive**, run `tdd-plan archive <slug>`.
 6. **Stop on unexpected failure.** If a validation fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after GREEN.** Commit via `jj commit -m "<message>"` after GREEN — the bash shell wrapper runs the pre-commit hook before the commit. After REFACTOR, amend the description if significant changes were made.
+9. **Commit after GREEN.** Commit via `jj commit -m "<message>"` after GREEN — the bash shell wrapper intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/`. After REFACTOR, amend the description if significant changes were made.
 10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/kickoff` (or `/tdd-go-kickoff <slug>`) to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
 11. **Kickoff gate.** Never begin Step 1 (🔴 RED) without first confirming the kickoff point is set. Do not write any test or implementation code until the kickoff is confirmed.
 12. **`jj new` at step start.** Always create a new jj revision before starting any RED/GREEN work. This ensures each step is a separate revision in the stack.

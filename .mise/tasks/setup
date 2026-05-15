@@ -13,5 +13,5 @@ luarocks --lua-version 5.4 install luacheck 2>/dev/null || true
 echo "=== Install Pi extension deps ==="
 (cd pi/.pi/agent/extensions && bun install)
 
-echo "=== Install wpi-tui deps ==="
-(cd wt/.local/share/wpi-tui && bun install)
+echo "=== Install git hooks ==="
+git config core.hooksPath .githooks

@@ -57,7 +57,7 @@ Tool directories may have an `AGENTS.md` (path-scoped agent instructions) or a `
 | Ghostty config | `ghostty/.config/ghostty/config.ghostty` |
 | Ghostty docs | `ghostty/README.md` |
 | jj config | `jj/.config/jj/config.toml` |
-| Pre-commit checks | `.git/hooks/pre-commit` runs `mise run pre-commit` |
+| Pre-commit checks | `.githooks/pre-commit` runs `mise run pre-commit` (via `core.hooksPath`) |
 | Pi extensions | `pi/.pi/agent/extensions/` (see its `AGENTS.md`) |
 | Pi extension docs | `pi/.pi/README.md` |
 | Tests | `pi/.pi/agent/extensions/**/*.test.ts`, `pi/.local/bin/tdd-plan.test.ts`, `obsidian/.local/lib/wiki-search/wiki-search.test.ts` |

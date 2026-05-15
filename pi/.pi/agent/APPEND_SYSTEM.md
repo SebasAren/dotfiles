@@ -6,7 +6,7 @@ This project uses **jj** as extra porcelain on top of git. jj is the primary int
 
 - **Use jj commands** instead of git for commits, logs, and history manipulation (`jj commit`, `jj log`, `jj squash`, `jj undo`, etc.)
 - **Conventional commits required** — all commit messages must follow `<type>(<scope>): <description>` format
-- **Pre-commit hook** runs `mise run pre-commit` (format + lint + typecheck + test) on `jj commit`
+- **Pre-commit hook** runs `mise run pre-commit` (format + lint + typecheck + test) via `.githooks/pre-commit` (set by `core.hooksPath`, intercepted by shell wrapper for `jj commit`/`jj ci`)
 - **No worktrees** — this project does not use git worktrees. All work happens in a single working directory
 
 ## TDD Workflow

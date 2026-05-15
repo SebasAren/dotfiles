@@ -109,7 +109,7 @@ If the diff is empty, use `chore: update`. Otherwise generate the message as des
 jj commit -m "<generated message>"
 ```
 
-This moves working copy changes into the current revision with the generated message. A bash shell wrapper in `~/.bashrc.d/alias` intercepts `jj commit`/`jj ci` and runs the pre-commit hook first — see the `jj()` function there.
+This moves working copy changes into the current revision with the generated message. A bash shell wrapper in `~/.bashrc.d/alias` intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/` (via `core.hooksPath`) first — see the `jj()` function there.
 
 ### Committing selectively
 

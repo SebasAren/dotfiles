@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Declarative pre-commit hook — version-controlled at .githooks/pre-commit
+# Setup: mise run setup (runs git config core.hooksPath .githooks)
+exec mise run pre-commit
