@@ -10,6 +10,7 @@ Review code locally using jj's brain workflow — review state lives in the comm
 ## When to Activate
 
 - User says "review this", "review <change-id>", "jj-review"
+- `/skill:jj-review <arg>` — the `<arg>` is **always a jj change ID** (full or partial like `nx`, `kowqznzo`). Resolve it immediately: `jj log -r '<arg>' -T 'change_id.short()' --no-graph`
 - User wants to review a PR, agent-generated commit, or any local change
 - User asks for help during an active review session
 

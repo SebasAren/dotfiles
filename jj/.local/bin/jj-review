@@ -37,15 +37,15 @@ setup() {
 
   # Check if the change is immutable (remote)
   local is_immutable
-  is_immutable=$(jj log -r "$change_id" -T 'if(mutable, "mutable", "immutable")' --no-graph 2>/dev/null | head -1)
+  is_immutable=$(jj log -r "$change_id" -T 'if(immutable, "immutable", "mutable")' --no-graph 2>/dev/null | head -1)
 
   info "Setting up review for ${BOLD}${resolved}${RESET} (${is_immutable})"
 
   # Step 1: Duplicate the change
   local dup_id
-  dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP 'Created \K\w+' || {
-    # Fallback: parse jj duplicate output for the new change ID
-    dup_id=$(jj duplicate "$change_id" 2>&1 | tail -1 | grep -oP '\w+$')
+  dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP '(?:Created|Duplicated) \w+ as \K\w+' || {
+    # Fallback: last word on the line containing "as"
+    dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP '\bas \K\w+' | head -1)
     echo "$dup_id"
   })
 
