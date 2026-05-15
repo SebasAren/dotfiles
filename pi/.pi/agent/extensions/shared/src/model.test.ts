@@ -73,7 +73,11 @@ describe("shouldUseFallback", () => {
   });
 
   it("matches upstream errors from providers (e.g. OpenRouter)", () => {
-    expect(shouldUseFallback("Upstream error from Inception: The server had an error while processing your request.")).toBe(true);
+    expect(
+      shouldUseFallback(
+        "Upstream error from Inception: The server had an error while processing your request.",
+      ),
+    ).toBe(true);
     expect(shouldUseFallback("upstream_error")).toBe(true);
     expect(shouldUseFallback("Upstream service error")).toBe(true);
   });
