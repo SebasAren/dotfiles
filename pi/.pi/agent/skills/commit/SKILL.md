@@ -29,9 +29,9 @@ If you found anything that clears the bar, present the findings to the user:
 
 - If the user answers **yes** → continue to Step 2 with all findings.
 - If the user answers **pick** → present each finding as a numbered option so they can select which to keep.
-- If the user answers **no** → skip to Step 3.
+- If the user answers **no** → skip to Step 4.
 
-If **nothing notable** was found, skip directly to Step 3.
+If **nothing notable** was found, skip directly to Step 4.
 
 ## Step 2: Update or Create Rules
 
@@ -93,7 +93,28 @@ description: What this rule covers
 
 Rules age out. When editing an existing rule file, scan it for entries that have decayed into implementation detail (the code now obviously expresses them) or contradict the current code, and delete them in the same commit. A pruned rule file is more valuable than a comprehensive one — every stale bullet costs context on every load.
 
-## Step 3: Generate Commit Message and Commit with jj
+## Step 3: Run jj fix (auto-format and lint-fix)
+
+Run `jj fix` to auto-format and lint-fix all changed files before committing.
+This ensures code style is consistent and catches fixable lint issues early.
+
+```bash
+jj fix
+```
+
+If any fix tool reports errors (e.g., unfixable lint warnings), surface them to the user:
+
+> `jj fix` reported errors:
+> - <list each error as a bullet>
+>
+> Would you like me to address these before committing?
+
+If the user asks to fix them, address the errors and re-run `jj fix` until it passes.
+If the user says to skip, proceed to the next step.
+
+If `jj fix` succeeds silently (no errors), proceed to Step 4.
+
+## Step 4: Generate Commit Message and Commit with jj
 
 ### Generate the commit message
 

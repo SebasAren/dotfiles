@@ -92,10 +92,37 @@ jj undo
 ```
 
 ### Squash recent revisions together
+
 ```bash
-jj squash        # squash @ into @-
-jj squash -r @-  # squash a specific revision into its parent
+jj squash             # squash @ (working copy) into @- (parent)
+jj squash -r <rev>    # squash a specific revision into its parent
 ```
+
+**Squashing a range of commits into one:** Use `--from` to move changes from a specific revision into the current revision (`@`). Repeat for each commit in the range.
+
+```bash
+# Move to the base where you want all changes to land
+jj edit <base-revision>
+
+# Squash each feature commit into @
+jj squash --from <rev-1>     # moves rev-1's changes into @
+jj squash --from <rev-2>      # moves rev-2's changes into @
+
+# Now @ has all changes combined. Set the final message.
+jj describe -m "feat(scope): combined feature description"
+
+# Abandon any empty descendants left behind
+jj abandon <empty-descendant>
+```
+
+**Handling the interactive editor:** When both source and destination have non-empty descriptions, `jj squash` opens an editor to ask which description to keep. To skip the editor:
+
+```bash
+jj squash --from <rev> --use-destination-message   # keep destination's description
+jj squash --from <rev> -m "combined message"        # supply a new description inline
+```
+
+**Important:** `jj squash` without `--from` squashes `@` into `@-` (working copy into parent). Use `--from <child-rev>` to squash a child into `@` instead.
 
 ### Edit a previous revision
 ```bash

@@ -1,0 +1,69 @@
+{
+  "title": "Add jj fix to commit skill",
+  "slug": "jj-fix-commit-skill",
+  "context": "Wire jj fix (format + lint autofix) into the agent commit skill so that code is auto-formatted and lint-fixed before commit message generation. Tools: stylua (Lua), ruff format + ruff check --fix (Python), prettier (TS/JS), shfmt (shell).",
+  "architecture": "Two components: 1) jj/config.toml gets [fix.tools] entries for all five tools. 2) commit SKILL.md gets a new jj fix step inserted between reflection and commit message generation.",
+  "created": "2026-05-15T20:51:42.282Z",
+  "updated": "2026-05-15T21:06:34.546Z",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Add [fix.tools] config to jj/config.toml",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Add fix.tools entries for stylua, ruff-format, ruff-check, prettier, shfmt with correct commands and file patterns. Validate with `jj config get fix.tools`.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 2,
+      "name": "Integration test for jj fix",
+      "red": {
+        "description": "Write Bun test that creates a temp jj repo with a malformed Lua file, runs `jj fix` without tool config, and expects the file to be fixed — test fails because no fix tools are configured in the temp repo.",
+        "status": "done"
+      },
+      "green": {
+        "description": "Configure fix tools in the temp repo (via --config flags), run `jj fix`, and assert the malformed file is properly formatted by stylua.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    },
+    {
+      "index": 3,
+      "name": "Update commit skill",
+      "red": {
+        "description": "none",
+        "status": "done"
+      },
+      "green": {
+        "description": "Insert a new step between \"update rules\" and \"generate commit message\" in the commit SKILL.md: run `jj fix`, surface errors if it fails. The step says to fix any reported lint errors and re-run.",
+        "status": "done"
+      },
+      "refactor": {
+        "description": "",
+        "status": "skipped"
+      },
+      "completed": true
+    }
+  ],
+  "notes": [],
+  "design": {
+    "currentState": "jj/config.toml has only [user], [ui], [revset-aliases]. No [fix.tools] configured. Commit skill has 3 steps: reflect on findings, update rules, generate message + jj commit. Tests use bun:test framework with *.test.ts files.",
+    "desiredState": "jj/config.toml has [fix.tools] entries for stylua (Lua), ruff format (Python), ruff check --fix (Python), prettier (TS/JS), and shfmt (shell). A Bun integration test verifies 'jj fix' works with the config on a temp repo with deliberately malformed files. Commit skill has a new step between rule updates and commit message generation: run 'jj fix', surface errors if it fails.",
+    "patterns": "Test files use bun:test (describe/it/expect). Integration tests use spawnSync with array args (no shell escaping). Test naming: *.test.ts. jj config is in jj/.config/jj/config.toml. Skill files are markdown at pi/.pi/agent/skills/<name>/SKILL.md.",
+    "decisions": "Five separate fix tools. ruff format and ruff check --fix are separate tools (not combined). ruff check --fix uses plain --fix (not --fix-only) to surface unfixable lint errors as a gate. No explicit retry logic in skill — agent's natural behavior handles error recovery. shfmt covers *.sh and *.bash.",
+    "questions": ""
+  }
+}

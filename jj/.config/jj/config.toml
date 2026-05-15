@@ -7,3 +7,23 @@ default-command = "log"
 
 [revset-aliases]
 "trunk()" = "main@origin"
+
+[fix.tools.stylua]
+command = ["stylua", "--respect-ignores"]
+patterns = ["*.lua"]
+
+[fix.tools.ruff-format]
+command = ["ruff", "format"]
+patterns = ["*.py"]
+
+[fix.tools.ruff-check]
+command = ["ruff", "check", "--fix"]
+patterns = ["*.py"]
+
+[fix.tools.prettier]
+command = ["prettier", "--write"]
+patterns = ["*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.yaml", "*.yml", "*.md"]
+
+[fix.tools.shfmt]
+command = ["shfmt", "-w"]
+patterns = ["*.sh", "*.bash"]
