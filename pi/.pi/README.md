@@ -21,7 +21,6 @@ These spawn a separate (cheaper/faster) model to handle reconnaissance, research
 |-----------|---------|
 | **fuzzy-edit** | Tab-aware fuzzy fallback for the edit tool — handles indentation and whitespace mismatches |
 | **plan-mode** | Read-only mode toggleable via `/plan`, with execution via `/plan-execute` |
-| **git-checkpoint** | Git stash checkpoints at each turn, enabling code state restoration when forking sessions |
 
 ### Research & Documentation
 

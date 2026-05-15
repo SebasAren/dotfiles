@@ -120,7 +120,6 @@ Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) 
 | **tdd-tree** | TDD kickoff point labeling in the session tree |
 | **context7** | Up-to-date library documentation lookup |
 | **exa-search** | Web search and page fetch via Exa API |
-| **git-checkpoint** | Git stash checkpoints at each turn |
 | **claude-rules** | `.claude/rules/` parser with picomatch glob matching |
 | **cache-control** | LLM cache hint injection |
 | **cheap-clarify** | Cheap-model clarification subagent |

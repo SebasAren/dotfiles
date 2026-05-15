@@ -33,4 +33,3 @@ These extensions have no tests — add at minimum an `integration.test.ts` verif
 
 - `todo` (303 LOC)
 - `wiki-stash` (195 LOC)
-- `git-checkpoint` (57 LOC)
