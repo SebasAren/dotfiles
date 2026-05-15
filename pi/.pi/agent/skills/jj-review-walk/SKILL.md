@@ -24,8 +24,11 @@ Walk the user through a change file by file, asking for their judgment on each. 
 
 ### Step 1: Set up the brain session
 
+Accepts a single change ID (partial or full) or a range:
+
 ```bash
 jj-review <change-id>
+jj-review <from>::<to>     # for multi-commit review
 ```
 
 Note the brain and duplicate IDs from the output.
@@ -138,4 +141,5 @@ Print the brain and duplicate IDs so the user can resume later.
 ```
 /skill:jj-review-walk nx                    # Walk through change nx interactively
 /skill:jj-review-walk kowqznzo              # Walk through change kowqznzo
+/skill:jj-review-walk abc::def              # Walk through range of commits
 ```

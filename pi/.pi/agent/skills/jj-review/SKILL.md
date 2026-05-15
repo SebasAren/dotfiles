@@ -25,13 +25,18 @@ Review code locally using jj's brain workflow — review state lives in the comm
 
 ### Step 1: Initiate the review
 
-Ask the user for a change ID if not provided. Then run:
+Ask the user for a change ID if not provided. Accepts:
+- A single change ID (partial or full): `nx`, `kowqznzo`
+- A range: `abc::def` (reviews the combined net diff of all commits in the range)
+
+Then run:
 
 ```bash
 jj-review <change-id>
+jj-review <from>::<to>     # for multi-commit review
 ```
 
-This duplicates the change, inserts the brain commit, and prints next steps.
+This duplicates the change(s), squashes into one if a range, inserts the brain commit, and prints next steps.
 
 If the user already has an active review session, skip to Step 2.
 
@@ -79,6 +84,8 @@ jj squash --from @ --to @- -- <file1> <file2>
 # Or interactively select hunks
 jj squash --interactive
 ```
+
+**Note:** For range reviews, the duplicate is already squashed into one commit — the diff you see is the combined net change, not individual commits.
 
 Track progress:
 
@@ -173,5 +180,6 @@ The agent should remind the user of the change IDs when pausing.
 ```
 /skill:jj-review                        # Review current change
 /skill:jj-review kowqznzo              # Review specific change
+/skill:jj-review abc::def              # Review range of commits (combined diff)
 /skill:jj-review --teardown            # Clean up review session
 ```

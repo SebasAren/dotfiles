@@ -3,6 +3,7 @@
 #
 # Usage:
 #   jj-review <change-id>          Set up: duplicate change, insert brain commit
+#   jj-review <from>::<to>         Set up: duplicate range, squash into one, insert brain
 #   jj-review --teardown           Tear down: abandon empty dup, clean up graph
 #   jj-review --teardown --keep    Tear down: keep brain (rebase onto main)
 #
@@ -22,11 +23,10 @@ ok()    { echo -e "${GREEN}✔${RESET} $*"; }
 warn()  { echo -e "${YELLOW}⚠${RESET} $*"; }
 err()   { echo -e "${RED}✖${RESET} $*" >&2; }
 
-# ── Setup ───────────────────────────────────────────────────────────
-setup() {
+# ── Setup (single change) ──────────────────────────────────────────
+setup_single() {
   local change_id="$1"
 
-  # Resolve the change ID to a full commit
   local resolved
   resolved=$(jj log -r "$change_id" -T 'change_id.short()' --no-graph 2>/dev/null | head -1)
 
@@ -35,19 +35,13 @@ setup() {
     exit 1
   fi
 
-  # Check if the change is immutable (remote)
   local is_immutable
   is_immutable=$(jj log -r "$change_id" -T 'if(immutable, "immutable", "mutable")' --no-graph 2>/dev/null | head -1)
 
   info "Setting up review for ${BOLD}${resolved}${RESET} (${is_immutable})"
 
-  # Step 1: Duplicate the change
   local dup_id
-  dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP '(?:Created|Duplicated) \w+ as \K\w+' || {
-    # Fallback: last word on the line containing "as"
-    dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP '\bas \K\w+' | head -1)
-    echo "$dup_id"
-  })
+  dup_id=$(jj duplicate "$change_id" 2>&1 | grep -oP '\bas \K\w+' | head -1)
 
   if [[ -z "$dup_id" ]]; then
     err "Failed to duplicate change. jj output:"
@@ -56,19 +50,76 @@ setup() {
   fi
 
   ok "Duplicated ${resolved} → ${dup_id}"
+  create_brain "$change_id" "$dup_id"
+}
 
-  # Step 2: Edit the duplicate
+# ── Setup (range of changes) ───────────────────────────────────────
+setup_range() {
+  local range="$1"
+
+  # Validate the range — make sure it resolves to at least one commit
+  local count
+  local ids
+  ids=$(jj log -r "$range" -T 'change_id.short() ++ "\n"' --no-graph 2>/dev/null)
+  count=$(echo "$ids" | grep -c . || true)
+
+  if [[ "$count" -eq 0 ]]; then
+    err "Range '$range' resolves to no commits. Run 'jj log' to see available revisions."
+    exit 1
+  fi
+
+  # Get the first and last commit in the range (log outputs newest-first)
+  local first_id last_id
+  last_id=$(echo "$ids" | head -1)
+  first_id=$(echo "$ids" | tail -1)
+
+  info "Setting up review for ${BOLD}${count}${RESET} commits (${first_id}..${last_id})"
+
+  # Duplicate the range
+  local dup_ids
+  dup_ids=$(jj duplicate "$range" 2>&1 | grep -oP '\bas \K\w+')
+
+  if [[ -z "$dup_ids" ]]; then
+    err "Failed to duplicate range. jj output:"
+    jj duplicate "$range" 2>&1
+    exit 1
+  fi
+
+  # Get the first duplicate (bottom of stack) — that's our squashed target
+  local first_dup
+  first_dup=$(echo "$dup_ids" | tail -1)
+
+  ok "Duplicated ${count} commits"
+
+  # Squash all duplicates into the first one (bottom-up)
+  info "Squashing duplicates into single review commit..."
+  local dup_list
+  dup_list=$(echo "$dup_ids" | head -n -1)
+  for id in $dup_list; do
+    jj squash --from "$id" --to "$first_dup" -m "" >/dev/null 2>&1
+    jj abandon "$id" >/dev/null 2>&1 || true
+  done
+
+  # Now we have one squashed duplicate — edit it
+  jj edit "$first_dup" >/dev/null 2>&1
+
+  create_brain "$last_id" "$first_dup"
+}
+
+# ── Create brain commit ────────────────────────────────────────────
+create_brain() {
+  local original_id="$1"
+  local dup_id="$2"
+
   jj edit "$dup_id" >/dev/null 2>&1
 
-  # Step 3: Insert brain commit before the duplicate
   local desc
-  desc=$(jj log -r "$change_id" -T 'description.first_line()' --no-graph 2>/dev/null | head -1)
+  desc=$(jj log -r "$original_id" -T 'description.first_line()' --no-graph 2>/dev/null | head -1)
   desc="${desc:-review}"
   local brain_msg="review: ${desc}"
 
   jj new --no-edit --insert-before @ -m "$brain_msg" >/dev/null 2>&1
 
-  # Get the brain commit ID (parent of current @)
   local brain_id
   brain_id=$(jj log -r '@-' -T 'change_id.short()' --no-graph 2>/dev/null | head -1)
 
@@ -87,7 +138,7 @@ setup() {
   echo "    jj-review --teardown --keep # clean up (keep brain, rebase to main)"
   echo ""
   echo -e "  Change IDs:  brain=${BOLD}${brain_id}${RESET}  duplicate=${BOLD}${dup_id}${RESET}"
-  echo -e "  Original:    ${resolved}"
+  echo -e "  Original:    ${original_id}"
 }
 
 # ── Teardown ────────────────────────────────────────────────────────
@@ -97,7 +148,6 @@ teardown() {
     keep_brain=true
   fi
 
-  # Find the review state: look for a "review: " commit followed by a duplicate
   local current_desc
   current_desc=$(jj log -r '@' -T 'description.first_line()' --no-graph 2>/dev/null | head -1)
 
@@ -105,7 +155,6 @@ teardown() {
 
   # Case 1: We're on the duplicate (review commit is parent)
   if [[ "$current_desc" != review:* ]]; then
-    # Check if parent is a brain commit
     local parent_desc
     parent_desc=$(jj log -r '@-' -T 'description.first_line()' --no-graph 2>/dev/null | head -1)
 
@@ -118,7 +167,7 @@ teardown() {
   # Case 2: We're on the brain commit (duplicate is child)
   if [[ -z "$brain_id" ]] && [[ "$current_desc" == review:* ]]; then
     brain_id=$(jj log -r '@' -T 'change_id.short()' --no-graph 2>/dev/null | head -1)
-    dup_id=$(jj log -r '@+' -T 'change_id.short()' --no-graph 2>/dev/null | head -1)
+    dup_id=$(jj log -r '@+' -T 'change_id.short()' --no-graph 2>&1 | grep -v 'Error' | head -1)
   fi
 
   if [[ -z "$brain_id" ]]; then
@@ -127,7 +176,6 @@ teardown() {
     exit 1
   fi
 
-  # Check if the duplicate has any remaining changes
   local dup_diff
   dup_diff=$(jj diff -s -r "$dup_id" 2>/dev/null || true)
   if [[ -n "$dup_diff" ]]; then
@@ -142,7 +190,6 @@ teardown() {
   fi
 
   if [[ "$keep_brain" == true ]]; then
-    # Rebase brain onto main, abandon duplicate
     info "Rebasing brain ${brain_id} onto main..."
     jj rebase -r "$brain_id" -d main >/dev/null 2>&1
     jj abandon "$dup_id" >/dev/null 2>&1
@@ -150,7 +197,6 @@ teardown() {
     echo ""
     echo -e "  Brain commit: ${BOLD}${brain_id}${RESET} (now on main)"
   else
-    # Abandon both
     info "Abandoning review session..."
     jj abandon "$dup_id" "$brain_id" >/dev/null 2>&1
     ok "Review session cleaned up (brain + duplicate abandoned)."
@@ -161,6 +207,7 @@ teardown() {
 if [[ $# -eq 0 ]]; then
   echo "Usage:"
   echo "  jj-review <change-id>       Set up brain review workflow"
+  echo "  jj-review <from>::<to>      Set up review for a range of commits"
   echo "  jj-review --teardown        Tear down (abandon all)"
   echo "  jj-review --teardown --keep Tear down (keep brain, rebase to main)"
   exit 0
@@ -173,6 +220,7 @@ case "${1:-}" in
   --help|-h)
     echo "Usage:"
     echo "  jj-review <change-id>       Set up brain review workflow"
+    echo "  jj-review <from>::<to>      Set up review for a range of commits"
     echo "  jj-review --teardown        Tear down (abandon all)"
     echo "  jj-review --teardown --keep Tear down (keep brain, rebase to main)"
     ;;
@@ -184,6 +232,12 @@ case "${1:-}" in
       err "Run 'jj-review --teardown' first to clean up."
       exit 1
     fi
-    setup "$1"
+
+    # Route: range vs single
+    if [[ "$1" == *"::"* ]]; then
+      setup_range "$1"
+    else
+      setup_single "$1"
+    fi
     ;;
 esac
