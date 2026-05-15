@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# jj-commit: Generate a commit message from jj diff using pi's CHEAP_MODEL,
-# then create a jj commit with it.
+# jj-describe: Generate a commit message from jj diff using pi's CHEAP_MODEL,
+# then update the current (or specified) revision's description with it.
 #
-# Standalone — handles its own secret resolution and pre-commit hook,
-# so it doesn't depend on interactive-shell wrappers from bashrc.
+# Standalone — handles its own secret resolution so pi has API keys,
+# without depending on interactive-shell wrappers from bashrc.
 set -euo pipefail
 
 # ── Bashrc integration ──────────────────────────────────────────────
@@ -20,22 +20,20 @@ if [[ -f ~/.bashrc.d/pi_models ]]; then
   source ~/.bashrc.d/pi_models
 fi
 
-# ── Pre-commit hook (same logic as the jj() shell wrapper in alias) ─
-_run_pre_commit() {
-  local hooks_dir
-  hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null || echo '.git/hooks')"
-  if [[ -f "$hooks_dir/pre-commit" ]]; then
-    "$hooks_dir/pre-commit" || exit 1
-  fi
-}
+# ── Parse revision ──────────────────────────────────────────────────
+revision="${1:-@}"
 
 # ── Diff ────────────────────────────────────────────────────────────
-diff=$(jj diff 2>/dev/null || true)
+diff=$(jj diff -r "$revision" 2>/dev/null || true)
 
 if [[ -z "$diff" ]]; then
-  echo "No changes to commit." >&2
+  echo "No diff found for revision $revision." >&2
   exit 1
 fi
+
+# Show current description before changing
+current_desc=$(jj log -r "$revision" --no-graph -T 'description' 2>/dev/null || echo "unknown")
+echo "Current description: $(echo "$current_desc" | head -c 80)" >&2
 
 # ── Generate commit message ─────────────────────────────────────────
 conventional_prefix='Output ONLY a conventional commit message for the following diff.
@@ -97,6 +95,5 @@ if [[ -z "$commit_msg" ]]; then
   echo "Using fallback commit message: $commit_msg" >&2
 fi
 
-# ── Commit ──────────────────────────────────────────────────────────
-_run_pre_commit
-jj commit -m "$commit_msg"
+echo "New description: $commit_msg" >&2
+jj describe -r "$revision" -m "$commit_msg"
