@@ -97,35 +97,11 @@ Rules age out. When editing an existing rule file, scan it for entries that have
 
 ### Generate the commit message
 
-Use the Pi LLM to generate a conventional commit message from the diff:
-
-```bash
-jj diff | pi -p --no-tools --no-extensions --no-skills --no-session --no-prompt-templates --thinking off "IMPORTANT: Your output is used directly as the git commit message.
-You MUST use Conventional Commits format: <type>(<scope>): <description>
-
-Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-Do NOT wrap output in code fences. Output ONLY the commit message, nothing else.
-
-$(jj diff)"
-```
-
-If the CHEAP_MODEL env var is set, pass `--model "$CHEAP_MODEL"` to pi.
+Generate a conventional commit message from the diff yourself (you are an LLM — don't shell out to another one). Read `jj diff` and produce a one-line message in `<type>(<scope>): <description>` format.
 
 ### Fallback
 
-If the LLM fails to generate a message, use a simple fallback:
-
-```bash
-files_changed=$(jj diff --stat | wc -l)
-if [[ $files_changed -eq 0 ]]; then
-  echo "chore: update"
-elif [[ $files_changed -eq 1 ]]; then
-  filename=$(jj diff --stat | head -1 | awk '{print $1}')
-  echo "chore: update $filename"
-else
-  echo "chore: update $files_changed files"
-fi
-```
+If the diff is empty, use `chore: update`. Otherwise generate the message as described above.
 
 ### Commit
 
