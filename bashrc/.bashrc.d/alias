@@ -7,3 +7,16 @@ alias .....="cd ../../../.."
 
 # Homebrew package tracking (brew-sync is stowed to ~/.local/bin/)
 alias brewfile="nvim ~/dotfiles/homebrew/Brewfile"
+
+# Run pre-commit hook before jj commit (jj ignores git hooks natively)
+# Handles vanilla .git/hooks/, husky v9's core.hooksPath, and jj's own aliases (ci, com)
+jj() {
+  if [[ "$1" == @(commit|ci) ]]; then
+    local hooks_dir
+    hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null || echo '.git/hooks')"
+    if [[ -f "$hooks_dir/pre-commit" ]]; then
+      "$hooks_dir/pre-commit" || return 1
+    fi
+  fi
+  command jj "$@"
+}
