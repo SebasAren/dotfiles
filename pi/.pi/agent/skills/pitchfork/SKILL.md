@@ -5,13 +5,23 @@ description: Query code quality status from pitchfork background watchers (tests
 
 # Pitchfork Quality Watchers
 
-Pitchfork manages background daemons that run code quality checks on file change. Use it to check status instead of running `mise run` manually.
+Pitchfork manages background daemons that run code quality checks on file change. Use it to check status instead of running quality commands manually.
 
 ## When to Use This Skill
 
 - Checking if tests/lint/typecheck/format pass after making changes
 - Getting a quality report before committing
-- Any time you'd normally run `mise run pre-commit` or individual check tasks
+- Any time you'd normally run test/lint/typecheck commands manually
+
+## Discovering Daemons
+
+Daemons are defined per-project in `pitchfork.toml`. Before checking status, discover what's available:
+
+```bash
+pitchfork list
+```
+
+This shows all daemons, their status (running/stopped), and their health. You can also read `pitchfork.toml` in the project root to understand what each daemon checks.
 
 ## Quick Check
 
@@ -27,18 +37,6 @@ If logs seem stale, clear them and re-run:
 pitchfork logs --clear && pitchfork start --all
 ```
 
-## Available Daemons
-
-| Daemon | What it checks | When it re-runs |
-|--------|---------------|-----------------|
-| `vitest` | TypeScript tests (extensions) | On `.ts` changes in extensions |
-| `lint-ts` | ESLint on extensions | On `.ts` changes in extensions |
-| `lint-python` | Ruff on all Python | On `.py` changes |
-| `lint-lua` | Selene on Neovim config | On `.lua` changes in nvim/ |
-| `lint-shell` | Shellcheck on scripts | On shell script changes |
-| `typecheck` | TypeScript type checking | On `.ts` changes in extensions |
-| `format-check` | Prettier + StyLua + Ruff format | On `.ts`, `.lua`, `.py` changes |
-
 ## Commands
 
 ```bash
@@ -49,14 +47,13 @@ pitchfork start --all
 pitchfork list
 
 # Read latest output from a specific daemon
-pitchfork logs vitest --raw -n 50
-pitchfork logs lint-ts --raw -n 20
+pitchfork logs <daemon> --raw -n 50
 
 # Read all logs at once
 pitchfork logs --raw -n 30
 
 # Restart a daemon (e.g. if results seem stale)
-pitchfork restart vitest
+pitchfork restart <daemon>
 
 # Stop all
 pitchfork stop --all
@@ -67,11 +64,10 @@ pitchfork stop --all
 **Empty output = clean.** If `pitchfork logs <daemon> --raw --since 5min` shows nothing, the last run passed with no issues.
 
 If output exists, read the raw logs directly:
-- **vitest**: Look for `FAIL` / `PASS` summary at the bottom of the output
-- **eslint**: Exits with error count, issues listed by file
-- **ruff**: Lists violations with file:line:col format
-- **typecheck**: `error TS...` lines indicate type errors
-- **format-check**: Lists files that need formatting
+- **Test runners**: Look for `FAIL` / `PASS` summary at the bottom
+- **Linters**: Exits with error count, issues listed by file
+- **Type checkers**: `error TS...` or similar error lines
+- **Format checkers**: Lists files that need formatting
 
 If a daemon isn't running, start it: `pitchfork start <name>`. If results seem stale, restart it: `pitchfork restart <name>`.
 
