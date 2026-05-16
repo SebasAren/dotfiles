@@ -77,6 +77,16 @@
         "diff": "^9.0.0",
       },
     },
+    "git-hooks": {
+      "name": "@pi-ext/git-hooks",
+      "version": "1.0.0",
+      "dependencies": {
+        "@pi-ext/shared": "workspace:*",
+      },
+      "peerDependencies": {
+        "@mariozechner/pi-coding-agent": "^0.70.6 || ^0.72.0 || ^0.73.0",
+      },
+    },
     "librarian": {
       "name": "@pi-ext/librarian",
       "version": "1.0.0",
@@ -384,6 +394,8 @@
     "@pi-ext/extract-share": ["@pi-ext/extract-share@workspace:extract-share"],
 
     "@pi-ext/fuzzy-edit": ["@pi-ext/fuzzy-edit@workspace:fuzzy-edit"],
+
+    "@pi-ext/git-hooks": ["@pi-ext/git-hooks@workspace:git-hooks"],
 
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 

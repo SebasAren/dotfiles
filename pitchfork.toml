@@ -1,0 +1,61 @@
+# Code quality watchers for SebbaFlow
+# Usage: pitchfork start --all
+# Check status: pitchfork logs <name> --raw -n 30
+
+# --- Test runners (native watch mode) ---
+# No pitchfork watch — bun test --watch has its own file watcher.
+# Pitchfork's watch would restart the whole daemon on every .ts change,
+# creating a feedback loop.
+
+[daemons.test]
+run = "bun test --watch --parallel --path-ignore-patterns='**/integration.test.ts'"
+dir = "pi/.pi/agent/extensions"
+
+# --- Linters (re-run on change) ---
+
+[daemons.lint-ts]
+run = "bunx eslint . --cache"
+dir = "pi/.pi/agent/extensions"
+watch = ["**/*.ts"]
+
+[daemons.lint-python]
+run = "ruff check ."
+dir = "."
+watch = ["**/*.py"]
+
+# Disabled: luacheck 1.2.0 is incompatible with Lua 5.5 (const variable assignment error).
+# The mise lint-lua task also masks this with || true. Re-enable when luacheck
+# releases a Lua 5.5-compatible update or we pin a separate Lua 5.4 for it.
+#
+# [daemons.lint-lua]
+# run = "luacheck --codes --no-color --config nvim/.config/nvim/.luacheckrc nvim/.config/nvim/lua/"
+# watch = ["nvim/.config/nvim/**/*.lua"]
+
+[daemons.lint-shell]
+run = "shellcheck -e SC1090 -e SC1091 -e SC2155 -e SC2162 -e SC2054 bashrc/.bashrc.d/alias bashrc/.bashrc.d/secrets .githooks/pre-commit .mise/tasks/*"
+watch = [
+    "bashrc/.bashrc.d/*",
+    ".githooks/*",
+    ".mise/tasks/*",
+]
+
+# --- Type checking (re-run on change) ---
+
+[daemons.typecheck]
+run = "bash -c 'for dir in */; do [ -f \"$dir/tsconfig.json\" ] && echo \"=== $dir ===\" && bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done'"
+dir = "pi/.pi/agent/extensions"
+watch = ["**/*.ts"]
+
+# --- Format check (re-run on change) ---
+# All paths kept relative to project root (no ../../) to avoid widening
+# the file watch tree beyond the repo, which was causing the supervisor
+# to spin at 100% CPU scanning all /proc/*/stat entries.
+
+[daemons.format-check]
+run = "bash -c 'prettier --check \"pi/.pi/agent/extensions/**/*.{ts,tsx}\" 2>/dev/null; stylua --check nvim/.config/nvim/ 2>/dev/null; ruff format --check . 2>/dev/null'"
+dir = "."
+watch = [
+    "pi/.pi/agent/extensions/**/*.ts",
+    "nvim/.config/nvim/**/*.lua",
+    "**/*.py",
+]

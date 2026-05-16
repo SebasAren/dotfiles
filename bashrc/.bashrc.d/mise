@@ -1,5 +1,7 @@
 #!/bin/bash
 eval "$(mise activate bash)"
 eval "$(fnox activate bash)"
+eval "$(pitchfork activate bash)"
+
 FNOX_AGE_KEY=$(cat ~/.config/fnox/age.txt | grep "AGE-SECRET-KEY")
 export FNOX_AGE_KEY
