@@ -15,8 +15,16 @@ Pitchfork manages background daemons that run code quality checks on file change
 
 ## Quick Check
 
+Always use `--since` to avoid stale logs from previous runs:
+
 ```bash
-pitchfork logs <daemon> --raw -n 50
+pitchfork logs <daemon> --raw --since 5min
+```
+
+If logs seem stale, clear them and re-run:
+
+```bash
+pitchfork logs --clear && pitchfork start --all
 ```
 
 ## Available Daemons
@@ -26,7 +34,7 @@ pitchfork logs <daemon> --raw -n 50
 | `vitest` | TypeScript tests (extensions) | On `.ts` changes in extensions |
 | `lint-ts` | ESLint on extensions | On `.ts` changes in extensions |
 | `lint-python` | Ruff on all Python | On `.py` changes |
-| `lint-lua` | Luacheck on Neovim config | On `.lua` changes in nvim/ |
+| `lint-lua` | Selene on Neovim config | On `.lua` changes in nvim/ |
 | `lint-shell` | Shellcheck on scripts | On shell script changes |
 | `typecheck` | TypeScript type checking | On `.ts` changes in extensions |
 | `format-check` | Prettier + StyLua + Ruff format | On `.ts`, `.lua`, `.py` changes |
@@ -56,7 +64,9 @@ pitchfork stop --all
 
 ## Interpreting Output
 
-Read the raw logs and interpret them directly:
+**Empty output = clean.** If `pitchfork logs <daemon> --raw --since 5min` shows nothing, the last run passed with no issues.
+
+If output exists, read the raw logs directly:
 - **vitest**: Look for `FAIL` / `PASS` summary at the bottom of the output
 - **eslint**: Exits with error count, issues listed by file
 - **ruff**: Lists violations with file:line:col format
@@ -68,7 +78,15 @@ If a daemon isn't running, start it: `pitchfork start <name>`. If results seem s
 ## Workflow
 
 1. Make changes to files
-2. Check quality: `pitchfork logs <daemon> --raw -n 50`
+2. Check quality: `pitchfork logs <daemon> --raw --since 5min`
 3. If issues found, fix them
 4. Re-check after fix (watchers auto re-run on file change)
 5. Commit when green
+
+## Avoiding Stale Logs
+
+Pitchfork logs are append-only — old errors persist even after fixes. To get clean feedback:
+
+- **Always use `--since`** (e.g. `--since 5min`, `--since 1h`) to filter to recent runs
+- **Clear history** with `pitchfork logs --clear` before starting a fresh session
+- **Empty output = success** — no lines means the daemon ran clean

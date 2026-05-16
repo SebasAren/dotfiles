@@ -14,25 +14,24 @@ dir = "pi/.pi/agent/extensions"
 # --- Linters (re-run on change) ---
 
 [daemons.lint-ts]
-run = "bunx eslint . --cache"
+run = "bash -c 'bunx eslint . --cache && echo ✓ lint-ts passed'"
 dir = "pi/.pi/agent/extensions"
 watch = ["**/*.ts"]
 
 [daemons.lint-python]
-run = "ruff check ."
+run = "bash -c 'ruff check . && echo ✓ lint-python passed'"
 dir = "."
 watch = ["**/*.py"]
 
 # Disabled: luacheck 1.2.0 is incompatible with Lua 5.5 (const variable assignment error).
-# The mise lint-lua task also masks this with || true. Re-enable when luacheck
-# releases a Lua 5.5-compatible update or we pin a separate Lua 5.4 for it.
-#
-# [daemons.lint-lua]
-# run = "luacheck --codes --no-color --config nvim/.config/nvim/.luacheckrc nvim/.config/nvim/lua/"
-# watch = ["nvim/.config/nvim/**/*.lua"]
+# Using selene (Rust-based Lua linter) instead.
+
+[daemons.lint-lua]
+run = "bash -c 'selene --config nvim/.config/nvim/selene.toml nvim/.config/nvim/lua/ && echo ✓ lint-lua passed'"
+watch = ["nvim/.config/nvim/**/*.lua"]
 
 [daemons.lint-shell]
-run = "shellcheck -e SC1090 -e SC1091 -e SC2155 -e SC2162 -e SC2054 bashrc/.bashrc.d/alias bashrc/.bashrc.d/secrets .githooks/pre-commit .mise/tasks/*"
+run = "bash -c 'shellcheck -e SC1090 -e SC1091 -e SC2155 -e SC2162 -e SC2054 bashrc/.bashrc.d/alias bashrc/.bashrc.d/secrets .githooks/pre-commit .mise/tasks/* && echo ✓ lint-shell passed'"
 watch = [
     "bashrc/.bashrc.d/*",
     ".githooks/*",
@@ -42,7 +41,7 @@ watch = [
 # --- Type checking (re-run on change) ---
 
 [daemons.typecheck]
-run = "bash -c 'for dir in */; do [ -f \"$dir/tsconfig.json\" ] && echo \"=== $dir ===\" && bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done'"
+run = "bash -c 'for dir in */; do [ -f \"$dir/tsconfig.json\" ] && echo \"=== $dir ===\" && bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done && echo ✓ typecheck passed'"
 dir = "pi/.pi/agent/extensions"
 watch = ["**/*.ts"]
 
@@ -52,7 +51,7 @@ watch = ["**/*.ts"]
 # to spin at 100% CPU scanning all /proc/*/stat entries.
 
 [daemons.format-check]
-run = "bash -c 'prettier --check \"pi/.pi/agent/extensions/**/*.{ts,tsx}\" 2>/dev/null; stylua --check nvim/.config/nvim/ 2>/dev/null; ruff format --check . 2>/dev/null'"
+run = "bash -c 'prettier --check \"pi/.pi/agent/extensions/**/*.{ts,tsx}\" 2>/dev/null; stylua --check nvim/.config/nvim/ 2>/dev/null; ruff format --check . 2>/dev/null; echo ✓ format-check passed'"
 dir = "."
 watch = [
     "pi/.pi/agent/extensions/**/*.ts",

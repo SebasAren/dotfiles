@@ -1,0 +1,5 @@
+std = "neovim"
+
+[lints]
+mixed_table = "allow"
+bad_string_escape = "allow"
