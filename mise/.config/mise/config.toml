@@ -10,6 +10,11 @@ pi = "0.75.3"
 pitchfork = "latest"
 tree-sitter = "latest"
 uv = "latest"
+prettier = "latest"
+"aqua:JohnnyMorganz/StyLua" = "latest"
+"aqua:astral-sh/ruff" = "latest"
+taplo = "latest"
+"aqua:mvdan/sh" = "latest"
 
 [settings]
 experimental = true
