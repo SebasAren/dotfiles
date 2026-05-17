@@ -5,7 +5,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "questionnaire.ts"],
+    ignores: ["**/node_modules/**", "**/dist/**", "questionnaire.ts", "herdr-agent-state.ts"],
   },
   // Source files — full type-checked rules + strict rules
   {
