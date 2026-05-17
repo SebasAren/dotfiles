@@ -9,21 +9,37 @@ default-command = "log"
 "trunk()" = "main@origin"
 
 [fix.tools.stylua]
-command = ["stylua", "--respect-ignores"]
-patterns = ["*.lua"]
+command = ["stylua", "--respect-ignores", "-"]
+patterns = ["glob:**/*.lua"]
 
 [fix.tools.ruff-format]
-command = ["ruff", "format"]
-patterns = ["*.py"]
+command = ["ruff", "format", "-"]
+patterns = ["glob:**/*.py"]
 
 [fix.tools.ruff-check]
-command = ["ruff", "check", "--fix"]
-patterns = ["*.py"]
+command = ["ruff", "check", "--fix", "-"]
+patterns = ["glob:**/*.py"]
 
 [fix.tools.prettier]
-command = ["prettier", "--write"]
-patterns = ["*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.yaml", "*.yml", "*.md"]
+command = ["prettier", "--stdin-filepath=$path"]
+patterns = [
+  "glob:**/*.ts",
+  "glob:**/*.tsx",
+  "glob:**/*.js",
+  "glob:**/*.jsx",
+  "glob:**/*.mjs",
+  "glob:**/*.json",
+  "glob:**/*.yaml",
+  "glob:**/*.yml",
+  "glob:**/*.md",
+  "glob:**/*.css",
+  "glob:**/*.html",
+]
 
 [fix.tools.shfmt]
-command = ["shfmt", "-w"]
-patterns = ["*.sh", "*.bash"]
+command = ["shfmt"]
+patterns = ["glob:**/*.sh", "glob:**/*.bash"]
+
+[fix.tools.taplo]
+command = ["taplo", "format", "-"]
+patterns = ["glob:**/*.toml"]

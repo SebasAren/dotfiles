@@ -44,7 +44,7 @@ Create a structured implementation plan. The plan MUST follow strict TDD discipl
 1. **Understand the request.** Ask clarifying questions if the scope is ambiguous. Don't plan blindly.
 2. **Identify test framework.** Note what testing tools are available (look at `package.json`, `pyproject.toml`, Makefile, or ask).
 3. **Explore the codebase.** Use the `explore` tool to understand relevant context. Build the explore query from the user's description.
-4. **Create a design artifact.** Before drafting steps, create a design artifact that surfaces what the agent found, what it plans to do, and what it doesn't understand. This is the human's opportunity to correct misconceptions *before* code is written. Run:
+4. **Create a design artifact.** Before drafting steps, create a design artifact that surfaces what the agent found, what it plans to do, and what it doesn't understand. This is the human's opportunity to correct misconceptions _before_ code is written. Run:
 
 ```bash
 tdd-plan create <slug> --title <title> --steps '[{"name":"Placeholder","red":"tbd","green":"tbd","refactor":""}]' --context <context> --architecture <architecture>
@@ -66,7 +66,7 @@ Then present the design artifact to the user for review:
 
 If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present.
 
-If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present. The goal is to give the human every opportunity to correct the agent's understanding *before* planning.
+If the user selects **needs-changes**, ask what to correct, update the design with `tdd-plan design <slug> --current-state ...` etc., and re-present. The goal is to give the human every opportunity to correct the agent's understanding _before_ planning.
 
 5. **Draft the plan.** With the corrected design artifact in hand, replace the placeholder steps with the real RED/GREEN/REFACTOR steps. Follow the output format below.
 6. **Review for completeness.** Check that every piece of functionality has a corresponding test.
@@ -106,6 +106,7 @@ REFACTOR: Extract token validation into reusable helper
 ```
 
 Rules:
+
 - `STEP N:` starts a new step (N is optional, auto-incremented)
 - `RED:` / `GREEN:` / `REFACTOR:` labels the phase description
 - `RED: none` declares a **structural step** — no failing condition, just implement and validate. Use for schema changes, config updates, scaffolding, or any change that is structural rather than behavioral.
@@ -264,14 +265,15 @@ Execute an existing plan step-by-step using jj for version control. Each step ge
 
 If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
 
-If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop.
-3. **Determine test command.** Check how to run tests in the project:
-   - **Node.js:** `package.json` `"test"` script. Common: `npm test`, `npx vitest`, `npx jest`.
-   - **Python:** `pyproject.toml` or `setup.cfg`. Common: `pytest`, `python -m pytest`.
-   - **Go:** `go test ./...`
-   - **Rust:** `cargo test`
-   - **Ruby:** `bundle exec rspec`
-   - **Other:** Look at Makefile, justfile, or ask the user.
+If **view**, run `tdd-plan show <slug>` and ask again. If **cancel**, stop. 3. **Determine test command.** Check how to run tests in the project:
+
+- **Node.js:** `package.json` `"test"` script. Common: `npm test`, `npx vitest`, `npx jest`.
+- **Python:** `pyproject.toml` or `setup.cfg`. Common: `pytest`, `python -m pytest`.
+- **Go:** `go test ./...`
+- **Rust:** `cargo test`
+- **Ruby:** `bundle exec rspec`
+- **Other:** Look at Makefile, justfile, or ask the user.
+
 4. If you cannot determine the test command, ask before proceeding.
 5. **Explore the codebase.** Before writing any code, use the `explore` tool to understand the relevant codebase context. Build the explore query from the plan's context and architecture fields. For example: `explore({ query: "Find existing auth middleware, JWT handling, and user model in this project" })`. This exploration is implementation-focused (finding exact files, functions, imports to modify) and is separate from the design-phase exploration done during Planning. This establishes a shared understanding and becomes the session tree kickoff point.
 6. **Set the kickoff point.** After exploration completes, call the `tdd-set-kickoff` tool with the plan slug: `tdd-set-kickoff({ slug: "<slug>" })`. Do not begin Step 1 (🔴 RED) until this is done. This labels the current session tree position as the TDD kickoff checkpoint. Call it exactly once per plan, only after the initial exploration. Never call `tdd-set-kickoff` again for the same plan. Each subsequent TDD step can then branch fresh from this single kickoff point.
@@ -283,6 +285,7 @@ Before starting a step, the user may choose to branch fresh from the kickoff poi
 If the user wants to start fresh, they can say so naturally (e.g., "fresh branch from kickoff") and you will send `/kickoff` as a user message. If there are multiple active plans, you may send `/kickoff <slug>` or `/tdd-go-kickoff <slug>` instead. This navigates the session tree to the **existing** kickoff checkpoint (set in step 6) and creates a new branch. The abandoned branch is summarized automatically. Use `/kickoff` (not `tdd-set-kickoff`) to return to the single kickoff point.
 
 Starting fresh is especially useful when:
+
 - A previous step's implementation is cluttering context
 - You want to approach the step with a clean mental model
 - The step is independent of previous step changes
@@ -309,9 +312,10 @@ If the step declares `RED: none`, skip directly to implementation:
 - Run the validation command specified in GREEN (schema generation, compilation, typecheck, etc.) to **confirm it passes**.
 - If validation fails, fix the implementation and re-run. Do not proceed until validation passes.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
-- **Commit:** Generate a conventional commit message and commit the revision:
+- **Commit:** Run `jj fix` to auto-format and lint-fix all changed files, then generate a conventional commit message and commit the revision:
 
 ```bash
+jj fix
 jj commit -m "<conventional commit message>"
 ```
 
@@ -338,9 +342,10 @@ For behavioral steps, establish the failing condition:
 - If the validation still fails, iterate on the implementation — but stay minimal. Do not add extra features.
 - **Update progress:** `tdd-plan phase <slug> <step> green done`
 - Output the passing result for the user to see.
-- **Commit:** Generate a conventional commit message and commit the revision. A bash shell wrapper (`.bashrc.d/alias`) intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/` (via `core.hooksPath`):
+- **Commit:** Run `jj fix` to auto-format and lint-fix all changed files, then generate a conventional commit message and commit the revision. A bash shell wrapper (`.bashrc.d/alias`) intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/` (via `core.hooksPath`):
 
 ```bash
+jj fix
 jj commit -m "<conventional commit message>"
 ```
 
@@ -374,6 +379,7 @@ Show:
 3. The jj revision that was created.
 
 **Then stop and ask the user what to do next.** The user will naturally say things like:
+
 - "Continue to next step" → proceed to the next step
 - "Fresh branch from kickoff" → send `/kickoff`, then proceed (or `/kickoff <slug>` if multiple plans)
 - "I want to make some changes" → address feedback, then ask again
@@ -425,7 +431,7 @@ If **archive**, run `tdd-plan archive <slug>`.
 6. **Stop on unexpected failure.** If a validation fails in an unexpected way (compilation error, wrong test framework, missing dependency), stop and explain. Ask the user how to proceed.
 7. **One step at a time.** Complete the full Red-Green-Refactor cycle for one step before starting the next. Never work on two steps simultaneously.
 8. **Respect the plan.** If you discover the plan is wrong or incomplete, pause and discuss with the user rather than silently deviating.
-9. **Commit after GREEN.** Commit via `jj commit -m "<message>"` after GREEN — the bash shell wrapper intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/`. After REFACTOR, amend the description if significant changes were made.
+9. **Run `jj fix` before commit.** Run `jj fix` to auto-format and lint-fix all changed files, then commit via `jj commit -m "<message>"` after GREEN. The bash shell wrapper intercepts `jj commit`/`jj ci` and runs the pre-commit hook from `.githooks/`. After REFACTOR, amend the description if significant changes were made.
 10. **Single kickoff point only.** Call `tdd-set-kickoff` exactly once per plan, immediately after the exploration phase. Never call it again. Use `/kickoff` (or `/tdd-go-kickoff <slug>`) to navigate back to this single kickoff point for fresh steps, but never create new checkpoints.
 11. **Kickoff gate.** Never begin Step 1 (🔴 RED) without first confirming the kickoff point is set. Do not write any test or implementation code until the kickoff is confirmed.
 12. **`jj new` at step start.** Always create a new jj revision before starting any RED/GREEN work. This ensures each step is a separate revision in the stack.

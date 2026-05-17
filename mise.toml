@@ -12,6 +12,9 @@ lua-language-server = "latest"
 "aqua:koalaman/shellcheck" = "latest"
 "aqua:mvdan/sh" = "latest"
 
+# TOML formatting
+taplo = "latest"
+
 # TypeScript/Node (for tsc, bun, prettier)
 bun = "latest"
 node = "latest"
