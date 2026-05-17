@@ -73,6 +73,7 @@ async function createExploreSession(
     systemPromptOverride: () => systemPrompt,
     // Skip extensions, skills, prompts — not needed for explore
     additionalExtensionPaths: [],
+    noExtensions: true,
   });
   await loader.reload();
 

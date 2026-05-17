@@ -18,13 +18,11 @@ auto = ["start", "stop"]
 run = "bash -c 'bunx eslint . --cache && echo ✓ lint-ts passed'"
 dir = "pi/.pi/agent/extensions"
 watch = ["**/*.ts"]
-auto = ["start", "stop"]
 
 [daemons.lint-python]
 run = "bash -c 'ruff check . && echo ✓ lint-python passed'"
 dir = "."
 watch = ["**/*.py"]
-auto = ["start", "stop"]
 
 # Disabled: luacheck 1.2.0 is incompatible with Lua 5.5 (const variable assignment error).
 # Using selene (Rust-based Lua linter) instead.
@@ -32,7 +30,6 @@ auto = ["start", "stop"]
 [daemons.lint-lua]
 run = "bash -c 'selene --config nvim/.config/nvim/selene.toml nvim/.config/nvim/lua/ && echo ✓ lint-lua passed'"
 watch = ["nvim/.config/nvim/**/*.lua"]
-auto = ["start", "stop"]
 
 [daemons.lint-shell]
 run = "bash -c 'shellcheck -e SC1090 -e SC1091 -e SC2155 -e SC2162 -e SC2054 bashrc/.bashrc.d/alias bashrc/.bashrc.d/secrets .githooks/pre-commit .mise/tasks/* && echo ✓ lint-shell passed'"
@@ -41,7 +38,6 @@ watch = [
     ".githooks/*",
     ".mise/tasks/*",
 ]
-auto = ["start", "stop"]
 
 # --- Type checking (re-run on change) ---
 
@@ -49,7 +45,6 @@ auto = ["start", "stop"]
 run = "bash -c 'for dir in */; do [ -f \"$dir/tsconfig.json\" ] && echo \"=== $dir ===\" && bunx tsc --noEmit -p \"$dir/tsconfig.json\"; done && echo ✓ typecheck passed'"
 dir = "pi/.pi/agent/extensions"
 watch = ["**/*.ts"]
-auto = ["start", "stop"]
 
 # --- Format check (re-run on change) ---
 # All paths kept relative to project root (no ../../) to avoid widening
@@ -64,4 +59,3 @@ watch = [
     "nvim/.config/nvim/**/*.lua",
     "**/*.py",
 ]
-auto = ["start", "stop"]
