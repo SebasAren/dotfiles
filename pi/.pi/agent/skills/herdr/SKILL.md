@@ -182,21 +182,18 @@ herdr wait agent-status 1-1 --status idle --timeout 60000
 
 1. **Wrong status for interactive agents:** `--status done` on `pi` will time out — `pi` never exits, it transitions `working` → `idle` after each task, never reaching `done`.
 
-2. **`idle` is not terminal for interactive agents:** `pi` goes `idle` on *every* subtask boundary (after explore calls, between file reads), not just at final completion. `wait agent-status --status idle` will trigger prematurely on intermediate steps, not when the full response is ready.
+2. **`idle` is now terminal for interactive agents:** `pi` previously went `idle` on *every* subtask boundary because extensions (like `herdr-agent-state.ts`) leaked into subagent sessions and reported false state transitions. This root cause is now fixed — subagent sessions no longer send state changes to herdr. `wait agent-status --status idle` now fires only when the main agent truly finishes its full response.
 
 3. **Race on already-idle agent:** If the agent is already `idle` when you call `wait agent-status --status idle`, the wait will hang because it only fires on a *transition*.
 
-   **Practical pattern for interactive agents:** Use `wait agent-status --status idle` + read + loop:
+   **Practical pattern for interactive agents (post-fix):** With the subtask false-idle bug fixed, a single `wait agent-status --status idle` followed by `pane read` is now sufficient:
 
    ```bash
-   herdr wait agent-status 1-1 --status idle --timeout 300000
-   herdr pane read 1-1 --source recent --lines 5
-   # if still mid-response, wait for next idle and re-read
    herdr wait agent-status 1-1 --status idle --timeout 300000
    herdr pane read 1-1 --source recent --lines 100
    ```
 
-   There's no structured end-of-response marker in pi's output — the status bar appears both between subtasks and at the end. `wait output` can't distinguish them, so the loop pattern is the most reliable approach.
+   If the agent was already idle when you started waiting (race condition — `wait agent-status` is transition-based, not snapshot-based), check `pane list` first to confirm the current state, or set a short initial timeout as a guard.
 
 ## send text or keys to a pane
 
@@ -315,10 +312,9 @@ NEW_PANE=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pa
 herdr pane run "$NEW_PANE" "pi"
 herdr wait output "$NEW_PANE" --match "pi v" --timeout 30000
 herdr pane run "$NEW_PANE" "explore the test setup in src/"
-# First idle fires when pi pauses between subtasks (explore calls finished)
+# Wait for pi to finish the full response (subtask false-idle bug is fixed)
 herdr wait agent-status "$NEW_PANE" --status idle --timeout 300000
 herdr pane read "$NEW_PANE" --source recent --lines 100
-# If the response looks incomplete, loop: wait idle again, then re-read
 ```
 
 ### spawn a batch agent (claude) and give it a task
@@ -334,15 +330,14 @@ herdr pane read 1-3 --source recent --lines 100
 
 ### coordinate with another agent (interactive, e.g. pi)
 
-Interactive agents like pi go `idle` on every subtask boundary — `wait agent-status --status idle` will trigger when explore subagents finish, not only when the full response is ready. The practical pattern is to wait for idle, read the pane, and re-wait if the response is still incomplete:
+With the subtask false-idle bug fixed, `wait agent-status --status idle` now fires only when pi's main agent truly finishes its full response. The simple pattern is reliable:
 
 ```bash
 herdr wait agent-status 1-1 --status idle --timeout 120000
 herdr pane read 1-1 --source recent --lines 100
-# check if response is complete; if not, loop back to wait idle again
 ```
 
-Note: pi has **no structured end-of-response marker** — the status bar appears both between subtasks and at the end. `wait output` can't reliably distinguish terminal from intermediate output. The safest approach is `wait agent-status --status idle` + read + loop.
+If the agent was already idle when the wait started (race condition — `wait agent-status` is transition-based, not snapshot-based), check `pane list` first to confirm the current state, or use a short initial timeout as a guard.
 
 ### coordinate with another agent (batch, e.g. claude script)
 
@@ -362,9 +357,9 @@ herdr pane read 1-1 --source recent --lines 100
 - use `pane read` for current output that already exists. use `wait output` for future output you expect next.
 - `wait output` works on **any** pane (servers, agents, shells). `wait agent-status` only works on panes detected as agents.
 - `wait agent-status` watches for a **status transition**, not the current state. If the agent is already in the target state, the wait will hang — check first with `pane list` or use the loop pattern below.
-- `wait agent-status --status idle` on interactive agents like `pi` triggers on **every subtask boundary** (explore calls finish, file reads complete), not just final completion. This is the only available signal — after it fires, read the pane and loop if the response is still incomplete.
+- `wait agent-status --status idle` on interactive agents like `pi` now fires **only when the main agent finishes its full response** (subtask false-idle bug fixed). This is the reliable signal for completion — no loop needed.
 - `wait agent-status --status done` is only correct for batch agents (scripts that invoke `claude`, run a test suite, and terminate).
-- pi has **no structured end-of-response marker** — the status bar appears both between subtasks and at the end. `wait output` can't distinguish them, so the `wait agent-status --status idle` + read + loop pattern is the most reliable approach for interactive agents.
+- pi has **no structured end-of-response marker**, but `wait agent-status --status idle` now reliably fires only at full response completion (false-idle bug fixed). A single wait + read is sufficient.
 - pi's startup banner does not use `❯`, `>`, `▌`, or any single-character prompt — it prints a multi-line banner ending with a status bar. To wait for pi to be ready, match on `"pi v"` (lowercase, appears early) or `"[Skills]"` (appears after all rules and context are loaded).
 - `--no-focus` on split, tab create, and workspace create keeps your current terminal context focused.
 - without `--label`, workspace create keeps cwd-based naming and tab create keeps numbered naming.
