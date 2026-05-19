@@ -3,7 +3,11 @@
  */
 
 import Exa from "exa-js";
-import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, truncateHead } from "@earendil-works/pi-coding-agent";
+import {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_LINES,
+  truncateHead,
+} from "@earendil-works/pi-coding-agent";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
