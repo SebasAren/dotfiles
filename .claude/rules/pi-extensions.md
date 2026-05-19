@@ -27,7 +27,7 @@ globs:
 - **`renderResult` callback `result` cast**: The `result` parameter is typed as `AgentToolResult<unknown>` because the SDK's `registerTool` generic parameter `TDetails` defaults to `unknown`. When passing to a typed render function, use `result as unknown as Parameters<typeof renderFn>[0]` (e.g. `renderSearchResult(result as unknown as Parameters<typeof renderSearchResult>[0], state, theme)`). This avoids `any`-typed casts and prevents `@typescript-eslint/no-unsafe-*` lint violations.
 - **`@types/bun` required for `tsc`**: Add `"types": ["node", "bun"]` to tsconfig.
 - **Exclude test files from tsconfig `include`**: Tests that mock modules can conflict with real types. Bun's test runner doesn't typecheck.
-- **Bun parser: trailing commas after class expressions in objects**: `class {}` as an object property value must have a trailing comma. Missing comma reports the error on the *next* property line, not where the comma is missing, making it hard to spot.
+- **Bun parser: trailing commas after class expressions in objects**: `class {}` as an object property value must have a trailing comma. Missing comma reports the error on the _next_ property line, not where the comma is missing, making it hard to spot.
 
 ## Extension Architecture
 
@@ -38,7 +38,7 @@ globs:
 - **OpenRouter image generation: `modalities: ["image"]` only**: Including `"text"` in the modalities array causes a 404 (`No endpoints found that support the requested output modalities: image, text`) because no OpenRouter endpoint supports both output modalities simultaneously.
 - **Subagent output formatting**: Explore/librarian subagent thinking is concatenated text, not markdown. Split on sentence boundaries (`. `, `: `, `! `, `? `), not newlines. Use `splitIntoSentences()` from `@pi-ext/shared`.
 - **Subagent thinking lacks spaces**: Output often has no space after periods. Use `\s*` (not `\s+`) after `[.!?]` in the regex.
-- **Librarian runs in-process via SDK**: The librarian creates an `AgentSession` with a `DefaultResourceLoader` that discovers extensions automatically (web_search, context7, etc.). No CLI flags needed — extensions are available by default.
+- **Subagent sessions must use `noExtensions: true`**: Loading extensions in a subagent session causes `herdr-agent-state.ts` to register its idle-detection hooks in the subagent, leaking false "idle" state transitions to herdr. Use `noExtensions: true` on `DefaultResourceLoader` and list needed extension paths explicitly in `additionalExtensionPaths` (e.g. `path.join(getAgentDir(), "extensions", "exa-search")`). See explore and librarian for the pattern.
 - **`parseSections` always creates ≥1 section**: The `splitIntoSentences` fallback only triggers for truly empty output, not "unstructured" text. Use `## Header` sections to exercise the section code path.
 - **`@earendil-works/pi-agent-core`**: Installed as a workspace dependency but considered internal. Prefer importing through `@earendil-works/pi-coding-agent` or create local type aliases if you need types not re-exported.
 - **`@pi-ext/shared` workspace dep for integration tests**: Even if production code doesn't import from shared, `integration.test.ts` needs `@pi-ext/shared/test-mocks`. Add `"@pi-ext/shared": "workspace:*"` to `package.json dependencies` or the test will throw `Cannot find module '@pi-ext/shared/test-mocks'`.
@@ -49,7 +49,6 @@ globs:
 - **`ctx.ui.custom()` with `{ overlay: true }` creates a focus-capturing modal, not inline content.** — Passive components (like raw `Image` from `pi-tui`) without a working `handleInput()` will freeze the terminal because the user cannot invoke `done()` to dismiss the overlay. For displaying images, return `{ type: "image", ... }` in the tool result content array instead — the framework renders it inline with proper protocol detection and fallback text, identical to the `read` tool.
 - **`ctx.ui.notify()` levels**: Only accepts `"error" | "warning" | "info"` — no `"success"` level exists.
 - **Double-token-cost anti-pattern**: `sendUserMessage` → parent model → tool → subagent processes conversation tokens twice with zero caching benefit. The serialized format differs from the cached prefix in the parent session (different content, different position), and the fresh subagent has no cache at all. For fire-and-forget operations, call `runSubagent` directly from the command handler instead.
-
 
 ## exa-js Typing
 

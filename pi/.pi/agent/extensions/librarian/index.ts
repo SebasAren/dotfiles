@@ -18,6 +18,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { CreateAgentSessionOptions } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import * as path from "node:path";
 
 import { resolveRealCwd, runSubagent, getModel, startSubagentTrace } from "@pi-ext/shared";
 
@@ -67,15 +68,22 @@ async function createLibrarianSession(
 ): Promise<AgentSession> {
   const { authStorage, modelRegistry, settingsManager } = getSharedInfrastructure();
 
-  // Use DefaultResourceLoader to discover extensions (exa-search, context7)
-  // but skip built-in tools, skills, and prompts — librarian only needs
-  // web_search, web_fetch, context7_search, context7_docs from extensions.
+  // Use noExtensions + explicit additionalExtensionPaths to load ONLY the
+  // extensions the librarian needs (exa-search, context7, wiki-search, wiki-read).
+  // This prevents loading herdr-agent-state in the subagent session, which would
+  // cause false "idle" state transitions in herdr.
+  const extensionsDir = path.join(getAgentDir(), "extensions");
   const loader = new DefaultResourceLoader({
     cwd,
     agentDir: getAgentDir(),
     systemPromptOverride: () => systemPrompt,
-    // No additionalExtensionPaths — let DefaultResourceLoader discover
-    // extensions from ~/.pi/agent/extensions/ and .pi/extensions/ normally
+    noExtensions: true,
+    additionalExtensionPaths: [
+      path.join(extensionsDir, "exa-search"),
+      path.join(extensionsDir, "context7"),
+      path.join(extensionsDir, "wiki-search"),
+      path.join(extensionsDir, "wiki-read"),
+    ],
   });
   await loader.reload();
 
