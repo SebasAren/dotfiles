@@ -13,9 +13,7 @@ import { chromium, type Browser, type LaunchOptions } from "playwright";
  */
 export async function htmlToPng(
   html: string,
-  launchBrowser: (options?: LaunchOptions) => Promise<Browser> = chromium.launch.bind(chromium) as (
-    options?: LaunchOptions,
-  ) => Promise<Browser>,
+  launchBrowser: (options?: LaunchOptions) => Promise<Browser> = chromium.launch.bind(chromium),
 ): Promise<Buffer> {
   let browser;
   try {

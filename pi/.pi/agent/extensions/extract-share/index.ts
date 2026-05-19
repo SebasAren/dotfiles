@@ -57,12 +57,12 @@ export function createExtension(deps: PipelineDeps) {
   return function (pi: ExtensionAPI) {
     pi.registerCommand("extract", {
       description: "Take a screenshot of the last assistant message and copy to clipboard",
-      handler: async (_args, ctx) => runExtract(ctx as HandlerContext, true, deps),
+      handler: async (_args, ctx) => runExtract(ctx, true, deps),
     });
 
     pi.registerShortcut("ctrl+shift+e", {
       description: "Take a screenshot of the last assistant message and copy to clipboard",
-      handler: async (ctx) => runExtract(ctx as HandlerContext, false, deps),
+      handler: async (ctx) => runExtract(ctx, false, deps),
     });
   };
 }

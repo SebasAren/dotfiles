@@ -141,7 +141,7 @@ export default function (pi: ExtensionAPI) {
                   : "No todos",
               },
             ],
-            details: { action: "list", todos: [...todos], nextId } as TodoDetails,
+            details: { action: "list", todos: [...todos], nextId },
           };
 
         case "add": {
@@ -153,7 +153,7 @@ export default function (pi: ExtensionAPI) {
                 todos: [...todos],
                 nextId,
                 error: "texts required",
-              } as TodoDetails,
+              },
             };
           }
           const added: Todo[] = [];
@@ -169,7 +169,7 @@ export default function (pi: ExtensionAPI) {
                 added.map((t) => `  #${t.id}: ${t.text}`).join("\n");
           return {
             content: [{ type: "text", text: summary }],
-            details: { action: "add", todos: [...todos], nextId } as TodoDetails,
+            details: { action: "add", todos: [...todos], nextId },
           };
         }
 
@@ -182,7 +182,7 @@ export default function (pi: ExtensionAPI) {
                 todos: [...todos],
                 nextId,
                 error: "id required",
-              } as TodoDetails,
+              },
             };
           }
           const todo = todos.find((t) => t.id === params.id);
@@ -194,7 +194,7 @@ export default function (pi: ExtensionAPI) {
                 todos: [...todos],
                 nextId,
                 error: `#${params.id} not found`,
-              } as TodoDetails,
+              },
             };
           }
           todo.done = !todo.done;
@@ -202,7 +202,7 @@ export default function (pi: ExtensionAPI) {
             content: [
               { type: "text", text: `Todo #${todo.id} ${todo.done ? "completed" : "uncompleted"}` },
             ],
-            details: { action: "toggle", todos: [...todos], nextId } as TodoDetails,
+            details: { action: "toggle", todos: [...todos], nextId },
           };
         }
 
@@ -212,7 +212,7 @@ export default function (pi: ExtensionAPI) {
           nextId = 1;
           return {
             content: [{ type: "text", text: `Cleared ${count} todos` }],
-            details: { action: "clear", todos: [], nextId: 1 } as TodoDetails,
+            details: { action: "clear", todos: [], nextId: 1 },
           };
         }
 
@@ -224,7 +224,7 @@ export default function (pi: ExtensionAPI) {
               todos: [...todos],
               nextId,
               error: `unknown action: ${String(params.action)}`,
-            } as TodoDetails,
+            },
           };
       }
     },
