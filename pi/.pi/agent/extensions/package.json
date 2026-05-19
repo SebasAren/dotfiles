@@ -12,17 +12,14 @@
     "librarian",
     "plan-mode",
     "shared",
-    "todo",
     "tdd-tree",
     "cheap-clarify",
     "wiki-search",
     "wiki-read",
     "wiki-lint",
-    "wiki-stash",
     "extract-share",
     "pi-notify",
-    "pi-image",
-    "git-hooks"
+    "pi-image"
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.0",

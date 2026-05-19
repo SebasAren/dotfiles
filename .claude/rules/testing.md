@@ -27,9 +27,4 @@ All test directories must be listed in `.mise/tasks/test`. When adding a new tes
 
 Integration tests (`**/integration.test.ts`) are excluded from CI via `--path-ignore-patterns` — run them manually.
 
-## Untested extensions (follow-up)
 
-These extensions have no tests — add at minimum an `integration.test.ts` verifying the load/register cycle:
-
-- `todo` (303 LOC)
-- `wiki-stash` (195 LOC)

@@ -77,16 +77,6 @@
         "diff": "^9.0.0",
       },
     },
-    "git-hooks": {
-      "name": "@pi-ext/git-hooks",
-      "version": "1.0.0",
-      "dependencies": {
-        "@pi-ext/shared": "workspace:*",
-      },
-      "peerDependencies": {
-        "@earendil-works/pi-coding-agent": "^0.75.3",
-      },
-    },
     "librarian": {
       "name": "@pi-ext/librarian",
       "version": "1.0.0",
@@ -169,13 +159,6 @@
     "wiki-search": {
       "name": "@pi-ext/wiki-search",
       "version": "1.0.0",
-    },
-    "wiki-stash": {
-      "name": "@pi-ext/wiki-stash",
-      "version": "1.0.0",
-      "dependencies": {
-        "@pi-ext/shared": "workspace:*",
-      },
     },
   },
   "packages": {
@@ -379,8 +362,6 @@
 
     "@pi-ext/fuzzy-edit": ["@pi-ext/fuzzy-edit@workspace:fuzzy-edit"],
 
-    "@pi-ext/git-hooks": ["@pi-ext/git-hooks@workspace:git-hooks"],
-
     "@pi-ext/librarian": ["@pi-ext/librarian@workspace:librarian"],
 
     "@pi-ext/pi-image": ["@pi-ext/pi-image@workspace:pi-image"],
@@ -400,8 +381,6 @@
     "@pi-ext/wiki-read": ["@pi-ext/wiki-read@workspace:wiki-read"],
 
     "@pi-ext/wiki-search": ["@pi-ext/wiki-search@workspace:wiki-search"],
-
-    "@pi-ext/wiki-stash": ["@pi-ext/wiki-stash@workspace:wiki-stash"],
 
     "@protobufjs/aspromise": ["@protobufjs/aspromise@1.1.2", "", {}, "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ=="],
 
