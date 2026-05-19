@@ -16,6 +16,8 @@ description: Global project conventions — stow, docs structure, and TypeScript
 
 **CONVENTIONS.md**: Source of truth for per-language code style (Lua, Python, Shell, TypeScript). Actionable rules with specific tool commands (e.g., `mise run stylua`), not vague guidance. Don't duplicate its contents in AGENTS.md or rule files — link to it.
 
+**`pi/.pi/agent/APPEND_SYSTEM.md`**: Personal cross-project workflow only (jj habits, communication preferences). No repo-specific conventions — those go in `.claude/rules/` or `AGENTS.md`.
+
 ## TypeScript / Bun gotchas
 
 These are external constraints not visible in code, kept here because they apply across every Bun script in the repo:
@@ -31,6 +33,7 @@ These are external constraints not visible in code, kept here because they apply
 ## Shellcheck in `.bashrc.d`
 
 These files intentionally omit `set -euo pipefail` (they are sourced interactively). All three recurring warning types below have been remediated — keep these patterns in mind for new scripts:
+
 - **SC2155**: `export VAR=$(cmd)` → `VAR=$(cmd); export VAR`
 - **SC2162**: `read env_key` → `read -r env_key`
 - **SC2054**: `FZF_OPTS=(a,b)` → `FZF_OPTS=(a b)` (arrays use spaces, not commas)
