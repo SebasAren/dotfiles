@@ -4,8 +4,8 @@ import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { piCodingAgentMock, piTuiMock, typeboxMock } from "@pi-ext/shared/test-mocks";
 
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 mock.module("typebox", typeboxMock);
 
 // ── Mock OpenAI SDK ────────────────────────────────────────────────────────

@@ -6,9 +6,9 @@
  * call renderer and the context.lastComponent reuse pattern.
  */
 
-import { type Component, Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
-import type { Theme } from "@mariozechner/pi-coding-agent";
-import { getMarkdownTheme } from "@mariozechner/pi-coding-agent";
+import { type Component, Container, Markdown, Spacer, Text } from "@earendil-works/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 
 import { formatUsageLine } from "./format";
 import { getSectionSummary, parseSections } from "./markdown";

@@ -16,8 +16,8 @@ import {
   ModelRegistry,
   SessionManager,
   SettingsManager,
-} from "@mariozechner/pi-coding-agent";
-import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
+import type { CreateAgentSessionOptions } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import { resolveRealCwd, runSubagent, getModel, startExploreTrace } from "@pi-ext/shared";

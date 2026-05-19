@@ -58,8 +58,8 @@ mock.module("@pi-ext/shared", () => ({
   getModel: () => "test-model",
   startSubagentTrace: mockStartSubagentTrace,
 }));
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 mock.module("typebox", typeboxMock);
 
 // Import the extension after mocks are set up

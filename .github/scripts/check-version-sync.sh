@@ -9,7 +9,7 @@ if [ -z "$mise_version" ]; then
 fi
 
 # Extract the semver range from npm pi packages (e.g. ^0.70.2)
-npm_range=$(grep -E '"@mariozechner/pi-(ai|coding-agent|tui|agent-core)"' pi/.pi/agent/extensions/package.json | head -1 | sed -E 's/.*"([">=<!^~]+[0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
+npm_range=$(grep -E '"@earendil-works/pi-(ai|coding-agent|tui|agent-core)"' pi/.pi/agent/extensions/package.json | head -1 | sed -E 's/.*"([">=<!^~]+[0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
 if [ -z "$npm_range" ]; then
   echo "ERROR: Could not extract pi package range from pi/.pi/agent/extensions/package.json"
   exit 1
@@ -58,7 +58,7 @@ semver_satisfies() {
 if ! semver_satisfies "$mise_version" "$npm_range"; then
   echo "ERROR: mise pi version does not satisfy npm package range"
   echo "  mise/.config/mise/config.toml:      pi = $mise_version"
-  echo "  pi/.pi/agent/extensions/package.json: @mariozechner/pi-* = $npm_range"
+  echo "  pi/.pi/agent/extensions/package.json: @earendil-works/pi-* = $npm_range"
   echo ""
   echo "  If the npm range needs an update, run:"
   echo "    mise run pi-version-sync $mise_version"

@@ -3,11 +3,11 @@ import { piTuiRenderMock, piCodingAgentThemeMock } from "@pi-ext/shared/test-moc
 
 // Mock external deps using shared factories before any imports.
 // piTuiRenderMock provides Text/Container/Markdown/Spacer with working render() methods.
-mock.module("@mariozechner/pi-tui", piTuiRenderMock);
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentThemeMock);
+mock.module("@earendil-works/pi-tui", piTuiRenderMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentThemeMock);
 
-import { Text, Container } from "@mariozechner/pi-tui";
-import { Theme } from "@mariozechner/pi-coding-agent";
+import { Text, Container } from "@earendil-works/pi-tui";
+import { Theme } from "@earendil-works/pi-coding-agent";
 
 import { reuseOrCreateText, renderSubagentCall, renderSubagentResult } from "./rendering";
 import type { RenderSubagentResultOptions, SubagentResultDetails } from "./rendering";

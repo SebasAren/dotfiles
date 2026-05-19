@@ -14,7 +14,7 @@
  * - Fallback model retry
  */
 
-import type { AgentSession, AgentSessionEvent } from "@mariozechner/pi-coding-agent";
+import type { AgentSession, AgentSessionEvent } from "@earendil-works/pi-coding-agent";
 import { argsSignature, detectLoop } from "./loop-detection.js";
 import { getModel, getFallbackModel, shouldUseFallback } from "./model.js";
 import type { SubagentResult } from "./types.js";

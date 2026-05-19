@@ -9,12 +9,12 @@ import { describe, it, expect, mock } from "bun:test";
 import { piTuiMock, typeboxMock } from "@pi-ext/shared/test-mocks";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-tui", () => ({
+mock.module("@earendil-works/pi-tui", () => ({
   ...piTuiMock(),
   matchesKey: (_data: string, _key: string) => false,
   truncateToWidth: (text: string, _width: number) => text,
 }));
-mock.module("@mariozechner/pi-ai", () => ({
+mock.module("@earendil-works/pi-ai", () => ({
   StringEnum: (values: readonly string[]) => ({ type: "string", enum: [...values] }),
 }));
 mock.module("typebox", typeboxMock);

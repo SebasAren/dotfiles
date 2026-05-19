@@ -1,6 +1,6 @@
 # Pi Agent Extensions
 
-TypeScript workspace of extensions for the [Pi coding agent](https://github.com/mariozechner/pi). Each subdirectory is a self-contained extension registered via Pi's extension API.
+TypeScript workspace of extensions for the [Pi coding agent](https://github.com/earendil-works/pi-mono). Each subdirectory is a self-contained extension registered via Pi's extension API.
 
 See [`.claude/rules/pi-extensions.md`](../../../../.claude/rules/pi-extensions.md) for the full authoring/debugging rulebook (Bun gotchas, mock patterns, render conventions, model config, Explore internals). This file covers layout and the test workflow only.
 

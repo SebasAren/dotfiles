@@ -12,8 +12,8 @@
  * wrong indentation depth, and trailing whitespace differences.
  */
 
-import type { ExtensionAPI, EditToolDetails } from "@mariozechner/pi-coding-agent";
-import { createEditTool, withFileMutationQueue } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, EditToolDetails } from "@earendil-works/pi-coding-agent";
+import { createEditTool, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { readFile, writeFile, access, constants } from "node:fs/promises";
 import { resolve } from "node:path";
 

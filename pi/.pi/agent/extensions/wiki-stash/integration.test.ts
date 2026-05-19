@@ -9,7 +9,7 @@ import { describe, it, expect, mock } from "bun:test";
 import { piCodingAgentMock } from "@pi-ext/shared/test-mocks";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-coding-agent", () => ({
+mock.module("@earendil-works/pi-coding-agent", () => ({
   ...piCodingAgentMock(),
   AuthStorage: class AuthStorage {
     static create() {

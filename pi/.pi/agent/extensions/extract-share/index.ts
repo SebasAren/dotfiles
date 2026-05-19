@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { getLastAssistantMessage } from "./getLastAssistantMessage";
 import { htmlToPng } from "./htmlToPng";
 import { markdownToHtml } from "./markdownToHtml";

@@ -2,8 +2,8 @@
  * Librarian extension TUI renderers for tool call and result display.
  */
 
-import { type Component, Text } from "@mariozechner/pi-tui";
-import type { Theme } from "@mariozechner/pi-coding-agent";
+import { type Component, Text } from "@earendil-works/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 import { renderSubagentResult, renderSubagentCall } from "@pi-ext/shared";
 
 import type { LibrarianDetails } from "./index";

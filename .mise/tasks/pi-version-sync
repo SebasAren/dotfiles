@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Sync @mariozechner/pi-* npm ranges in extensions to a target version"
+#MISE description="Sync @earendil-works/pi-* npm ranges in extensions to a target version"
 set -euo pipefail
 
 target="${1:-}"
@@ -25,15 +25,15 @@ update_dep() {
 }
 
 # Update root workspace package.json (dependencies + devDependencies)
-for key in "@mariozechner/pi-ai" "@mariozechner/pi-coding-agent" "@mariozechner/pi-tui" "@mariozechner/pi-agent-core"; do
+for key in "@earendil-works/pi-ai" "@earendil-works/pi-coding-agent" "@earendil-works/pi-tui" "@earendil-works/pi-agent-core"; do
   update_dep "$extensions_root/package.json" "$key" "$new_range"
 done
 
 # Update individual extension peerDependencies
-for f in "$extensions_root"/shared/package.json "$extensions_root"/extract-share/package.json "$extensions_root"/pi-notify/package.json; do
-  for key in "@mariozechner/pi-coding-agent" "@mariozechner/pi-tui"; do
+for f in "$extensions_root"/shared/package.json "$extensions_root"/extract-share/package.json "$extensions_root"/pi-notify/package.json "$extensions_root"/git-hooks/package.json "$extensions_root"/todo/package.json; do
+  for key in "@earendil-works/pi-coding-agent" "@earendil-works/pi-tui"; do
     update_dep "$f" "$key" "$new_range"
   done
 done
 
-echo "✓ Updated all @mariozechner/pi-* ranges to $new_range"
+echo "✓ Updated all @earendil-works/pi-* ranges to $new_range"

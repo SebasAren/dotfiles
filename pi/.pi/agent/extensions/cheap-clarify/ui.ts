@@ -5,8 +5,8 @@
  * (single question or multi-question) and collects {@link Answer}s.
  */
 
-import { Editor, type EditorTheme, Key, matchesKey, truncateToWidth } from "@mariozechner/pi-tui";
-import type { ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import { Editor, type EditorTheme, Key, matchesKey, truncateToWidth } from "@earendil-works/pi-tui";
+import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
 import type { Answer, Question, QuestionnaireResult, QuestionOption } from "./parser";
 

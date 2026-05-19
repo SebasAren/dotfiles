@@ -50,7 +50,7 @@ mock.module("./getLastAssistantMessage", () => ({
   },
 }));
 
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
 mock.module("typebox", typeboxMock);
 
 import extractExtension from "./index";

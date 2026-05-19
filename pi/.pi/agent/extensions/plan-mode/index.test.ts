@@ -2,7 +2,7 @@ import { describe, it, expect, mock } from "bun:test";
 import { piTuiMock } from "../shared/src/test-mocks";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 
 // Now import the extension after mocks are set up
 import planModeExtension from "./index";

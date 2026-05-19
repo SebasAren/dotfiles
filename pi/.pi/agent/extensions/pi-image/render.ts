@@ -2,8 +2,8 @@
  * Pi Image Generation Extension — TUI renderers.
  */
 
-import { type Component, Text } from "@mariozechner/pi-tui";
-import type { Theme } from "@mariozechner/pi-coding-agent";
+import { type Component, Text } from "@earendil-works/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 
 /** Parameters for the generate_image tool call. */
 export interface GenerateImageCallArgs {

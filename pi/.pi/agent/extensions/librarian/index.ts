@@ -5,7 +5,7 @@
  * to research external documentation. The model is configurable via CHEAP_MODEL env var.
  */
 
-import { type ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
   type AgentSession,
   AuthStorage,
@@ -15,8 +15,8 @@ import {
   ModelRegistry,
   SessionManager,
   SettingsManager,
-} from "@mariozechner/pi-coding-agent";
-import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
+import type { CreateAgentSessionOptions } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import { resolveRealCwd, runSubagent, getModel, startSubagentTrace } from "@pi-ext/shared";

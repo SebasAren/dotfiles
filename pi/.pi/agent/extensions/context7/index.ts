@@ -7,7 +7,7 @@
  * - context7_docs: Get documentation for a specific library ID
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Context7 } from "@upstash/context7-sdk";
 
 import { SearchParams, executeSearch } from "./search";

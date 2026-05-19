@@ -1,6 +1,6 @@
 # Pi Agent Extensions
 
-Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) AI coding assistant, written in TypeScript/Bun. Each extension is a self-contained module that registers tools, commands, and TUI renderers into the Pi session.
+Custom extensions for the [Pi](https://github.com/earendil-works/pi-mono) AI coding assistant, written in TypeScript/Bun. Each extension is a self-contained module that registers tools, commands, and TUI renderers into the Pi session.
 
 ## Extension Catalog
 

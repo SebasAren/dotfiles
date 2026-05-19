@@ -9,7 +9,7 @@ mock.module("@upstash/context7-sdk", () => ({
 
 mock.module("typebox", typeboxMock);
 
-mock.module("@mariozechner/pi-ai", () => ({
+mock.module("@earendil-works/pi-ai", () => ({
   StringEnum: (values: any, options: any) => ({ type: "string", enum: values, ...options }),
 }));
 

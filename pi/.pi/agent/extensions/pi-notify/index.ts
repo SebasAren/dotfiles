@@ -13,7 +13,7 @@ import type {
   AgentEndEvent,
   ExtensionAPI,
   SessionShutdownEvent,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 import { enableFocusTracking, isFocused, cleanup } from "./focus-tracker";
 import { notify } from "./notify";
 

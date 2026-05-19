@@ -17,15 +17,15 @@
  *     typeboxMock,
  *   } from "@pi-ext/shared/test-mocks";
  *
- *   mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
- *   mock.module("@mariozechner/pi-tui", piTuiMock);
+ *   mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+ *   mock.module("@earendil-works/pi-tui", piTuiMock);
  *   mock.module("typebox", typeboxMock);
  *
  *   import myExtension from "./index";
  */
 
 /**
- * Complete mock for `@mariozechner/pi-coding-agent`.
+ * Complete mock for `@earendil-works/pi-coding-agent`.
  * Covers every export used by any extension:
  *   - `createEditTool` (fuzzy-edit)
  *   - `withFileMutationQueue` (fuzzy-edit)
@@ -109,7 +109,7 @@ export const piCodingAgentMock = () => ({
 });
 
 /**
- * Complete mock for `@mariozechner/pi-tui`.
+ * Complete mock for `@earendil-works/pi-tui`.
  * Covers every export used by any extension:
  *   - `Container`, `Markdown`, `Spacer`, `Text` (explore, librarian, wt-worktree)
  *   - `Key` (plan-mode)
@@ -140,7 +140,7 @@ export const piTuiMock = () => ({
 });
 
 /**
- * Richer mock for `@mariozechner/pi-tui` with working `render()` methods.
+ * Richer mock for `@earendil-works/pi-tui` with working `render()` methods.
  *
  * Use this instead of `piTuiMock` when tests need to call `component.render(width)`
  * and assert on the rendered output. Each class serialises its content to string
@@ -214,7 +214,7 @@ export const typeboxMock = () => ({
 });
 
 /**
- * Mock for `@mariozechner/pi-coding-agent` that includes a pass-through `Theme` class.
+ * Mock for `@earendil-works/pi-coding-agent` that includes a pass-through `Theme` class.
  *
  * `Theme.fg()` / `Theme.bg()` / `Theme.bold()` simply return their text argument
  * unchanged, which is perfect for asserting on rendered content without ANSI

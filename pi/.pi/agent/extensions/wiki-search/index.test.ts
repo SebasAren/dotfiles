@@ -5,12 +5,12 @@
 import { describe, it, expect, mock, beforeAll } from "bun:test";
 
 beforeAll(() => {
-  mock.module("@mariozechner/pi-coding-agent", () => ({
+  mock.module("@earendil-works/pi-coding-agent", () => ({
     DEFAULT_MAX_BYTES: 100_000,
     DEFAULT_MAX_LINES: 500,
     truncateHead: (text: string) => ({ content: text, truncated: false }),
   }));
-  mock.module("@mariozechner/pi-tui", () => ({
+  mock.module("@earendil-works/pi-tui", () => ({
     Text: class {
       text = "";
       constructor(text: string, _x: number, _y: number) {
@@ -23,7 +23,7 @@ beforeAll(() => {
   }));
 });
 
-import type { Theme } from "@mariozechner/pi-coding-agent";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 import { WikiSearchDetails } from "./index";
 import { renderSearchCall, renderSearchResult } from "./render";
 

@@ -3,7 +3,7 @@
  */
 
 import Exa from "exa-js";
-import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, truncateHead } from "@mariozechner/pi-coding-agent";
+import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, truncateHead } from "@earendil-works/pi-coding-agent";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ export interface WebSearchDetails {
 // ── Schema ─────────────────────────────────────────────────────────────────
 
 import { Type } from "typebox";
-import { StringEnum } from "@mariozechner/pi-ai";
+import { StringEnum } from "@earendil-works/pi-ai";
 
 export const WebSearchParams = Type.Object({
   query: Type.String({ description: "Search query" }),

@@ -1,8 +1,8 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { piCodingAgentMock, piTuiMock } from "@pi-ext/shared/test-mocks";
 
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 
 // Import after mocks
 import ext from "./index";

@@ -9,8 +9,8 @@ import { describe, it, expect, mock } from "bun:test";
 import { piCodingAgentMock, piTuiMock } from "@pi-ext/shared/test-mocks";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 
 // Mock focus-tracker to avoid accessing process.stdin during init
 mock.module("./focus-tracker", () => ({

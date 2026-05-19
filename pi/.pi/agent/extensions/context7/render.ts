@@ -2,8 +2,8 @@
  * Context7 extension TUI renderers for both tools.
  */
 
-import { type Component, Text } from "@mariozechner/pi-tui";
-import type { Theme } from "@mariozechner/pi-coding-agent";
+import { type Component, Text } from "@earendil-works/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 
 import type { SearchDetails } from "./search";
 import type { DocsDetails } from "./docs";

@@ -9,8 +9,8 @@ import type {
   ExtensionAPI,
   ExtensionContext,
   BeforeAgentStartEvent,
-} from "@mariozechner/pi-coding-agent";
-import { Key } from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-coding-agent";
+import { Key } from "@earendil-works/pi-tui";
 
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "explore", "librarian"];
 

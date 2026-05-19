@@ -2,8 +2,8 @@
  * Exa extension TUI renderers for both web_search and web_fetch tools.
  */
 
-import { type Component, Text } from "@mariozechner/pi-tui";
-import type { Theme } from "@mariozechner/pi-coding-agent";
+import { type Component, Text } from "@earendil-works/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 
 import type { WebSearchDetails } from "./web-search";
 import type { WebFetchDetails } from "./web-fetch";

@@ -15,7 +15,7 @@
       "groupName": "pi monorepo",
       "groupSlug": "pi-monorepo",
       "matchPackageNames": [
-        "@mariozechner/pi-*",
+        "@earendil-works/pi-*",
         "pi"
       ],
       "automerge": true,

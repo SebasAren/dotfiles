@@ -4,8 +4,8 @@
  * via a TUI questionnaire. Answers are sent back as a user message.
  */
 
-import { complete } from "@mariozechner/pi-ai";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { complete } from "@earendil-works/pi-ai";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import {
   buildExtractPrompt,

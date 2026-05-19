@@ -3,7 +3,7 @@
 [![test](https://github.com/SebasAren/SebbaFlow/actions/workflows/test.yml/badge.svg)](https://github.com/SebasAren/SebbaFlow/actions/workflows/test.yml)
 [![GNU Stow](https://img.shields.io/badge/managed%20with-GNU%20Stow-blue)](https://www.gnu.org/software/stow/)
 [![mise](https://img.shields.io/badge/runtimes-mise-green)](https://mise.jdx.dev/)
-[![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/mariozechner/pi-coding-agent)
+[![Pi Agent](https://img.shields.io/badge/AI-Pi%20Agent%20Extensions-orange)](https://github.com/earendil-works/pi-mono)
 
 Linux workstation config, managed with [GNU Stow](https://www.gnu.org/software/stow/) for symlink-based installation.
 
@@ -101,7 +101,7 @@ Note: Kitty is the preferred terminal; tmux is kept for SSH fallback sessions on
 
 ## Pi Agent Extensions
 
-Custom extensions for the [Pi](https://github.com/mariozechner/pi-coding-agent) coding assistant, written in TypeScript/Bun. Each extension is a self-contained module registering tools, commands, and TUI renderers.
+Custom extensions for the [Pi](https://github.com/earendil-works/pi-mono) coding assistant, written in TypeScript/Bun. Each extension is a self-contained module registering tools, commands, and TUI renderers.
 
 > **Full documentation**: [`pi/.pi/README.md`](pi/.pi/README.md)
 
@@ -293,7 +293,7 @@ bun test pi/.local/bin/tdd-plan.test.ts
 bun test obsidian/.local/lib/wiki-search/wiki-search.test.ts
 ```
 
-**Mocking conventions**: External SDKs (`exa-js`, `@upstash/context7-sdk`, `@mariozechner/pi-coding-agent`) are mocked via shared factories in `pi/.pi/agent/extensions/shared/src/test-mocks.ts` — tests never hit the network and need no API keys. See `.claude/rules/pi-extensions.md` for the full rationale.
+**Mocking conventions**: External SDKs (`exa-js`, `@upstash/context7-sdk`, `@earendil-works/pi-coding-agent`) are mocked via shared factories in `pi/.pi/agent/extensions/shared/src/test-mocks.ts` — tests never hit the network and need no API keys. See `.claude/rules/pi-extensions.md` for the full rationale.
 
 ### Pre-commit Checks
 

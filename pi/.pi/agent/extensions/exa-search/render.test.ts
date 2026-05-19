@@ -1,7 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 
 // Mock TUI
-mock.module("@mariozechner/pi-tui", () => ({
+mock.module("@earendil-works/pi-tui", () => ({
   Text: class Text {
     text: string;
     constructor(text: string, _x: number, _y: number) {
@@ -44,7 +44,7 @@ describe("renderSearchCall", () => {
   });
 
   it("reuses context.lastComponent", () => {
-    const { Text } = require("@mariozechner/pi-tui");
+    const { Text } = require("@earendil-works/pi-tui");
     const existing = new Text("old", 0, 0);
     const result = renderSearchCall({ query: "test" }, makeTheme(), { lastComponent: existing });
     expect(result).toBe(existing);
@@ -268,7 +268,7 @@ describe("renderFetchCall", () => {
   });
 
   it("reuses context.lastComponent", () => {
-    const { Text } = require("@mariozechner/pi-tui");
+    const { Text } = require("@earendil-works/pi-tui");
     const existing = new Text("old", 0, 0);
     const result = renderFetchCall({ urls: ["url1"] }, makeTheme(), { lastComponent: existing });
     expect(result).toBe(existing);

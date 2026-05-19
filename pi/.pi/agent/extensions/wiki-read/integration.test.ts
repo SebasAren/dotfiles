@@ -3,8 +3,8 @@ import { piCodingAgentMock, piTuiMock, typeboxMock } from "@pi-ext/shared/test-m
 import { mkdirSync, writeFileSync, rmSync, mkdtempSync } from "node:fs";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 mock.module("typebox", typeboxMock);
 
 import wikiReadExtension, { executeWikiRead } from "./index";

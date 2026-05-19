@@ -2,8 +2,8 @@ import { describe, expect, it, mock } from "bun:test";
 import { piCodingAgentMock, piTuiMock } from "@pi-ext/shared/test-mocks";
 
 // Mock external dependencies with shared mock factories
-mock.module("@mariozechner/pi-coding-agent", piCodingAgentMock);
-mock.module("@mariozechner/pi-tui", piTuiMock);
+mock.module("@earendil-works/pi-coding-agent", piCodingAgentMock);
+mock.module("@earendil-works/pi-tui", piTuiMock);
 
 // Now import the extension after mocks are set up
 import clarifyExtension from "./index";

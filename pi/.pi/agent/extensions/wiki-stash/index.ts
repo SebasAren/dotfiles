@@ -26,8 +26,8 @@ import {
   serializeConversation,
   SessionManager,
   SettingsManager,
-} from "@mariozechner/pi-coding-agent";
-import type { CreateAgentSessionOptions } from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
+import type { CreateAgentSessionOptions } from "@earendil-works/pi-coding-agent";
 
 import { resolveRealCwd, runSubagent } from "@pi-ext/shared";
 
